@@ -14,6 +14,14 @@ import { caseRoutes } from './routes/case'
 import { revenueRoutes } from './routes/revenue'
 import { notificationRoutes } from './routes/notification'
 import { adminRoutes } from './routes/admin'
+import { userRoutes } from './routes/user'
+import { documentRoutes } from './routes/document'
+import { supportRoutes, supportAdminRoutes } from './routes/support'
+import { adminExtendedRoutes } from './routes/admin-extended'
+import { transactionRoutes } from './routes/transaction'
+import { revenueExtendedRoutes } from './routes/revenue-extended'
+import { referralRoutes } from './routes/referral'
+import { contentRoutes } from './routes/content'
 import { getAuth } from './lib/auth'
 import { logger } from './lib/logger'
 
@@ -60,7 +68,16 @@ app.route('/api/brokers', brokerRoutes)
 app.route('/api/cases', caseRoutes)
 app.route('/api/revenue', revenueRoutes)
 app.route('/api/notifications', notificationRoutes)
+app.route('/api/admin', adminExtendedRoutes)
 app.route('/api/admin', adminRoutes)
+app.route('/api/admin/inquiries', supportAdminRoutes)
+app.route('/api/users', userRoutes)
+app.route('/api', documentRoutes)
+app.route('/api/support', supportRoutes)
+app.route('/api/transactions', transactionRoutes)
+app.route('/api/revenue', revenueExtendedRoutes)
+app.route('/api/referrals', referralRoutes)
+app.route('/api', contentRoutes)
 
 // 404
 app.notFound((c) =>
