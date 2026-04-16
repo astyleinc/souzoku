@@ -17,6 +17,8 @@ export type Property = {
   title: string
   address: string
   prefecture: string
+  lat: number
+  lng: number
   price: number
   type: PropertyType
   area: number
@@ -64,6 +66,8 @@ export const mockProperties: Property[] = [
     title: '練馬区 駅近マンション 3LDK',
     address: '東京都練馬区豊玉北5丁目',
     prefecture: '東京都',
+    lat: 35.7380,
+    lng: 139.6540,
     price: 3500,
     type: 'apartment',
     area: 72.5,
@@ -82,6 +86,8 @@ export const mockProperties: Property[] = [
     title: '杉並区 閑静な住宅地の土地',
     address: '東京都杉並区荻窪3丁目',
     prefecture: '東京都',
+    lat: 35.7034,
+    lng: 139.6204,
     price: 4200,
     type: 'land',
     area: 120.5,
@@ -98,6 +104,8 @@ export const mockProperties: Property[] = [
     title: '世田谷区 二世帯住宅',
     address: '東京都世田谷区桜丘4丁目',
     prefecture: '東京都',
+    lat: 35.6461,
+    lng: 139.6427,
     price: 5800,
     type: 'house',
     area: 180.2,
@@ -116,6 +124,8 @@ export const mockProperties: Property[] = [
     title: '横浜市青葉区 駅徒歩3分マンション',
     address: '神奈川県横浜市青葉区美しが丘2丁目',
     prefecture: '神奈川県',
+    lat: 35.5780,
+    lng: 139.5580,
     price: 2800,
     type: 'apartment',
     area: 65.3,
@@ -134,6 +144,8 @@ export const mockProperties: Property[] = [
     title: '大田区 商業地の一戸建て',
     address: '東京都大田区蒲田5丁目',
     prefecture: '東京都',
+    lat: 35.5626,
+    lng: 139.7163,
     price: 3200,
     type: 'house',
     area: 95.0,
@@ -152,6 +164,8 @@ export const mockProperties: Property[] = [
     title: '板橋区 リノベ向きマンション',
     address: '東京都板橋区成増3丁目',
     prefecture: '東京都',
+    lat: 35.7780,
+    lng: 139.6310,
     price: 1800,
     type: 'apartment',
     area: 55.0,
@@ -170,6 +184,8 @@ export const mockProperties: Property[] = [
     title: '川崎市 大型一戸建て',
     address: '神奈川県川崎市宮前区有馬6丁目',
     prefecture: '神奈川県',
+    lat: 35.5764,
+    lng: 139.5853,
     price: 4500,
     type: 'house',
     area: 200.0,
@@ -188,6 +204,8 @@ export const mockProperties: Property[] = [
     title: '中野区 駅近ワンルーム投資用',
     address: '東京都中野区中野5丁目',
     prefecture: '東京都',
+    lat: 35.7074,
+    lng: 139.6657,
     price: 1500,
     type: 'apartment',
     area: 25.5,

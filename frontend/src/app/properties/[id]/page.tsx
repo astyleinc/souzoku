@@ -152,18 +152,22 @@ export default function PropertyDetailPage({
               {/* 地図 */}
               <div>
                 <h2 className="text-sm font-semibold mb-2">所在地</h2>
-                <div className="aspect-[2/1] bg-neutral-100 rounded-xl flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-8 h-8 text-neutral-300 mx-auto" />
-                    <p className="text-sm text-neutral-400 mt-2">Google Map</p>
-                    <a
-                      href="#"
-                      className="inline-flex items-center gap-1 text-sm text-primary-500 mt-1 hover:underline"
-                    >
-                      大きな地図で見る
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
+                <div className="aspect-[2/1] rounded-xl overflow-hidden relative">
+                  <iframe
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.lng - 0.008},${property.lat - 0.005},${property.lng + 0.008},${property.lat + 0.005}&layer=mapnik&marker=${property.lat},${property.lng}`}
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                    title="物件所在地"
+                  />
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-3 right-3 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm hover:bg-white transition-colors"
+                  >
+                    Google Mapで見る
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               </div>
             </div>
