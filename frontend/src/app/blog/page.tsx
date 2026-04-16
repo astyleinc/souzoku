@@ -99,7 +99,7 @@ export default function BlogPage() {
                 >
                   <div className="h-40 bg-neutral-100 flex items-center justify-center">
                     {article.thumbnailUrl ? (
-                      <img src={article.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-xs text-neutral-400">サムネイル画像</span>
                     )}

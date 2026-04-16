@@ -58,17 +58,17 @@ export default function AdminRevenueDetailPage() {
   const [payments, setPayments] = useState<PaymentItem[]>([])
   const [loading, setLoading] = useState(true)
 
+  const loadData = async () => {
+    const [revRes, payRes] = await Promise.all([
+      api.get<unknown>(`/revenue/${params.id}`),
+      api.get<unknown>(`/revenue/${params.id}/payments`),
+    ])
+    if (revRes.success) setRevenue(revRes.data as RevenueDetail)
+    if (payRes.success) setPayments(toItems<PaymentItem>(payRes.data))
+  }
+
   useEffect(() => {
-    const load = async () => {
-      const [revRes, payRes] = await Promise.all([
-        api.get<unknown>(`/revenue/${params.id}`),
-        api.get<unknown>(`/revenue/${params.id}/payments`),
-      ])
-      if (revRes.success) setRevenue(revRes.data as RevenueDetail)
-      if (payRes.success) setPayments(toItems<PaymentItem>(payRes.data))
-      setLoading(false)
-    }
-    load()
+    loadData().then(() => setLoading(false))
   }, [params.id])
 
   if (loading) {
@@ -193,7 +193,7 @@ export default function AdminRevenueDetailPage() {
                         <td className="py-3">
                           {p.status === 'unpaid' && (
                             <button
-                              onClick={() => api.patch(`/revenue/${params.id}/payments/${p.id}`, { status: 'invoiced' }).then((r) => { if (r.success) window.location.reload() })}
+                              onClick={() => api.patch(`/revenue/${params.id}/payments/${p.id}`, { status: 'invoiced' }).then((r) => { if (r.success) loadData() })}
                               className="text-xs text-cta-500 hover:underline font-medium"
                             >
                               請求書発行
@@ -201,7 +201,7 @@ export default function AdminRevenueDetailPage() {
                           )}
                           {p.status === 'invoiced' && (
                             <button
-                              onClick={() => api.patch(`/revenue/${params.id}/payments/${p.id}`, { status: 'paid' }).then((r) => { if (r.success) window.location.reload() })}
+                              onClick={() => api.patch(`/revenue/${params.id}/payments/${p.id}`, { status: 'paid' }).then((r) => { if (r.success) loadData() })}
                               className="text-xs text-success-500 hover:underline font-medium"
                             >
                               入金確認
