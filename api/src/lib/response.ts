@@ -12,9 +12,3 @@ export const created = <T>(c: Context, data: T) =>
 export const paginated = <T>(c: Context, response: PaginatedResponse<T>) =>
   c.json<ApiResponse<PaginatedResponse<T>>>({ success: true, data: response }, 200)
 
-// エラーレスポンス
-export const errorResponse = (c: Context, code: string, message: string, status: number = 400) =>
-  c.json<ApiResponse<never>>({
-    success: false,
-    error: { code, message },
-  }, status as Parameters<typeof c.json>[1])

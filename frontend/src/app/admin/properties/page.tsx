@@ -23,8 +23,11 @@ export default function AdminPropertiesPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
 
+  const [fetchError, setFetchError] = useState(false)
+
   const fetchProperties = async () => {
     setLoading(true)
+    setFetchError(false)
     const params = new URLSearchParams()
     params.set('includeAll', 'true')
     params.set('limit', '50')
@@ -35,6 +38,8 @@ export default function AdminPropertiesPage() {
     const res = await api.get<unknown>(`/properties?${params.toString()}`)
     if (res.success) {
       setProperties(toItems<ApiProperty>(res.data).map(toProperty))
+    } else {
+      setFetchError(true)
     }
     setLoading(false)
   }
@@ -103,6 +108,11 @@ export default function AdminPropertiesPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      ) : fetchError ? (
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center">
+          <p className="text-sm text-error-500 mb-3">データの取得に失敗しました</p>
+          <button onClick={fetchProperties} className="text-sm text-primary-500 hover:underline">再試行</button>
         </div>
       ) : properties.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-card p-10 text-center">

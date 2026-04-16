@@ -19,30 +19,29 @@ import type { ApiProperty } from '@/lib/mappers'
 export default function SellerPropertiesPage() {
   const [properties, setProperties] = useState<ReturnType<typeof toProperty>[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [keyword, setKeyword] = useState('')
 
-  useEffect(() => {
-    const load = async () => {
-      const params = new URLSearchParams({ includeAll: 'true', limit: '50' })
-      if (keyword) params.set('keyword', keyword)
-      const res = await api.get<unknown>(`/properties?${params}`)
-      if (res.success) {
-        setProperties(toItems<ApiProperty>(res.data).map(toProperty))
-      }
-      setLoading(false)
-    }
-    load()
-  }, [])
-
-  const handleSearch = async () => {
+  const fetchProperties = async (kw?: string) => {
     setLoading(true)
+    setFetchError(false)
     const params = new URLSearchParams({ includeAll: 'true', limit: '50' })
-    if (keyword) params.set('keyword', keyword)
+    if (kw) params.set('keyword', kw)
     const res = await api.get<unknown>(`/properties?${params}`)
     if (res.success) {
       setProperties(toItems<ApiProperty>(res.data).map(toProperty))
+    } else {
+      setFetchError(true)
     }
     setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchProperties()
+  }, [])
+
+  const handleSearch = () => {
+    fetchProperties(keyword)
   }
 
   return (
@@ -78,6 +77,11 @@ export default function SellerPropertiesPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        </div>
+      ) : fetchError ? (
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center">
+          <p className="text-sm text-error-500 mb-3">データの取得に失敗しました</p>
+          <button onClick={() => fetchProperties(keyword)} className="text-sm text-primary-500 hover:underline">再試行</button>
         </div>
       ) : properties.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-card p-12 text-center">

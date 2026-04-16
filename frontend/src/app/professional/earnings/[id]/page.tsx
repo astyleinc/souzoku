@@ -1,32 +1,79 @@
 'use client'
 
+import { useState, useEffect, use } from 'react'
 import {
   ArrowLeft,
   CheckCircle,
   Clock,
-  Building2,
   Globe,
   DollarSign,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
+import { api } from '@/lib/api'
 
-export default function ProfessionalEarningDetailPage() {
-  const earning = {
-    id: 'e1',
-    propertyTitle: '大田区 商業地の一戸建て',
-    propertyAddress: '東京都大田区蒲田5丁目',
-    clientName: '中村 一郎',
-    salePrice: 3200,
-    brokerageFee: 204,
-    professionalAmount: 30.6,
-    nwRoute: 'awaka cross',
-    isNwReferral: true,
-    status: 'paid' as const,
-    closedAt: '2026-03-25',
-    paidAt: '2026-04-10',
-    referredAt: '2026-03-01',
+type Earning = {
+  id: string
+  propertyTitle: string
+  propertyAddress: string
+  clientId: string
+  clientName: string
+  referralId: string
+  salePrice: number
+  brokerageFee: number
+  professionalAmount: number
+  nwRoute: string | null
+  isNwReferral: boolean
+  status: 'paid' | 'pending'
+  closedAt: string
+  paidAt: string | null
+  referredAt: string
+}
+
+export default function ProfessionalEarningDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+  const [earning, setEarning] = useState<Earning | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<Earning>(`/professionals/me/earnings/${id}`)
+      if (res.success) {
+        setEarning(res.data)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="紹介料詳細" roleLabel="士業パートナー" navItems={professionalNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!earning) {
+    return (
+      <DashboardShell title="紹介料詳細" roleLabel="士業パートナー" navItems={professionalNav}>
+        <Link href="/professional/earnings" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
+          <ArrowLeft className="w-4 h-4" />
+          紹介料実績に戻る
+        </Link>
+        <div className="bg-white rounded-2xl shadow-card p-10 text-center">
+          <p className="text-sm text-neutral-400">データが見つかりませんでした</p>
+        </div>
+      </DashboardShell>
+    )
   }
 
   return (
@@ -146,14 +193,14 @@ export default function ProfessionalEarningDetailPage() {
             <h3 className="text-base font-semibold mb-3">関連ページ</h3>
             <div className="space-y-2">
               <Link
-                href="/professional/clients/pc1"
+                href={`/professional/clients/${earning.clientId}`}
                 className="block p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors text-sm"
               >
                 <p className="font-medium text-primary-500">クライアント詳細</p>
                 <p className="text-xs text-neutral-400 mt-0.5">{earning.clientName}</p>
               </Link>
               <Link
-                href="/professional/referrals/ref1"
+                href={`/professional/referrals/${earning.referralId}`}
                 className="block p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors text-sm"
               >
                 <p className="font-medium text-primary-500">紹介案件詳細</p>

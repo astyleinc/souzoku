@@ -39,7 +39,7 @@ professionalRoutes.get('/:id/nw', auth, async (c) => {
   return ok(c, affiliations)
 })
 
-professionalRoutes.delete('/:id/nw/:nwId', auth, requireRole('professional', 'admin'), async (c) => {
+professionalRoutes.delete('/:id/nw/:nwId', auth, requireRole('professional', 'admin'), validateUuidParam('nwId'), async (c) => {
   await services.professional.leaveNw(c.req.param('id'), c.req.param('nwId'))
   return ok(c, { message: 'NW脱退が完了しました' })
 })
