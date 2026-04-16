@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { OnboardingChecklist } from '@/components/shared/OnboardingChecklist'
 import { buyerNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockBids, BID_STATUS_LABEL, mockNotifications } from '@/data/mock-dashboard'
@@ -26,6 +27,15 @@ export default function BuyerDashboardPage() {
       userName="株式会社山本不動産"
       navItems={buyerNav}
     >
+      <OnboardingChecklist
+        items={[
+          { label: 'プロフィールを完成させる', href: '/buyer/settings', completed: true },
+          { label: '物件を検索してみる', href: '/properties', completed: true },
+          { label: 'お気に入りに登録する', href: '/properties', completed: false },
+          { label: '最初の入札をする', href: '/properties', completed: false },
+        ]}
+      />
+
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[

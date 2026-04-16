@@ -8,7 +8,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Shield,
 } from 'lucide-react'
+import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { mockDocuments } from '@/data/mock-dashboard'
@@ -33,6 +35,17 @@ export default function SellerDocumentsPage() {
       userName="中村 一郎"
       navItems={sellerNav}
     >
+      {/* 閲覧許可管理リンク */}
+      <div className="flex items-center justify-end mb-4">
+        <Link
+          href="/seller/documents/permissions"
+          className="inline-flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium transition-colors"
+        >
+          <Shield className="w-3.5 h-3.5" />
+          士業への閲覧許可を管理
+        </Link>
+      </div>
+
       {/* アップロードエリア */}
       <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
         <div className="border-2 border-dashed border-neutral-200 rounded-xl p-8 text-center hover:border-primary-300 transition-colors cursor-pointer">

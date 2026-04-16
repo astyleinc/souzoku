@@ -14,6 +14,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { NotificationList } from '@/components/shared/NotificationList'
 import { SummaryCard } from '@/components/shared/SummaryCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { OnboardingChecklist } from '@/components/shared/OnboardingChecklist'
 import { professionalNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockNotifications } from '@/data/mock-dashboard'
@@ -28,6 +29,15 @@ export default function ProfessionalDashboardPage() {
       userName="山田 太郎"
       navItems={professionalNav}
     >
+      <OnboardingChecklist
+        items={[
+          { label: 'プロフィールを完成させる', href: '/professional/settings', completed: true },
+          { label: '資格証明書をアップロード', href: '/professional/settings', completed: true },
+          { label: '紹介リンクを発行する', href: '/professional/referral-link', completed: false },
+          { label: 'クライアントを紹介する', href: '/professional/clients/new', completed: false },
+        ]}
+      />
+
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <SummaryCard icon={Users} iconColor="text-primary-500" iconBg="bg-primary-50" label="紹介件数" value="8" sub="今月 +2件" subIcon={TrendingUp} subColor="text-success-500" />
