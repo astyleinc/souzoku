@@ -11,7 +11,6 @@ export default function BuyerAccountDeletionPage() {
     <DashboardShell
       title="アカウント削除"
       roleLabel="買い手"
-      userName="株式会社山本不動産"
       navItems={buyerNav}
     >
       <Link href="/buyer/settings" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -20,7 +19,6 @@ export default function BuyerAccountDeletionPage() {
       </Link>
       <AccountDeletionForm
         roleName="買い手"
-        userName="株式会社山本不動産"
       />
     </DashboardShell>
   )

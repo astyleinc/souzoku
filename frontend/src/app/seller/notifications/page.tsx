@@ -2,15 +2,12 @@
 
 import { NotificationPage } from '@/components/shared/NotificationPage'
 import { sellerNav } from '@/config/navigation'
-import { mockNotifications } from '@/data/mock-dashboard'
 
 export default function SellerNotificationsPage() {
   return (
     <NotificationPage
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
-      notifications={mockNotifications}
     />
   )
 }

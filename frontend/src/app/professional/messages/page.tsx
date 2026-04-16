@@ -19,7 +19,6 @@ export default function ProfessionalMessagesPage() {
     <DashboardShell
       title="メッセージ"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       {professionalThreads.length === 0 ? (

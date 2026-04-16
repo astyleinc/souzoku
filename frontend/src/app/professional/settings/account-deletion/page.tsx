@@ -11,7 +11,6 @@ export default function ProfessionalAccountDeletionPage() {
     <DashboardShell
       title="アカウント削除"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       <Link href="/professional/settings" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -20,7 +19,6 @@ export default function ProfessionalAccountDeletionPage() {
       </Link>
       <AccountDeletionForm
         roleName="士業パートナー"
-        userName="山田 太郎"
       />
     </DashboardShell>
   )

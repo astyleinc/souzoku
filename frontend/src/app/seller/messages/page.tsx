@@ -18,7 +18,6 @@ export default function SellerMessagesPage() {
     <DashboardShell
       title="メッセージ"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
       {sellerThreads.length === 0 ? (

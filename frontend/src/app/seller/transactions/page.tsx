@@ -1,34 +1,73 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   DollarSign,
   CheckCircle,
   Clock,
+  Loader2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { SummaryCard } from '@/components/shared/SummaryCard'
 import { TransactionList } from '@/components/shared/TransactionList'
 import { sellerNav } from '@/config/navigation'
+import { api, toItems } from '@/lib/api'
 
-const mockTransactions = [
-  { id: 'tx1', propertyTitle: '練馬区 駅近マンション 3LDK', amount: 3200, counterparty: '株式会社山本不動産', status: 'completed' as const, date: '2026-03-25' },
-  { id: 'tx2', propertyTitle: '杉並区 閑静な住宅地の土地', amount: 4500, counterparty: '田中建設株式会社', status: 'in_progress' as const, date: '2026-04-10' },
-  { id: 'tx3', propertyTitle: '世田谷区 二世帯住宅', amount: 6800, counterparty: '（選定中）', status: 'in_progress' as const, date: '2026-04-15' },
-]
+type Transaction = {
+  id: string
+  propertyTitle: string
+  amount: number
+  counterparty: string
+  status: 'completed' | 'in_progress'
+  date: string
+}
+
+const toMan = (yen: number) => Math.round(yen / 10000)
 
 export default function SellerTransactionsPage() {
-  const completed = mockTransactions.filter((t) => t.status === 'completed')
-  const totalAmount = completed.reduce((sum, t) => sum + t.amount, 0)
-  const inProgress = mockTransactions.filter((t) => t.status === 'in_progress')
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/transactions/seller')
+      if (res.success) {
+        setTransactions(toItems<Transaction>(res.data))
+      } else {
+        setFetchError(true)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardShell title="取引履歴" roleLabel="売主" navItems={sellerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  const completed = transactions.filter((t) => t.status === 'completed')
+  const totalAmount = completed.reduce((sum, t) => sum + toMan(t.amount), 0)
+  const inProgress = transactions.filter((t) => t.status === 'in_progress')
 
   return (
     <DashboardShell
       title="取引履歴"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
-      {/* サマリカード */}
+      {fetchError && (
+        <div className="flex items-center gap-2 p-3 mb-6 text-sm text-error-700 bg-error-50 rounded-xl">
+          データの取得に失敗しました。ページを更新してください。
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <SummaryCard
           icon={DollarSign}
@@ -53,7 +92,7 @@ export default function SellerTransactionsPage() {
         />
       </div>
 
-      <TransactionList transactions={mockTransactions} />
+      <TransactionList transactions={transactions.map((t) => ({ ...t, amount: toMan(t.amount) }))} />
     </DashboardShell>
   )
 }

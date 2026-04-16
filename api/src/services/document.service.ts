@@ -4,6 +4,7 @@ import { properties, propertyDocuments, documentPermissions } from '../db/schema
 import { bids } from '../db/schema'
 import type { UploadDocumentInput, DocumentQuery } from '../schemas/document'
 import { notFound, forbidden, conflict } from '../lib/errors'
+import { storage } from '../lib/storage'
 import type { PaginatedResponse } from '@shared/types'
 
 export const createDocumentService = (db: Database) => ({
@@ -52,9 +53,11 @@ export const createDocumentService = (db: Database) => ({
 
     const record = result[0]
 
+    const signedUploadUrl = await storage.createSignedUploadUrl(fileUrl)
+
     return {
       ...record,
-      signedUploadUrl: `https://storage.example.com/signed/upload/${record.id}`,
+      signedUploadUrl,
     }
   },
 
@@ -72,6 +75,11 @@ export const createDocumentService = (db: Database) => ({
     if (doc[0].uploadedBy !== userId) {
       throw forbidden('この書類を削除する権限がありません')
     }
+
+    // ストレージからファイル削除
+    await storage.deleteFile(doc[0].fileUrl).catch(() => {
+      // ファイルが既に削除済みの場合は無視
+    })
 
     // 関連する閲覧許可も削除
     await db.delete(documentPermissions)
@@ -106,10 +114,8 @@ export const createDocumentService = (db: Database) => ({
 
     // 売主（物件所有者）はアクセス可能
     if (property[0].sellerId === userId) {
-      return {
-        documentId,
-        downloadUrl: `https://storage.example.com/signed/${documentId}`,
-      }
+      const downloadUrl = await storage.createSignedDownloadUrl(doc[0].fileUrl)
+      return { documentId, downloadUrl }
     }
 
     // 閲覧許可がある士業はアクセス可能
@@ -122,10 +128,8 @@ export const createDocumentService = (db: Database) => ({
       .limit(1)
 
     if (permission.length > 0) {
-      return {
-        documentId,
-        downloadUrl: `https://storage.example.com/signed/${documentId}`,
-      }
+      const downloadUrl = await storage.createSignedDownloadUrl(doc[0].fileUrl)
+      return { documentId, downloadUrl }
     }
 
     throw forbidden('この書類を閲覧する権限がありません')
@@ -142,10 +146,8 @@ export const createDocumentService = (db: Database) => ({
       throw notFound('書類')
     }
 
-    return {
-      documentId,
-      downloadUrl: `https://storage.example.com/signed/${documentId}`,
-    }
+    const downloadUrl = await storage.createSignedDownloadUrl(doc[0].fileUrl)
+    return { documentId, downloadUrl }
   },
 
   // 書類の閲覧許可を付与

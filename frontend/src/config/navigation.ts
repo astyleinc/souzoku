@@ -31,6 +31,7 @@ export type NavItem = {
 
 export const sellerNav: NavItem[] = [
   { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
+  { icon: Search, label: '物件を探す', href: '/properties' },
   { icon: Building2, label: '出品物件', href: '/seller/properties' },
   { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
   { icon: ClipboardList, label: '案件進捗', href: '/seller/cases' },
@@ -57,6 +58,7 @@ export const buyerNav: NavItem[] = [
 
 export const professionalNav: NavItem[] = [
   { icon: LayoutDashboard, label: 'ダッシュボード', href: '/professional' },
+  { icon: Search, label: '物件を探す', href: '/properties' },
   { icon: Users, label: '紹介案件', href: '/professional/referrals' },
   { icon: DollarSign, label: '紹介料実績', href: '/professional/earnings' },
   { icon: Link2, label: '紹介リンク', href: '/professional/referral-link' },
@@ -69,6 +71,7 @@ export const professionalNav: NavItem[] = [
 
 export const brokerNav: NavItem[] = [
   { icon: LayoutDashboard, label: 'ダッシュボード', href: '/broker' },
+  { icon: Search, label: '物件を探す', href: '/properties' },
   { icon: Briefcase, label: '案件管理', href: '/broker/cases' },
   { icon: MessageSquare, label: 'メッセージ', href: '/broker/messages' },
   { icon: Receipt, label: '請求書', href: '/broker/invoices' },
@@ -79,6 +82,7 @@ export const brokerNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
+  { icon: Search, label: '物件を探す', href: '/properties' },
   { icon: Building2, label: '物件管理', href: '/admin/properties' },
   { icon: Gavel, label: '入札管理', href: '/admin/bids' },
   { icon: ClipboardList, label: '案件管理', href: '/admin/cases' },

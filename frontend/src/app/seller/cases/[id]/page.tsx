@@ -1,16 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   CheckCircle,
   Circle,
-  Phone,
   Mail,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
-import { mockCases, CASE_STATUS_LABEL } from '@/data/mock-dashboard'
+import { api } from '@/lib/api'
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -21,21 +23,75 @@ const statusSteps = [
   { key: 'settlement_done', label: '決済完了' },
 ]
 
+type CaseDetail = {
+  id: string
+  propertyTitle: string
+  propertyAddress: string
+  sellerName: string
+  buyerName: string
+  brokerName: string
+  status: string
+  salePrice: number
+  createdAt: string
+  updatedAt: string
+}
+
 export default function SellerCaseDetailPage() {
-  const caseData = mockCases[0]
+  const params = useParams()
+  const [caseData, setCaseData] = useState<CaseDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<CaseDetail>(`/cases/${params.id}`)
+      if (res.success) {
+        setCaseData(res.data)
+      } else {
+        setFetchError(true)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="売主" navItems={sellerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!caseData) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="売主" navItems={sellerNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">案件が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
   const currentStepIndex = statusSteps.findIndex((s) => s.key === caseData.status)
+  const amount = caseData.salePrice ? Math.round(caseData.salePrice / 10000) : 0
 
   return (
     <DashboardShell
       title="案件詳細"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
       <Link href="/seller/cases" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
         <ArrowLeft className="w-4 h-4" />
         案件一覧に戻る
       </Link>
+
+      {fetchError && (
+        <div className="flex items-center gap-2 p-3 mb-6 text-sm text-error-700 bg-error-50 rounded-xl">
+          データの取得に失敗しました。ページを更新してください。
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
@@ -49,7 +105,7 @@ export default function SellerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">成約額</p>
-                <p className="price">{caseData.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
+                <p className="price">{amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">買い手</p>
@@ -57,7 +113,7 @@ export default function SellerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">案件開始日</p>
-                <p>{caseData.createdAt}</p>
+                <p>{caseData.createdAt?.slice(0, 10)}</p>
               </div>
             </div>
           </div>
@@ -104,11 +160,9 @@ export default function SellerCaseDetailPage() {
 
         {/* サイドバー */}
         <div className="space-y-6">
-          {/* 担当業者 */}
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="text-base font-semibold mb-3">担当仲介業者</h3>
             <p className="text-sm font-medium">{caseData.brokerName}</p>
-            <p className="text-xs text-neutral-400 mt-1">担当: 松本 大輝</p>
             <div className="mt-3 space-y-2">
               <p className="text-xs text-neutral-400">
                 ご不明な点はメッセージからお問い合わせください
@@ -123,17 +177,16 @@ export default function SellerCaseDetailPage() {
             </div>
           </div>
 
-          {/* 重要な日程 */}
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="text-base font-semibold mb-3">重要な日程</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-neutral-400">案件開始</span>
-                <span>{caseData.createdAt}</span>
+                <span>{caseData.createdAt?.slice(0, 10)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-400">最終更新</span>
-                <span>{caseData.updatedAt}</span>
+                <span>{caseData.updatedAt?.slice(0, 10)}</span>
               </div>
             </div>
           </div>

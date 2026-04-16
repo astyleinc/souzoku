@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Noto_Sans_JP, Inter } from 'next/font/google'
 import './globals.css'
 import { DevAuthSwitcher } from '@/components/dev/DevAuthSwitcher'
+import { AuthProvider } from '@/providers/AuthProvider'
 
 const notoSansJP = Noto_Sans_JP({
   variable: '--font-sans',
@@ -34,8 +35,10 @@ export default function RootLayout({
       className={`${notoSansJP.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <DevAuthSwitcher />
+        <AuthProvider>
+          {children}
+          <DevAuthSwitcher />
+        </AuthProvider>
       </body>
     </html>
   )

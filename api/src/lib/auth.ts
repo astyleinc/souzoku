@@ -3,6 +3,9 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { genericOAuth } from 'better-auth/plugins'
 import type { BetterAuthOptions } from 'better-auth'
 import { getDb } from '../db/client'
+import { authUser, authSession, authAccount, authVerification } from '../db/schema/auth'
+import { users } from '../db/schema/users'
+import { logger } from './logger'
 
 // Apple Sign-Inのクライアントシークレット生成
 const generateAppleClientSecret = async (): Promise<string> => {
@@ -35,9 +38,22 @@ const getAuthOptions = (): BetterAuthOptions => {
   const db = getDb()
 
   return {
-    database: drizzleAdapter(db, { provider: 'pg' }),
-    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:8787',
+    database: drizzleAdapter(db, {
+      provider: 'pg',
+      schema: {
+        user: authUser,
+        session: authSession,
+        account: authAccount,
+        verification: authVerification,
+      },
+    }),
+    baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:8787'),
     secret: process.env.BETTER_AUTH_SECRET,
+    trustedOrigins: process.env.FRONTEND_URL
+      ? [process.env.FRONTEND_URL]
+      : process.env.NODE_ENV === 'production'
+        ? []
+        : ['http://localhost:3000'],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
@@ -68,6 +84,27 @@ const getAuthOptions = (): BetterAuthOptions => {
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            // BetterAuthユーザー作成後にアプリケーションusersレコードを自動作成
+            try {
+              const role = (user.role as string) || 'buyer'
+              await db.insert(users).values({
+                authId: user.id,
+                email: user.email,
+                name: user.name,
+                role: role as 'seller' | 'buyer' | 'professional' | 'broker' | 'admin',
+              })
+              logger.info('ユーザーレコード作成', { authId: user.id, email: user.email, role })
+            } catch (err) {
+              logger.error('ユーザーレコード作成失敗', { authId: user.id, error: err })
+            }
+          },
+        },
+      },
     },
     user: {
       additionalFields: {

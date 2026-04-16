@@ -1,53 +1,95 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
   MapPin,
   Home,
-  Ruler,
-  Calendar,
   Clock,
   Gavel,
   AlertCircle,
-  FileText,
   ExternalLink,
   Heart,
   Share2,
   ChevronDown,
   ChevronUp,
+  Loader2,
 } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PropertyCard } from '@/components/property/PropertyCard'
+import { PropertyImageGallery } from '@/components/property/PropertyImageGallery'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { UrgencyBadge } from '@/components/shared/UrgencyBadge'
-import { mockProperties, PROPERTY_TYPE_LABEL } from '@/data/mock'
-
-const mockBids = [
-  { id: 1, amount: 3800, date: '2026-04-15 14:30', status: '有効' },
-  { id: 2, amount: 3650, date: '2026-04-14 09:15', status: '有効' },
-  { id: 3, amount: 3600, date: '2026-04-12 18:42', status: '有効' },
-  { id: 4, amount: 3550, date: '2026-04-11 11:20', status: '更新済み' },
-  { id: 5, amount: 3500, date: '2026-04-10 16:05', status: '有効' },
-]
+import { PROPERTY_TYPE_LABEL } from '@/data/mock'
+import { toProperty } from '@/lib/mappers'
+import { api, toItems } from '@/lib/api'
 
 export default function PropertyDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  const { id } = use(params)
   const [saved, setSaved] = useState(false)
   const [bidPrice, setBidPrice] = useState('')
   const [showBidTable, setShowBidTable] = useState(false)
+  const [property, setProperty] = useState<ReturnType<typeof toProperty> | null>(null)
+  const [relatedProperties, setRelatedProperties] = useState<ReturnType<typeof toProperty>[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // パラメータはクライアントコンポーネントなので同期的に取得できないが、
-  // 実際にはuseParamsを使う。モックではデフォルトを使用
-  const property = mockProperties[0]
-  const relatedProperties = mockProperties
-    .filter((p) => p.id !== property.id && p.prefecture === property.prefecture && (p.status === 'bidding' || p.status === 'published'))
-    .slice(0, 3)
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      const res = await api.get<Record<string, unknown>>(`/properties/${id}`)
+      if (res.success) {
+        const p = toProperty(res.data as Parameters<typeof toProperty>[0])
+        setProperty(p)
+
+        // 同じエリアの関連物件を取得
+        const relRes = await api.get<unknown>(
+          `/properties?prefecture=${encodeURIComponent(p.prefecture)}&limit=4`
+        )
+        if (relRes.success) {
+          setRelatedProperties(
+            toItems<Parameters<typeof toProperty>[0]>(relRes.data)
+              .map(toProperty)
+              .filter((rp) => rp.id !== p.id && (rp.status === 'bidding' || rp.status === 'published'))
+              .slice(0, 3)
+          )
+        }
+      }
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="bg-neutral-50 min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-neutral-300" />
+        </main>
+      </>
+    )
+  }
+
+  if (!property) {
+    return (
+      <>
+        <Header />
+        <main className="bg-neutral-50 min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg font-semibold text-foreground mb-2">物件が見つかりません</p>
+            <Link href="/properties" className="text-sm text-primary-500 hover:underline">物件一覧に戻る</Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   const isBidding = property.status === 'bidding'
 
@@ -70,13 +112,19 @@ export default function PropertyDetailPage({
           {/* メインカード */}
           <div className="bg-white rounded-2xl shadow-card overflow-hidden">
             {/* 画像 */}
-            <div className="aspect-[16/9] sm:aspect-[2/1] bg-neutral-100 flex items-center justify-center relative">
-              <div className="text-center">
-                <Home className="w-16 h-16 text-neutral-300 mx-auto" />
-                <p className="text-sm text-neutral-400 mt-2">物件写真</p>
-              </div>
+            <div className="relative">
+              {property.images.length > 0 ? (
+                <PropertyImageGallery images={property.images} title={property.title} />
+              ) : (
+                <div className="aspect-[16/9] sm:aspect-[2/1] bg-neutral-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <Home className="w-16 h-16 text-neutral-300 mx-auto" />
+                    <p className="text-sm text-neutral-400 mt-2">物件写真</p>
+                  </div>
+                </div>
+              )}
               {/* アクションボタン */}
-              <div className="absolute top-4 right-4 flex gap-2">
+              <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <button
                   onClick={() => setSaved(!saved)}
                   className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
@@ -90,7 +138,7 @@ export default function PropertyDetailPage({
                 </button>
               </div>
               {/* ステータス */}
-              <div className="absolute top-4 left-4 flex gap-2">
+              <div className="absolute top-4 left-4 flex gap-2 z-10">
                 <StatusBadge status={property.status} />
                 <UrgencyBadge urgency={property.urgency} />
               </div>
@@ -110,7 +158,7 @@ export default function PropertyDetailPage({
                 </p>
               </div>
 
-              {/* スペック（4つに絞る） */}
+              {/* スペック */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-neutral-50 rounded-xl mb-6">
                 <div>
                   <p className="text-xs text-neutral-400">種別</p>
@@ -135,30 +183,20 @@ export default function PropertyDetailPage({
               </div>
 
               {/* 説明 */}
-              <div className="mb-5">
-                <h2 className="text-sm font-semibold mb-2">物件説明</h2>
-                <p className="text-sm text-neutral-500 leading-relaxed">
-                  {property.description}
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <h2 className="text-sm font-semibold mb-2">売却理由</h2>
-                <p className="text-sm text-neutral-500 leading-relaxed">
-                  {property.sellerReason}
-                </p>
-              </div>
+              {property.description && (
+                <div className="mb-6">
+                  <h2 className="text-sm font-semibold mb-2">物件説明</h2>
+                  <p className="text-sm text-neutral-500 leading-relaxed">
+                    {property.description}
+                  </p>
+                </div>
+              )}
 
               {/* 地図 */}
               <div>
                 <h2 className="text-sm font-semibold mb-2">所在地</h2>
-                <div className="aspect-[2/1] rounded-xl overflow-hidden relative">
-                  <iframe
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.lng - 0.008},${property.lat - 0.005},${property.lng + 0.008},${property.lat + 0.005}&layer=mapnik&marker=${property.lat},${property.lng}`}
-                    className="w-full h-full border-0"
-                    loading="lazy"
-                    title="物件所在地"
-                  />
+                <div className="aspect-[2/1] rounded-xl overflow-hidden relative bg-neutral-100 flex items-center justify-center">
+                  <p className="text-sm text-neutral-400">{property.address}</p>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`}
                     target="_blank"
@@ -175,7 +213,7 @@ export default function PropertyDetailPage({
 
           {/* 入札セクション */}
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* デスクトップ: 入札フォーム（右サイド固定） */}
+            {/* デスクトップ: 入札フォーム */}
             <div className="hidden lg:block lg:col-span-2 lg:order-2">
               <div className="bg-white rounded-2xl shadow-card p-6 sticky top-20">
                 <div className="flex items-center gap-2 mb-4">
@@ -206,9 +244,12 @@ export default function PropertyDetailPage({
                       </div>
                     </div>
 
-                    <button className="w-full py-3 bg-cta-500 text-white font-medium rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all">
+                    <Link
+                      href={`/properties/${property.id}/bid`}
+                      className="block w-full py-3 bg-cta-500 text-white font-medium rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all text-center"
+                    >
                       入札する
-                    </button>
+                    </Link>
 
                     <div className="mt-4 flex items-start gap-2 text-xs text-neutral-400">
                       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -220,17 +261,6 @@ export default function PropertyDetailPage({
                 )}
 
                 <div className="mt-4 pt-4 border-t border-neutral-100 space-y-2.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">入札期間</span>
-                    <span className="font-medium">2026/04/10 〜 04/24</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">残り</span>
-                    <span className="font-medium text-warning-700 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      8日
-                    </span>
-                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-neutral-400">入札数</span>
                     <span className="font-medium">{property.bidCount}件</span>
@@ -248,7 +278,6 @@ export default function PropertyDetailPage({
                 >
                   <div className="flex items-center gap-2">
                     <h2 className="text-sm font-semibold">入札一覧</h2>
-                    <span className="text-xs text-neutral-400">{mockBids.length}件</span>
                   </div>
                   {showBidTable ? (
                     <ChevronUp className="w-4 h-4 text-neutral-400" />
@@ -259,61 +288,9 @@ export default function PropertyDetailPage({
 
                 {showBidTable && (
                   <div className="px-5 pb-5">
-                    <p className="text-xs text-neutral-400 mb-3 p-2 bg-info-50 rounded-lg">
+                    <p className="text-xs text-neutral-400 p-2 bg-info-50 rounded-lg">
                       入札内容は売主・紹介士業・提携業者・運営のみ閲覧可能です（sealed bid）
                     </p>
-                    {/* モバイル: カード表示 */}
-                    <div className="sm:hidden space-y-2">
-                      {mockBids.map((bid, i) => (
-                        <div key={bid.id} className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0">
-                          <div>
-                            <p className="price text-base">{bid.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
-                            <p className="text-xs text-neutral-400 mt-0.5">{bid.date}</p>
-                          </div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            bid.status === '有効'
-                              ? 'bg-success-50 text-success-700'
-                              : 'bg-neutral-100 text-neutral-500'
-                          }`}>
-                            {bid.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    {/* デスクトップ: テーブル */}
-                    <div className="hidden sm:block overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-neutral-100">
-                            <th className="text-left py-2 px-3 text-xs text-neutral-400 font-medium">#</th>
-                            <th className="text-right py-2 px-3 text-xs text-neutral-400 font-medium">入札価格</th>
-                            <th className="text-left py-2 px-3 text-xs text-neutral-400 font-medium">入札日時</th>
-                            <th className="text-left py-2 px-3 text-xs text-neutral-400 font-medium">状態</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {mockBids.map((bid, i) => (
-                            <tr key={bid.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
-                              <td className="py-2.5 px-3 text-neutral-400">{i + 1}</td>
-                              <td className="py-2.5 px-3 text-right">
-                                <span className="price text-base">{bid.amount.toLocaleString()}</span>
-                                <span className="text-xs text-neutral-400 ml-1">万円</span>
-                              </td>
-                              <td className="py-2.5 px-3 text-neutral-400">{bid.date}</td>
-                              <td className="py-2.5 px-3">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  bid.status === '有効'
-                                    ? 'bg-success-50 text-success-700'
-                                    : 'bg-neutral-100 text-neutral-500'
-                                }`}>
-                                  {bid.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
                 )}
               </div>
@@ -345,12 +322,15 @@ export default function PropertyDetailPage({
               </p>
               <p className="text-xs text-neutral-400 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                残り8日 / {property.bidCount}件入札中
+                {property.bidCount}件入札中
               </p>
             </div>
-            <button className="shrink-0 px-6 py-3 bg-cta-500 text-white text-sm font-medium rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all">
+            <Link
+              href={`/properties/${property.id}/bid`}
+              className="shrink-0 px-6 py-3 bg-cta-500 text-white text-sm font-medium rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all"
+            >
               入札する
-            </button>
+            </Link>
           </div>
         </div>
       )}

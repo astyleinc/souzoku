@@ -1,24 +1,57 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   MessageSquare,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { brokerNav } from '@/config/navigation'
-import { mockMessageThreads } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
+
+type CaseThread = {
+  id: string
+  propertyTitle: string
+  sellerName: string
+  status: string
+  updatedAt: string
+}
 
 export default function BrokerMessagesPage() {
+  const [threads, setThreads] = useState<CaseThread[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/cases?role=broker')
+      if (res.success) {
+        setThreads(toItems<CaseThread>(res.data))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardShell title="メッセージ" roleLabel="提携業者" navItems={brokerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
   return (
     <DashboardShell
       title="メッセージ"
       roleLabel="提携業者"
-      userName="松本 大輝"
       navItems={brokerNav}
     >
-      {mockMessageThreads.length === 0 ? (
+      {threads.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
           title="メッセージはありません"
@@ -26,50 +59,23 @@ export default function BrokerMessagesPage() {
         />
       ) : (
         <div className="bg-white rounded-2xl shadow-card divide-y divide-neutral-100">
-          {mockMessageThreads.map((thread) => (
+          {threads.map((thread) => (
             <Link
               key={thread.id}
-              href={`/broker/cases/${thread.caseId}`}
+              href={`/broker/messages/${thread.id}`}
               className="flex items-center gap-4 px-5 py-4 hover:bg-neutral-50/50 transition-colors"
             >
-              {/* 未読インジケーター */}
               <div className="shrink-0">
-                {thread.unreadCount > 0 ? (
-                  <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-4.5 h-4.5 text-white" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-4.5 h-4.5 text-neutral-400" />
-                  </div>
-                )}
-              </div>
-
-              {/* 内容 */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className={`text-sm truncate ${thread.unreadCount > 0 ? 'font-semibold' : 'font-medium'}`}>
-                    {thread.propertyTitle}
-                  </p>
-                  {thread.unreadCount > 0 && (
-                    <span className="shrink-0 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-error-500 rounded-full">
-                      {thread.unreadCount}
-                    </span>
-                  )}
+                <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-neutral-400" />
                 </div>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  買い手: {thread.buyerName}
-                </p>
-                <p className={`text-sm mt-1 truncate ${thread.unreadCount > 0 ? 'text-foreground' : 'text-neutral-400'}`}>
-                  {thread.lastMessage}
-                </p>
               </div>
-
-              {/* 日時 + 矢印 */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{thread.propertyTitle}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">売主: {thread.sellerName}</p>
+              </div>
               <div className="shrink-0 text-right flex items-center gap-2">
-                <span className="text-xs text-neutral-400">
-                  {thread.lastMessageAt.split(' ')[0]}
-                </span>
+                <span className="text-xs text-neutral-400">{thread.updatedAt?.slice(0, 10)}</span>
                 <ChevronRight className="w-4 h-4 text-neutral-300" />
               </div>
             </Link>

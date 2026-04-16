@@ -38,7 +38,6 @@ export default function ProfessionalReferralLinkPage() {
     <DashboardShell
       title="紹介リンク"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       <div className="max-w-2xl space-y-6">

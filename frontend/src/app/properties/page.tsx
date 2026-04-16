@@ -1,6 +1,7 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { Search, ArrowUpDown } from 'lucide-react'
+import { Search, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PropertyCard } from '@/components/property/PropertyCard'
@@ -10,88 +11,61 @@ import {
   MobileFilterButton,
   SortSelect,
 } from '@/components/property/PropertyFilters'
-import {
-  mockProperties,
-  type PropertyType,
-  type Urgency,
-} from '@/data/mock'
+import { toProperty, type ApiProperty } from '@/lib/mappers'
+import type { Property, Urgency } from '@/data/mock'
+
+export const metadata: Metadata = {
+  title: '物件一覧｜Ouver',
+  description: '相続不動産の物件一覧。入札方式で適正価格での売却・購入が可能です。エリア・価格帯・物件種別で絞り込めます。',
+  openGraph: {
+    title: '物件一覧｜Ouver',
+    description: '相続不動産の物件一覧。入札方式で適正価格での売却・購入が可能です。',
+  },
+}
+
+const API_BASE = process.env.API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'bids' | 'area_desc'
 
-/**
- * サーバー側でフィルタリング・ソートを行う
- * 将来的にはDB検索に置き換える
- */
-const searchProperties = (params: Record<string, string | undefined>) => {
-  const { q, prefecture, type, price_min, price_max, urgency, bidding_only, sort } = params
+const ITEMS_PER_PAGE = 12
 
-  // 買い手に見せる物件のみ
-  let results = mockProperties.filter(
-    (p) => p.status === 'published' || p.status === 'bidding'
-  )
+const fetchProperties = async (params: Record<string, string | undefined>) => {
+  const query = new URLSearchParams()
+  const page = Math.max(1, Number(params.page) || 1)
 
-  // キーワード
-  if (q) {
-    const keyword = q.toLowerCase()
-    results = results.filter(
-      (p) =>
-        p.title.toLowerCase().includes(keyword) ||
-        p.address.toLowerCase().includes(keyword) ||
-        p.description.toLowerCase().includes(keyword)
-    )
+  if (params.q) query.set('keyword', params.q)
+  if (params.prefecture) query.set('prefecture', params.prefecture)
+  if (params.type) query.set('propertyType', params.type)
+  if (params.price_min) query.set('minPrice', String(Number(params.price_min) * 10000))
+  if (params.price_max) query.set('maxPrice', String(Number(params.price_max) * 10000))
+  if (params.bidding_only === '1') query.set('biddingOnly', 'true')
+  if (params.sort) query.set('sort', params.sort)
+  query.set('page', String(page))
+  query.set('limit', String(ITEMS_PER_PAGE))
+
+  const url = `${API_BASE}/api/properties?${query.toString()}`
+
+  try {
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
+    if (!res.ok) return null
+    const json = await res.json() as { success: boolean; data?: { items: ApiProperty[]; total: number } }
+    if (json.success && json.data) {
+      return json.data
+    }
+    return null
+  } catch {
+    return null
   }
+}
 
-  // エリア
-  if (prefecture) {
-    results = results.filter((p) => p.prefecture === prefecture)
+const buildPageUrl = (params: Record<string, string | undefined>, page: number) => {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value && key !== 'page') query.set(key, value)
   }
-
-  // 物件種別
-  if (type) {
-    const types = type.split(',') as PropertyType[]
-    results = results.filter((p) => types.includes(p.type))
-  }
-
-  // 価格帯
-  if (price_min) {
-    results = results.filter((p) => p.price >= Number(price_min))
-  }
-  if (price_max) {
-    results = results.filter((p) => p.price <= Number(price_max))
-  }
-
-  // 緊急度
-  if (urgency) {
-    const urgencies = urgency.split(',') as Urgency[]
-    results = results.filter((p) => urgencies.includes(p.urgency))
-  }
-
-  // 入札中のみ
-  if (bidding_only === '1') {
-    results = results.filter((p) => p.status === 'bidding')
-  }
-
-  // ソート
-  const sortKey = (sort ?? 'newest') as SortKey
-  switch (sortKey) {
-    case 'newest':
-      results.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      break
-    case 'price_asc':
-      results.sort((a, b) => a.price - b.price)
-      break
-    case 'price_desc':
-      results.sort((a, b) => b.price - a.price)
-      break
-    case 'bids':
-      results.sort((a, b) => b.bidCount - a.bidCount)
-      break
-    case 'area_desc':
-      results.sort((a, b) => b.area - a.area)
-      break
-  }
-
-  return results
+  if (page > 1) query.set('page', String(page))
+  const qs = query.toString()
+  return `/properties${qs ? `?${qs}` : ''}`
 }
 
 const countActiveFilters = (params: Record<string, string | undefined>) => {
@@ -111,9 +85,27 @@ export default async function PropertiesPage({
   searchParams: Promise<Record<string, string | undefined>>
 }) {
   const params = await searchParams
-  const results = searchProperties(params)
+  const currentPage = Math.max(1, Number(params.page) || 1)
+  const apiResult = await fetchProperties(params)
+
+  // APIから取得してフロントエンド型に変換
+  const allProperties = apiResult?.items?.map(toProperty) ?? []
+  const totalCount = apiResult?.total ?? allProperties.length
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+
+  // クライアントサイドフィルタリング（APIが未対応のフィルター）
+  let results = allProperties.filter(
+    (p) => p.status === 'published' || p.status === 'bidding'
+  )
+
+  // 緊急度フィルター（API側で未対応のためクライアントで処理）
+  if (params.urgency) {
+    const urgencies = params.urgency.split(',') as Urgency[]
+    results = results.filter((p) => urgencies.includes(p.urgency))
+  }
+
   const activeFilterCount = countActiveFilters(params)
-  const biddingCount = mockProperties.filter((p) => p.status === 'bidding').length
+  const biddingCount = allProperties.filter((p) => p.status === 'bidding').length
 
   return (
     <>
@@ -179,11 +171,58 @@ export default async function PropertiesPage({
 
               {/* 結果 */}
               {results.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {results.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {results.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
+
+                  {/* ページネーション */}
+                  {totalPages > 1 && (
+                    <nav className="flex items-center justify-center gap-2 mt-8">
+                      {currentPage > 1 && (
+                        <Link
+                          href={buildPageUrl(params, currentPage - 1)}
+                          className="inline-flex items-center gap-1 px-3 py-2 text-sm text-neutral-500 hover:bg-neutral-100 rounded-xl transition-colors"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          前へ
+                        </Link>
+                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                        .map((p, idx, arr) => {
+                          const prev = arr[idx - 1]
+                          const showEllipsis = prev !== undefined && p - prev > 1
+                          return (
+                            <span key={p} className="contents">
+                              {showEllipsis && <span className="px-1 text-neutral-300">...</span>}
+                              <Link
+                                href={buildPageUrl(params, p)}
+                                className={`min-w-[36px] h-9 flex items-center justify-center text-sm rounded-xl transition-colors ${
+                                  p === currentPage
+                                    ? 'bg-primary-500 text-white font-medium'
+                                    : 'text-neutral-500 hover:bg-neutral-100'
+                                }`}
+                              >
+                                {p}
+                              </Link>
+                            </span>
+                          )
+                        })}
+                      {currentPage < totalPages && (
+                        <Link
+                          href={buildPageUrl(params, currentPage + 1)}
+                          className="inline-flex items-center gap-1 px-3 py-2 text-sm text-neutral-500 hover:bg-neutral-100 rounded-xl transition-colors"
+                        >
+                          次へ
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      )}
+                    </nav>
+                  )}
+                </>
               ) : (
                 <div className="bg-white rounded-2xl shadow-card p-10 text-center">
                   <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

@@ -1,19 +1,41 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   Mail,
   Phone,
-  Building2,
   Globe,
   CheckCircle,
   Circle,
   DollarSign,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
-import { mockProfessionalClients } from '@/data/mock-dashboard'
+import { api } from '@/lib/api'
+
+type ClientDetail = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  propertyCount: number
+  latestPropertyTitle: string
+  latestPropertyStatus: string
+  referredAt: string
+  nwRoute: string
+  confirmedRevenue: number
+  estimatedRevenue: number
+  properties: {
+    id: string
+    title: string
+    status: string
+    referredAt: string
+  }[]
+}
 
 const statusSteps = [
   { key: 'reviewing', label: '審査待ち' },
@@ -33,21 +55,72 @@ const statusStepIndex: Record<string, number> = {
   settlement: 5,
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  reviewing: '審査待ち',
+  published: '公開',
+  bidding: '入札受付中',
+  bid_ended: '入札終了',
+  closed: '成約',
+  settlement: '決済完了',
+}
+
+const toMan = (yen: number) => (yen / 10000).toFixed(1)
+
 export default function ProfessionalClientDetailPage() {
-  const client = mockProfessionalClients[0]
+  const params = useParams()
+  const [client, setClient] = useState<ClientDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<ClientDetail>(`/referrals/me/clients/${params.id}`)
+      if (res.success) {
+        setClient(res.data)
+      } else {
+        setFetchError(true)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="クライアント詳細" roleLabel="士業パートナー" navItems={professionalNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!client) {
+    return (
+      <DashboardShell title="クライアント詳細" roleLabel="士業パートナー" navItems={professionalNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">クライアントが見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
   const currentStep = statusStepIndex[client.latestPropertyStatus] ?? 0
 
   return (
     <DashboardShell
       title="クライアント詳細"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       <Link href="/professional/clients" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
         <ArrowLeft className="w-4 h-4" />
         クライアント一覧に戻る
       </Link>
+
+      {fetchError && (
+        <div className="flex items-center gap-2 p-3 mb-6 text-sm text-error-700 bg-error-50 rounded-xl">
+          データの取得に失敗しました。ページを更新してください。
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
@@ -75,17 +148,11 @@ export default function ProfessionalClientDetailPage() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <p className="text-sm font-medium">{client.latestPropertyTitle}</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">紹介日: {client.referredAt}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">紹介日: {client.referredAt?.slice(0, 10)}</p>
                   </div>
-                  <Link
-                    href={`/professional/referrals/ref1`}
-                    className="text-xs text-primary-500 hover:underline font-medium shrink-0"
-                  >
-                    詳細
-                  </Link>
                 </div>
                 {/* ステータス進行 */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {statusSteps.map((step, i) => {
                     const isCompleted = i <= currentStep
                     return (
@@ -107,18 +174,20 @@ export default function ProfessionalClientDetailPage() {
                 </div>
               </div>
 
-              {/* 過去の物件（2件目がある場合） */}
-              {client.propertyCount > 1 && (
-                <div className="p-4 border border-neutral-100 rounded-xl">
+              {/* その他の物件 */}
+              {(client.properties ?? []).filter((_, i) => i > 0).map((prop) => (
+                <div key={prop.id} className="p-4 border border-neutral-100 rounded-xl">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium">大田区 商業地の一戸建て</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">紹介日: 2026-02-10</p>
+                      <p className="text-sm font-medium">{prop.title}</p>
+                      <p className="text-xs text-neutral-400 mt-0.5">紹介日: {prop.referredAt?.slice(0, 10)}</p>
                     </div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-500 text-white">成約</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600">
+                      {STATUS_LABEL[prop.status] ?? prop.status}
+                    </span>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -151,15 +220,15 @@ export default function ProfessionalClientDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-neutral-400">確定済み</span>
-                <span className="price font-medium">30.6<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
+                <span className="price font-medium">{toMan(client.confirmedRevenue)}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-400">見込み</span>
-                <span className="price font-medium">33.75<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
+                <span className="price font-medium">{toMan(client.estimatedRevenue)}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
               </div>
               <div className="pt-2 border-t border-neutral-100 flex justify-between">
                 <span className="font-medium">合計</span>
-                <span className="price font-semibold">64.35<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
+                <span className="price font-semibold">{toMan(client.confirmedRevenue + client.estimatedRevenue)}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></span>
               </div>
             </div>
           </div>

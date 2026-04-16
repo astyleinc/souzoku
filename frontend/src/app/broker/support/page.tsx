@@ -9,7 +9,6 @@ export default function BrokerSupportPage() {
     <DashboardShell
       title="サポート"
       roleLabel="提携業者"
-      userName="エリア不動産株式会社"
       navItems={brokerNav}
     >
       <SupportTicketList contactHref="/contact" />

@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   Building2,
@@ -8,26 +10,68 @@ import {
   XCircle,
   CheckCircle,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { buyerNav } from '@/config/navigation'
-import { mockBids } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
+
+type BidDetail = {
+  id: string
+  propertyId: string
+  propertyTitle: string
+  propertyAddress: string
+  amount: number
+  status: string
+  createdAt: string
+  updatedAt: string
+}
 
 export default function BuyerBidDetailPage() {
-  const bid = mockBids[0]
-  const bidHistory = [
-    { amount: 3600, status: 'active' as const, createdAt: '2026-04-14 10:30' },
-    { amount: 3400, status: 'superseded' as const, createdAt: '2026-04-12 09:00' },
-    { amount: 3200, status: 'superseded' as const, createdAt: '2026-04-10 14:15' },
-  ]
+  const params = useParams()
+  const [bid, setBid] = useState<BidDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      // 入札一覧から取得して該当IDをフィルタ
+      const res = await api.get<unknown>('/bids/me')
+      if (res.success) {
+        const found = toItems<BidDetail>(res.data).find((b) => b.id === params.id)
+        if (found) setBid(found)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="入札詳細" roleLabel="買い手" navItems={buyerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!bid) {
+    return (
+      <DashboardShell title="入札詳細" roleLabel="買い手" navItems={buyerNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">入札が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
+  const toMan = (yen: number) => Math.round(yen / 10000)
 
   return (
     <DashboardShell
       title="入札詳細"
       roleLabel="買い手"
-      userName="株式会社山本不動産"
       navItems={buyerNav}
     >
       <Link href="/buyer/bids" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -43,7 +87,7 @@ export default function BuyerBidDetailPage() {
               <Building2 className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
               <div>
                 <h2 className="text-lg font-semibold">{bid.propertyTitle}</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">東京都練馬区豊玉北5丁目</p>
+                <p className="text-xs text-neutral-400 mt-0.5">{bid.propertyAddress}</p>
               </div>
             </div>
             <Link
@@ -60,36 +104,13 @@ export default function BuyerBidDetailPage() {
             <div className="flex items-center justify-between gap-4 p-4 bg-primary-50 rounded-xl">
               <div>
                 <p className="text-xs text-neutral-400 mb-1">入札金額</p>
-                <p className="price text-2xl font-bold text-primary-500">{bid.amount.toLocaleString()}<span className="text-sm font-normal text-neutral-400 ml-1">万円</span></p>
+                <p className="price text-2xl font-bold text-primary-500">{toMan(bid.amount).toLocaleString()}<span className="text-sm font-normal text-neutral-400 ml-1">万円</span></p>
               </div>
               <BidStatusBadge status={bid.status} />
             </div>
             <div className="flex gap-3 mt-2 text-xs text-neutral-400">
-              <span>入札日: {bid.createdAt}</span>
-              <span>最終更新: {bid.updatedAt}</span>
-            </div>
-          </div>
-
-          {/* 入札履歴 */}
-          <div className="bg-white rounded-2xl shadow-card p-6">
-            <h3 className="text-base font-semibold mb-4">入札履歴</h3>
-            <div className="space-y-3">
-              {bidHistory.map((h, i) => (
-                <div key={i} className={`flex items-center justify-between gap-3 p-3 rounded-xl ${i === 0 ? 'bg-primary-50' : 'bg-neutral-50'}`}>
-                  <div className="flex items-center gap-3">
-                    {i === 0 ? (
-                      <CheckCircle className="w-4 h-4 text-primary-500 shrink-0" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-neutral-300 shrink-0" />
-                    )}
-                    <div>
-                      <p className="price text-sm font-medium">{h.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
-                      <p className="text-xs text-neutral-400">{h.createdAt}</p>
-                    </div>
-                  </div>
-                  <BidStatusBadge status={h.status} />
-                </div>
-              ))}
+              <span>入札日: {bid.createdAt?.slice(0, 10)}</span>
+              <span>最終更新: {bid.updatedAt?.slice(0, 10)}</span>
             </div>
           </div>
         </div>
@@ -107,8 +128,20 @@ export default function BuyerBidDetailPage() {
                 <RefreshCw className="w-4 h-4" />
                 入札金額を更新
               </Link>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors">
-                <XCircle className="w-4 h-4" />
+              <button
+                onClick={async () => {
+                  if (!bid || !confirm('入札をキャンセルしますか？')) return
+                  setCancelling(true)
+                  const res = await api.patch(`/bids/${bid.id}/cancel`, {})
+                  if (res.success) {
+                    setBid((prev) => prev ? { ...prev, status: 'superseded' } : prev)
+                  }
+                  setCancelling(false)
+                }}
+                disabled={cancelling}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors disabled:opacity-50"
+              >
+                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                 入札をキャンセル
               </button>
             </div>

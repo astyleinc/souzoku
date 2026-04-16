@@ -28,9 +28,13 @@ export const createPropertyService = (db: Database) => ({
     }
     if (query.status) {
       conditions.push(eq(properties.status, query.status as typeof properties.status.enumValues[number]))
-    }
-    if (query.biddingOnly) {
+    } else if (query.biddingOnly) {
       conditions.push(eq(properties.status, 'bidding'))
+    } else if (!query.includeAll) {
+      // デフォルト: 公開済み・入札中の物件のみ表示（管理画面以外）
+      conditions.push(
+        sql`${properties.status} IN ('published', 'bidding', 'published_registering')`,
+      )
     }
     if (query.keyword) {
       // LIKEワイルドカード文字をエスケープ

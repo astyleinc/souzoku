@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   ArrowLeft,
   MapPin,
@@ -14,6 +15,7 @@ import {
   Download,
   CheckCircle,
   XCircle,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { use } from 'react'
@@ -23,8 +25,26 @@ import { UrgencyBadge } from '@/components/shared/UrgencyBadge'
 import { PriceDisplay } from '@/components/shared/PriceDisplay'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { sellerNav } from '@/config/navigation'
-import { mockProperties, PROPERTY_TYPE_LABEL } from '@/data/mock'
-import { mockBids, mockDocuments } from '@/data/mock-dashboard'
+import { PROPERTY_TYPE_LABEL } from '@/data/mock'
+import { api, toItems } from '@/lib/api'
+import type { ApiProperty } from '@/lib/mappers'
+import { toProperty } from '@/lib/mappers'
+
+type ApiBid = {
+  id: string
+  propertyId: string
+  amount: number
+  status: string
+  bidderName: string
+  bidderType: string
+  createdAt: string
+}
+
+type ApiDocument = {
+  id: string
+  name: string
+  status: 'approved' | 'pending' | 'rejected'
+}
 
 export default function SellerPropertyDetailPage({
   params,
@@ -32,11 +52,62 @@ export default function SellerPropertyDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
-  const property = mockProperties.find((p) => p.id === id) ?? mockProperties[0]
-  const propertyBids = mockBids
-    .filter((b) => b.propertyId === property.id)
-    .sort((a, b) => b.amount - a.amount)
-  const highestBid = propertyBids[0]
+  const [loading, setLoading] = useState(true)
+  const [property, setProperty] = useState<ReturnType<typeof toProperty> | null>(null)
+  const [bids, setBids] = useState<ApiBid[]>([])
+  const [documents, setDocuments] = useState<ApiDocument[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      const [propRes, bidRes, docRes] = await Promise.all([
+        api.get<ApiProperty>(`/properties/${id}`),
+        api.get<unknown>(`/bids?propertyId=${id}`),
+        api.get<unknown>(`/properties/${id}/documents`),
+      ])
+
+      if (propRes.success) {
+        setProperty(toProperty(propRes.data))
+      }
+      if (bidRes.success) {
+        setBids(toItems<ApiBid>(bidRes.data).sort((a, b) => b.amount - a.amount))
+      }
+      if (docRes.success) {
+        setDocuments(toItems<ApiDocument>(docRes.data))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="物件詳細" roleLabel="売主" navItems={sellerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!property) {
+    return (
+      <DashboardShell title="物件詳細" roleLabel="売主" navItems={sellerNav}>
+        <div className="text-center py-20">
+          <p className="text-sm text-neutral-400">物件が見つかりませんでした</p>
+          <Link href="/seller/properties" className="text-sm text-primary-500 hover:underline mt-2 inline-block">
+            出品物件一覧に戻る
+          </Link>
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  const highestBid = bids[0] ?? null
+  // 万円表示に変換（APIはbidsの金額も円で返す想定）
+  const displayBids = bids.map((b) => ({
+    ...b,
+    displayAmount: Math.round(b.amount / 10000),
+  }))
 
   const docStatusIcon = {
     approved: <CheckCircle className="w-4 h-4 text-success-500" />,
@@ -54,7 +125,6 @@ export default function SellerPropertyDetailPage({
     <DashboardShell
       title="物件詳細"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
       <Link
@@ -66,7 +136,7 @@ export default function SellerPropertyDetailPage({
       </Link>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* 左: 物件情報 + 入札 + 書類 */}
+        {/* 左: 物件情報 + 入札 */}
         <div className="xl:col-span-2 space-y-6">
           {/* 物件基本情報 */}
           <div className="bg-white rounded-2xl shadow-card p-6">
@@ -123,14 +193,12 @@ export default function SellerPropertyDetailPage({
               </div>
             </div>
 
-            <div className="mb-4">
-              <p className="text-xs text-neutral-400 mb-1">物件説明</p>
-              <p className="text-sm leading-relaxed">{property.description}</p>
-            </div>
-            <div>
-              <p className="text-xs text-neutral-400 mb-1">売却理由</p>
-              <p className="text-sm leading-relaxed">{property.sellerReason}</p>
-            </div>
+            {property.description && (
+              <div className="mb-4">
+                <p className="text-xs text-neutral-400 mb-1">物件説明</p>
+                <p className="text-sm leading-relaxed">{property.description}</p>
+              </div>
+            )}
 
             <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center gap-3">
               <Link
@@ -141,10 +209,13 @@ export default function SellerPropertyDetailPage({
                 公開ページを確認
               </Link>
               {(property.status === 'reviewing' || property.status === 'returned') && (
-                <button className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-500 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
+                <Link
+                  href={`/seller/properties/${property.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-500 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+                >
                   <Edit3 className="w-4 h-4" />
                   物件情報を編集
-                </button>
+                </Link>
               )}
             </div>
           </div>
@@ -164,21 +235,20 @@ export default function SellerPropertyDetailPage({
               </Link>
             </div>
 
-            {propertyBids.length === 0 ? (
+            {displayBids.length === 0 ? (
               <div className="px-5 pb-5 text-center py-8">
                 <Gavel className="w-8 h-8 text-neutral-200 mx-auto mb-2" />
                 <p className="text-sm text-neutral-400">まだ入札はありません</p>
               </div>
             ) : (
               <>
-                {/* 最高入札のハイライト */}
                 {highestBid && (
                   <div className="mx-5 mb-4 p-4 bg-cta-50 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-cta-700">現在の最高入札</p>
                         <p className="price text-xl text-cta-600 mt-1">
-                          {highestBid.amount.toLocaleString()}
+                          {Math.round(highestBid.amount / 10000).toLocaleString()}
                           <span className="text-sm font-normal text-cta-500 ml-1">万円</span>
                         </p>
                       </div>
@@ -199,30 +269,22 @@ export default function SellerPropertyDetailPage({
                         <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">種別</th>
                         <th className="text-right py-3 px-5 text-xs text-neutral-400 font-medium">入札額</th>
                         <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">ステータス</th>
-                        <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">操作</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {propertyBids.map((bid, i) => (
+                      {displayBids.map((bid, i) => (
                         <tr key={bid.id} className="border-t border-neutral-100 hover:bg-neutral-50/50">
                           <td className="py-3.5 px-5 font-medium">{bid.bidderName}</td>
                           <td className="py-3.5 px-5 text-neutral-500">{bid.bidderType}</td>
                           <td className="py-3.5 px-5 text-right">
                             <span className={`price ${i === 0 ? 'text-cta-600' : ''}`}>
-                              {bid.amount.toLocaleString()}
+                              {bid.displayAmount.toLocaleString()}
                             </span>
                             <span className="text-xs text-neutral-400 ml-1">万円</span>
                             {i === 0 && <span className="text-xs text-cta-500 ml-2">最高額</span>}
                           </td>
                           <td className="py-3.5 px-5">
                             <BidStatusBadge status={bid.status} />
-                          </td>
-                          <td className="py-3.5 px-5">
-                            {bid.status === 'active' && property.status === 'bid_ended' && (
-                              <button className="text-sm text-cta-500 hover:text-cta-600 font-medium">
-                                選択する
-                              </button>
-                            )}
                           </td>
                         </tr>
                       ))}
@@ -232,7 +294,7 @@ export default function SellerPropertyDetailPage({
 
                 {/* モバイル: カード */}
                 <div className="sm:hidden divide-y divide-neutral-100">
-                  {propertyBids.map((bid, i) => (
+                  {displayBids.map((bid, i) => (
                     <div key={bid.id} className="px-5 py-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -243,7 +305,7 @@ export default function SellerPropertyDetailPage({
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <span className="price text-sm">
-                          <span className={i === 0 ? 'text-cta-600' : ''}>{bid.amount.toLocaleString()}</span>
+                          <span className={i === 0 ? 'text-cta-600' : ''}>{bid.displayAmount.toLocaleString()}</span>
                           <span className="text-xs font-normal text-neutral-400 ml-1">万円</span>
                           {i === 0 && <span className="text-xs text-cta-500 ml-1">最高額</span>}
                         </span>
@@ -264,27 +326,16 @@ export default function SellerPropertyDetailPage({
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-400">入札数</span>
-                <span className="price font-medium">{propertyBids.length}件</span>
+                <span className="price font-medium">{bids.length}件</span>
               </div>
               {highestBid && (
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-400">最高入札額</span>
                   <span className="price font-medium text-cta-600">
-                    {highestBid.amount.toLocaleString()}万円
+                    {Math.round(highestBid.amount / 10000).toLocaleString()}万円
                   </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-400">入札期間</span>
-                <span className="font-medium">2026/04/10 〜 04/24</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-400">残り</span>
-                <span className="font-medium text-warning-700 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  8日
-                </span>
-              </div>
             </div>
           </div>
 
@@ -299,20 +350,24 @@ export default function SellerPropertyDetailPage({
                 管理画面へ
               </Link>
             </div>
-            <div className="space-y-3">
-              {mockDocuments.slice(0, 4).map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
-                    <span className="text-sm truncate">{doc.name}</span>
+            {documents.length === 0 ? (
+              <p className="text-sm text-neutral-400">書類はまだアップロードされていません</p>
+            ) : (
+              <div className="space-y-3">
+                {documents.slice(0, 4).map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
+                      <span className="text-sm truncate">{doc.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {docStatusIcon[doc.status]}
+                      <span className="text-xs text-neutral-400">{docStatusLabel[doc.status]}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {docStatusIcon[doc.status]}
-                    <span className="text-xs text-neutral-400">{docStatusLabel[doc.status]}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <Link
               href="/seller/documents"
               className="inline-flex items-center gap-1.5 mt-4 px-3.5 py-2 text-xs font-medium text-primary-500 border border-primary-200 rounded-xl hover:bg-primary-50 transition-colors w-full justify-center"
@@ -320,31 +375,6 @@ export default function SellerPropertyDetailPage({
               <Download className="w-3.5 h-3.5" />
               書類をアップロード
             </Link>
-          </div>
-
-          {/* タイムライン */}
-          <div className="bg-white rounded-2xl shadow-card p-5">
-            <h3 className="text-base font-semibold mb-4">物件の経緯</h3>
-            <div className="space-y-4">
-              {[
-                { date: '2026-04-10', event: '物件を登録しました', color: 'bg-primary-500' },
-                { date: '2026-04-10', event: '書類をアップロードしました', color: 'bg-primary-500' },
-                { date: '2026-04-11', event: '審査が完了し、公開されました', color: 'bg-success-500' },
-                { date: '2026-04-12', event: '入札受付が開始されました', color: 'bg-cta-500' },
-                { date: '2026-04-14', event: '3件の入札がありました', color: 'bg-info-500' },
-              ].map((item, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color} shrink-0 mt-1`} />
-                    {i < 4 && <div className="w-px flex-1 bg-neutral-200 my-1" />}
-                  </div>
-                  <div className="pb-1">
-                    <p className="text-sm">{item.event}</p>
-                    <p className="text-xs text-neutral-400">{item.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

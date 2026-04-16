@@ -9,7 +9,6 @@ export default function ProfessionalSupportPage() {
     <DashboardShell
       title="サポート"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       <SupportTicketList contactHref="/contact" />

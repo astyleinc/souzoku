@@ -51,6 +51,7 @@ export const propertyQuerySchema = z.object({
   maxPrice: z.coerce.number().int().optional(),
   status: z.string().optional(),
   biddingOnly: z.coerce.boolean().optional(),
+  includeAll: z.coerce.boolean().optional(),
   sort: z.enum(['newest', 'price_asc', 'price_desc', 'area_desc']).default('newest'),
   keyword: z.string().optional(),
 })

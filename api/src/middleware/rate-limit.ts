@@ -21,6 +21,12 @@ export const rateLimit = (opts: {
   const { windowMs, max, keyGenerator } = opts
 
   return async (c, next) => {
+    // 開発環境ではレート制限を無効化
+    if (process.env.NODE_ENV !== 'production') {
+      await next()
+      return
+    }
+
     const key = keyGenerator
       ? keyGenerator(c)
       : c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown'

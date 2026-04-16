@@ -9,7 +9,6 @@ export default function SellerSupportPage() {
     <DashboardShell
       title="サポート"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
       <SupportTicketList contactHref="/contact" />

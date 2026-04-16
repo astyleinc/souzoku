@@ -1,9 +1,62 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
+import { useAuth } from '@/providers/AuthProvider'
+
+const roleDashboard: Record<string, string> = {
+  seller: '/seller',
+  buyer: '/buyer',
+  professional: '/professional',
+  broker: '/broker',
+  admin: '/admin',
+}
 
 export default function LoginPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
+  const { user, login, refresh } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  // 既にログイン済みならダッシュボードへ
+  useEffect(() => {
+    if (user) {
+      router.replace(roleDashboard[user.role] ?? '/')
+    }
+  }, [user, router])
+
+  if (user) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!email || !password) {
+      setError('メールアドレスとパスワードを入力してください')
+      return
+    }
+
+    setLoading(true)
+    const result = await login(email, password)
+    setLoading(false)
+
+    if (result.success) {
+      const refreshedUser = await refresh()
+      const role = refreshedUser?.role ?? 'buyer'
+      router.push(redirectTo ?? roleDashboard[role] ?? '/')
+    } else {
+      setError(result.error ?? 'ログインに失敗しました')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
-      {/* ヘッダー（控えめ） */}
       <header className="py-6">
         <div className="max-w-7xl mx-auto px-4">
           <Link href="/" className="flex items-center gap-2 w-fit">
@@ -15,7 +68,6 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* メイン */}
       <main className="flex-1 flex items-center justify-center px-4 pb-16">
         <div className="w-full max-w-sm">
           <div className="bg-white rounded-2xl shadow-card p-8">
@@ -26,15 +78,23 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* メールアドレス・パスワード */}
-            <form className="space-y-4">
+            {error && (
+              <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-xl text-sm text-error-600">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5">
                   メールアドレス
                 </label>
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="mail@example.com"
+                  autoComplete="email"
                   className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
                 />
               </div>
@@ -44,23 +104,24 @@ export default function LoginPage() {
                 </label>
                 <input
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500" />
-                  <span className="text-xs text-neutral-400">ログイン状態を保持</span>
-                </label>
+              <div className="flex items-center justify-end">
                 <Link href="/forgot-password" className="text-xs text-primary-500 hover:text-primary-600">
                   パスワードを忘れた方
                 </Link>
               </div>
               <button
                 type="submit"
-                className="w-full py-3 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all"
+                disabled={loading}
+                className="w-full py-3 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 ログイン
               </button>
             </form>
@@ -75,10 +136,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* OAuth */}
+            {/* OAuth（ローカル開発では無効表示） */}
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-foreground hover:bg-neutral-50 active:scale-[0.98] transition-all">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <button
+                disabled
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-300 cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 opacity-40" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -87,13 +151,14 @@ export default function LoginPage() {
                 Googleでログイン
               </button>
 
-              <button className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#06C755] rounded-xl text-sm font-medium text-white hover:bg-[#05b34c] active:scale-[0.98] transition-all">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .348-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .349-.281.631-.63.631h-2.386c-.345 0-.627-.282-.627-.631V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.627-.631.627-.346 0-.626-.283-.626-.627V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.627-.631.627-.345 0-.627-.283-.627-.627V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.627H4.917c-.345 0-.63-.282-.63-.627V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .349-.281.631-.629.631M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                </svg>
+              <button
+                disabled
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-neutral-100 rounded-xl text-sm font-medium text-neutral-300 cursor-not-allowed"
+              >
                 LINEでログイン
               </button>
             </div>
+            <p className="text-center text-[10px] text-neutral-300 mt-2">ソーシャルログインは本番環境で有効になります</p>
 
             <p className="mt-6 text-center text-[11px] text-neutral-400 leading-relaxed">
               ログインすることで、

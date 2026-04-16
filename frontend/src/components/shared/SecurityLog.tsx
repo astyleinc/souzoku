@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   CheckCircle,
   Monitor,
@@ -7,7 +8,9 @@ import {
   Globe,
   LogOut,
   Lock,
+  Loader2,
 } from 'lucide-react'
+import { api, toItems } from '@/lib/api'
 
 type LoginEntry = {
   id: string
@@ -19,35 +22,53 @@ type LoginEntry = {
   isCurrent: boolean
 }
 
-const mockEntries: LoginEntry[] = [
-  { id: 'sl1', datetime: '2026-04-16 14:30', device: 'デスクトップ', browser: 'Chrome 126', ip: '203.0.113.10', location: '東京都', isCurrent: true },
-  { id: 'sl2', datetime: '2026-04-15 09:15', device: 'モバイル', browser: 'Safari 19', ip: '198.51.100.25', location: '東京都', isCurrent: false },
-  { id: 'sl3', datetime: '2026-04-12 18:42', device: 'デスクトップ', browser: 'Chrome 126', ip: '203.0.113.10', location: '東京都', isCurrent: false },
-  { id: 'sl4', datetime: '2026-04-10 11:05', device: 'モバイル', browser: 'Chrome Mobile', ip: '192.0.2.50', location: '神奈川県', isCurrent: false },
-  { id: 'sl5', datetime: '2026-04-08 20:30', device: 'デスクトップ', browser: 'Firefox 128', ip: '203.0.113.10', location: '東京都', isCurrent: false },
-]
-
 export const SecurityLog = () => {
+  const [entries, setEntries] = useState<LoginEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/users/me/security-log')
+      if (res.success) {
+        setEntries(toItems<LoginEntry>(res.data))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const currentEntry = entries.find((e) => e.isCurrent)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl space-y-6">
       {/* 現在のセッション */}
-      <div className="bg-white rounded-2xl shadow-card p-5 border-2 border-success-200">
-        <div className="flex items-center gap-2 mb-2">
-          <CheckCircle className="w-4 h-4 text-success-500" />
-          <h3 className="text-sm font-semibold">現在のセッション</h3>
+      {currentEntry && (
+        <div className="bg-white rounded-2xl shadow-card p-5 border-2 border-success-200">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="w-4 h-4 text-success-500" />
+            <h3 className="text-sm font-semibold">現在のセッション</h3>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-neutral-600">
+            <span className="flex items-center gap-1.5">
+              <Monitor className="w-3.5 h-3.5 text-neutral-400" />
+              {currentEntry.device} — {currentEntry.browser}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-neutral-400" />
+              {currentEntry.location}
+            </span>
+            <span className="text-xs text-neutral-400">{currentEntry.ip}</span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-neutral-600">
-          <span className="flex items-center gap-1.5">
-            <Monitor className="w-3.5 h-3.5 text-neutral-400" />
-            {mockEntries[0].device} — {mockEntries[0].browser}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-neutral-400" />
-            {mockEntries[0].location}
-          </span>
-          <span className="text-xs text-neutral-400">{mockEntries[0].ip}</span>
-        </div>
-      </div>
+      )}
 
       {/* ログイン履歴 */}
       <div className="bg-white rounded-2xl shadow-card">
@@ -55,67 +76,75 @@ export const SecurityLog = () => {
           <h3 className="text-base font-semibold">ログイン履歴</h3>
         </div>
 
-        {/* PC: テーブル */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-100">
-                <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">日時</th>
-                <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">デバイス</th>
-                <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">ブラウザ</th>
-                <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">IP</th>
-                <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">場所</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockEntries.map((entry) => (
-                <tr key={entry.id} className="border-t border-neutral-100">
-                  <td className="py-3 px-5 text-neutral-400 whitespace-nowrap">{entry.datetime}</td>
-                  <td className="py-3 px-5">
-                    <span className="flex items-center gap-1.5">
-                      {entry.device === 'デスクトップ' ? (
-                        <Monitor className="w-3.5 h-3.5 text-neutral-400" />
-                      ) : (
-                        <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
-                      )}
-                      {entry.device}
-                      {entry.isCurrent && (
-                        <span className="px-1.5 py-0.5 text-xs font-medium bg-success-50 text-success-700 rounded">現在</span>
-                      )}
-                    </span>
-                  </td>
-                  <td className="py-3 px-5 text-neutral-500">{entry.browser}</td>
-                  <td className="py-3 px-5 text-neutral-400 font-mono text-xs">{entry.ip}</td>
-                  <td className="py-3 px-5 text-neutral-500">{entry.location}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* モバイル: カード */}
-        <div className="lg:hidden divide-y divide-neutral-100">
-          {mockEntries.map((entry) => (
-            <div key={entry.id} className="px-5 py-3">
-              <div className="flex items-center gap-2">
-                {entry.device === 'デスクトップ' ? (
-                  <Monitor className="w-3.5 h-3.5 text-neutral-400" />
-                ) : (
-                  <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
-                )}
-                <span className="text-sm font-medium">{entry.device}</span>
-                {entry.isCurrent && (
-                  <span className="px-1.5 py-0.5 text-xs font-medium bg-success-50 text-success-700 rounded">現在</span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-neutral-400">
-                <span>{entry.browser}</span>
-                <span>{entry.location}</span>
-                <span>{entry.datetime}</span>
-              </div>
+        {entries.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <p className="text-sm text-neutral-400">ログイン履歴はありません</p>
+          </div>
+        ) : (
+          <>
+            {/* PC: テーブル */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100">
+                    <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">日時</th>
+                    <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">デバイス</th>
+                    <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">ブラウザ</th>
+                    <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">IP</th>
+                    <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">場所</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry) => (
+                    <tr key={entry.id} className="border-t border-neutral-100">
+                      <td className="py-3 px-5 text-neutral-400 whitespace-nowrap">{entry.datetime}</td>
+                      <td className="py-3 px-5">
+                        <span className="flex items-center gap-1.5">
+                          {entry.device === 'デスクトップ' ? (
+                            <Monitor className="w-3.5 h-3.5 text-neutral-400" />
+                          ) : (
+                            <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
+                          )}
+                          {entry.device}
+                          {entry.isCurrent && (
+                            <span className="px-1.5 py-0.5 text-xs font-medium bg-success-50 text-success-700 rounded">現在</span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="py-3 px-5 text-neutral-500">{entry.browser}</td>
+                      <td className="py-3 px-5 text-neutral-400 font-mono text-xs">{entry.ip}</td>
+                      <td className="py-3 px-5 text-neutral-500">{entry.location}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
+
+            {/* モバイル: カード */}
+            <div className="lg:hidden divide-y divide-neutral-100">
+              {entries.map((entry) => (
+                <div key={entry.id} className="px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    {entry.device === 'デスクトップ' ? (
+                      <Monitor className="w-3.5 h-3.5 text-neutral-400" />
+                    ) : (
+                      <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
+                    )}
+                    <span className="text-sm font-medium">{entry.device}</span>
+                    {entry.isCurrent && (
+                      <span className="px-1.5 py-0.5 text-xs font-medium bg-success-50 text-success-700 rounded">現在</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-neutral-400">
+                    <span>{entry.browser}</span>
+                    <span>{entry.location}</span>
+                    <span>{entry.datetime}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* アクション */}

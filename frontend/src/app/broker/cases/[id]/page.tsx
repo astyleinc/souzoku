@@ -1,16 +1,19 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   Upload,
   Send,
   ArrowLeft,
   CheckCircle,
   Circle,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { brokerNav } from '@/config/navigation'
-import { mockCases, mockCaseMessages } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -21,15 +24,97 @@ const statusSteps = [
   { key: 'settlement_done', label: '決済完了' },
 ]
 
+type CaseDetail = {
+  id: string
+  propertyTitle: string
+  propertyAddress: string
+  sellerName: string
+  buyerName: string
+  brokerName: string
+  status: string
+  salePrice: number
+  createdAt: string
+  updatedAt: string
+}
+
+type CaseMessage = {
+  id: string
+  senderName: string
+  senderRole: string
+  content: string
+  createdAt: string
+}
+
 export default function BrokerCaseDetailPage() {
-  const caseData = mockCases[0]
+  const params = useParams()
+  const [caseData, setCaseData] = useState<CaseDetail | null>(null)
+  const [messages, setMessages] = useState<CaseMessage[]>([])
+  const [loading, setLoading] = useState(true)
+  const [messageText, setMessageText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [updating, setUpdating] = useState(false)
+
+  useEffect(() => {
+    const load = async () => {
+      const [caseRes, msgRes] = await Promise.all([
+        api.get<CaseDetail>(`/cases/${params.id}`),
+        api.get<unknown>(`/cases/${params.id}/messages`),
+      ])
+      if (caseRes.success) setCaseData(caseRes.data)
+      if (msgRes.success) setMessages(toItems<CaseMessage>(msgRes.data))
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim()) return
+    setSending(true)
+    const res = await api.post(`/cases/${params.id}/messages`, {
+      content: messageText.trim(),
+    })
+    if (res.success) {
+      setMessageText('')
+      const msgRes = await api.get<unknown>(`/cases/${params.id}/messages`)
+      if (msgRes.success) setMessages(toItems<CaseMessage>(msgRes.data))
+    }
+    setSending(false)
+  }
+
+  const handleUpdateStatus = async (nextStatus: string) => {
+    setUpdating(true)
+    const res = await api.patch(`/cases/${params.id}/status`, { status: nextStatus })
+    if (res.success && caseData) {
+      setCaseData({ ...caseData, status: nextStatus })
+    }
+    setUpdating(false)
+  }
+
+  if (loading) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="提携業者" navItems={brokerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!caseData) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="提携業者" navItems={brokerNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">案件が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
   const currentStepIndex = statusSteps.findIndex((s) => s.key === caseData.status)
+  const amount = caseData.salePrice ? Math.round(caseData.salePrice / 10000) : 0
 
   return (
     <DashboardShell
       title="案件詳細"
       roleLabel="提携業者"
-      userName="松本 大輝"
       navItems={brokerNav}
     >
       <Link href="/broker/cases" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -38,7 +123,6 @@ export default function BrokerCaseDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* メイン情報 */}
         <div className="xl:col-span-2 space-y-6">
           {/* 案件概要 */}
           <div className="bg-white rounded-2xl shadow-card p-6">
@@ -50,7 +134,7 @@ export default function BrokerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">成約額</p>
-                <p className="price">{caseData.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
+                <p className="price">{amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">売主</p>
@@ -91,8 +175,12 @@ export default function BrokerCaseDetailPage() {
             {currentStepIndex < statusSteps.length - 1 && (
               <div className="mt-6 pt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <p className="text-sm text-neutral-400">次のステータスへ進める:</p>
-                <button className="px-4 py-2.5 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors">
-                  {statusSteps[currentStepIndex + 1].label}に更新
+                <button
+                  onClick={() => handleUpdateStatus(statusSteps[currentStepIndex + 1].key)}
+                  disabled={updating}
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-50"
+                >
+                  {updating ? '更新中...' : `${statusSteps[currentStepIndex + 1].label}に更新`}
                 </button>
               </div>
             )}
@@ -103,8 +191,8 @@ export default function BrokerCaseDetailPage() {
             <h3 className="text-base font-semibold mb-4">書類アップロード</h3>
             <div className="space-y-3">
               {[
-                { label: '重要事項説明書', required: caseData.status === 'explanation_done' || statusSteps.findIndex((s) => s.key === caseData.status) >= 3 },
-                { label: '売買契約書', required: statusSteps.findIndex((s) => s.key === caseData.status) >= 4 },
+                { label: '重要事項説明書', required: currentStepIndex >= 3 },
+                { label: '売買契約書', required: currentStepIndex >= 4 },
                 { label: '決済完了証明書類', required: caseData.status === 'settlement_done' },
               ].map((doc) => (
                 <div key={doc.label} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
@@ -125,27 +213,38 @@ export default function BrokerCaseDetailPage() {
             <h3 className="text-base font-semibold">やり取り</h3>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
-            {mockCaseMessages.map((msg) => (
-              <div key={msg.id}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium">{msg.senderName}</span>
-                  <span className="text-xs text-neutral-400">({msg.senderRole})</span>
+            {messages.length === 0 ? (
+              <p className="text-xs text-neutral-400 text-center py-8">まだメッセージはありません</p>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium">{msg.senderName}</span>
+                    <span className="text-xs text-neutral-400">({msg.senderRole})</span>
+                  </div>
+                  <div className="bg-neutral-50 rounded-xl p-3">
+                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-1">{msg.createdAt?.slice(0, 16).replace('T', ' ')}</p>
                 </div>
-                <div className="bg-neutral-50 rounded-xl p-3">
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                </div>
-                <p className="text-xs text-neutral-400 mt-1">{msg.createdAt}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <div className="p-4 border-t border-neutral-100">
             <div className="flex items-center gap-2">
               <input
                 type="text"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                 placeholder="メッセージを入力..."
                 className="flex-1 px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
               />
-              <button className="p-2.5 text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors">
+              <button
+                onClick={handleSendMessage}
+                disabled={sending || !messageText.trim()}
+                className="p-2.5 text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50"
+              >
                 <Send className="w-4 h-4" />
               </button>
             </div>

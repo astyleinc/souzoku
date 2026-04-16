@@ -1,15 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   CheckCircle,
-  Circle,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { sellerNav } from '@/config/navigation'
-import { mockCases, CASE_STATUS_LABEL } from '@/data/mock-dashboard'
+import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
+import type { Case } from '@/types/dashboard'
 
 const statusSteps = ['broker_assigned', 'seller_contacted', 'buyer_contacted', 'explanation_done', 'contract_signed', 'settlement_done']
 
@@ -24,20 +27,41 @@ const caseStatusStyle: Record<string, string> = {
 }
 
 export default function SellerCasesPage() {
-  const sellerCases = mockCases.filter((c) => c.sellerName === '中村 一郎')
+  const [cases, setCases] = useState<Case[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/cases?role=seller')
+      if (res.success) {
+        setCases(toItems<Case>(res.data))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardShell title="案件進捗" roleLabel="売主" navItems={sellerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell
       title="案件進捗"
       roleLabel="売主"
-      userName="中村 一郎"
       navItems={sellerNav}
     >
       <p className="text-sm text-neutral-400 mb-6">
         成約後の仲介手続きの進捗を確認できます
       </p>
 
-      {sellerCases.length === 0 ? (
+      {cases.length === 0 ? (
         <EmptyState
           icon={CheckCircle}
           title="進行中の案件はありません"
@@ -45,7 +69,7 @@ export default function SellerCasesPage() {
         />
       ) : (
         <div className="space-y-4">
-          {sellerCases.map((c) => {
+          {cases.map((c) => {
             const stepIndex = statusSteps.indexOf(c.status)
             const progress = c.status === 'cancelled' ? 0 : Math.round(((stepIndex + 1) / statusSteps.length) * 100)
             return (
@@ -65,10 +89,9 @@ export default function SellerCasesPage() {
 
                 <div className="flex items-center gap-3 text-xs text-neutral-400 mb-3">
                   <span>買い手: {c.buyerName}</span>
-                  <span>成約額: <span className="price text-neutral-600">{c.amount.toLocaleString()}</span>万円</span>
+                  <span>成約額: <span className="price text-neutral-600">{Math.round(c.amount / 10000).toLocaleString()}</span>万円</span>
                 </div>
 
-                {/* 進捗バー */}
                 {c.status !== 'cancelled' && (
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">

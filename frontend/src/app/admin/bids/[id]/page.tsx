@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   AlertTriangle,
@@ -9,27 +11,88 @@ import {
   Building2,
   Users,
   Clock,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { adminNav } from '@/config/navigation'
-import { mockBids } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
 
-const propertyBids = mockBids
-  .filter((b) => b.propertyId === '1')
-  .sort((a, b) => b.amount - a.amount)
+type PropertyInfo = {
+  id: string
+  title: string
+  askingPrice: number
+  prefecture: string
+  city: string
+  address: string
+  sellerId: string
+}
 
-const highestAmount = propertyBids.length > 0 ? propertyBids[0].amount : 0
+type BidItem = {
+  id: string
+  bidderName: string
+  bidderType: string
+  amount: number
+  status: string
+  selectedReason: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+const toMan = (yen: number) => Math.round(yen / 10000)
 
 export default function AdminBidDetailPage() {
-  const selectedBid = propertyBids[1]
+  const params = useParams()
+  const [property, setProperty] = useState<PropertyInfo | null>(null)
+  const [bids, setBids] = useState<BidItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [reason, setReason] = useState('')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      const [propRes, bidRes] = await Promise.all([
+        api.get<unknown>(`/properties/${params.id}`),
+        api.get<unknown>(`/bids/property/${params.id}`),
+      ])
+      if (propRes.success) setProperty(propRes.data as PropertyInfo)
+      if (bidRes.success) {
+        const sorted = toItems<BidItem>(bidRes.data).sort((a, b) => b.amount - a.amount)
+        setBids(sorted)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="入札審査" roleLabel="管理画面" navItems={adminNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!property) {
+    return (
+      <DashboardShell title="入札審査" roleLabel="管理画面" navItems={adminNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">物件が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
+  const highestAmount = bids.length > 0 ? bids[0].amount : 0
+  const selectedBid = bids.find((b) => b.status === 'selected')
+  const isNonHighestSelected = selectedBid && selectedBid.amount < highestAmount
 
   return (
     <DashboardShell
       title="入札審査"
       roleLabel="管理画面"
-      userName="田中 太郎"
       navItems={adminNav}
     >
       <Link href="/admin/bids" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -44,51 +107,55 @@ export default function AdminBidDetailPage() {
             <div className="flex items-start gap-3 mb-4">
               <Building2 className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
               <div>
-                <h2 className="text-lg font-semibold">練馬区 駅近マンション 3LDK</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">東京都練馬区豊玉北5丁目</p>
+                <h2 className="text-lg font-semibold">{property.title}</h2>
+                <p className="text-xs text-neutral-400 mt-0.5">{property.prefecture}{property.city}{property.address}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <p className="text-xs text-neutral-400 mb-0.5">希望価格</p>
-                <p className="price font-medium">3,500<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
+                <p className="price font-medium">{toMan(property.askingPrice).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-0.5">入札件数</p>
-                <p className="font-medium">{propertyBids.length}件</p>
+                <p className="font-medium">{bids.length}件</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-0.5">最高入札額</p>
-                <p className="price font-medium text-cta-500">{highestAmount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
+                <p className="price font-medium text-cta-500">{toMan(highestAmount).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
               </div>
             </div>
           </div>
 
-          {/* 売主の選択 */}
-          <div className="bg-warning-50 rounded-2xl p-5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-sm font-semibold text-warning-700">売主が最高額以外の入札者を選択しました</h3>
-                <p className="text-sm text-warning-600 mt-1">
-                  売主「中村 一郎」は最高額（{highestAmount.toLocaleString()}万円）ではなく、
-                  <span className="font-medium">{selectedBid.bidderName}（{selectedBid.amount.toLocaleString()}万円）</span>を選択しました。
-                </p>
-                <div className="mt-3 p-3 bg-white rounded-xl">
-                  <p className="text-xs text-neutral-400 mb-1">選択理由</p>
-                  <p className="text-sm text-neutral-700">与信/資金調達に不安がある（最高額入札者について）</p>
+          {/* 売主の選択（最高額以外を選んだ場合） */}
+          {isNonHighestSelected && (
+            <div className="bg-warning-50 rounded-2xl p-5">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-warning-700">売主が最高額以外の入札者を選択しました</h3>
+                  <p className="text-sm text-warning-600 mt-1">
+                    最高額（{toMan(highestAmount).toLocaleString()}万円）ではなく、
+                    <span className="font-medium">{selectedBid.bidderName}（{toMan(selectedBid.amount).toLocaleString()}万円）</span>を選択しました。
+                  </p>
+                  {selectedBid.selectedReason && (
+                    <div className="mt-3 p-3 bg-white rounded-xl">
+                      <p className="text-xs text-neutral-400 mb-1">選択理由</p>
+                      <p className="text-sm text-neutral-700">{selectedBid.selectedReason}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* 全入札一覧 */}
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="text-base font-semibold mb-4">入札一覧</h3>
             <div className="space-y-3">
-              {propertyBids.map((bid) => {
+              {bids.map((bid) => {
                 const isHighest = bid.amount === highestAmount
-                const isSelected = bid.id === selectedBid.id
+                const isSelected = bid.status === 'selected'
                 return (
                   <div
                     key={bid.id}
@@ -104,7 +171,7 @@ export default function AdminBidDetailPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="price font-semibold">{bid.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
+                        <p className="price font-semibold">{toMan(bid.amount).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-0.5">万円</span></p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {isSelected && <span className="text-xs text-success-500 font-medium">売主選択</span>}
                           {isHighest && !isSelected && <span className="text-xs text-cta-500 font-medium">最高額</span>}
@@ -113,8 +180,8 @@ export default function AdminBidDetailPage() {
                       </div>
                     </div>
                     <div className="flex gap-3 mt-2 text-xs text-neutral-400">
-                      <span>入札日: {bid.createdAt}</span>
-                      <span>更新日: {bid.updatedAt}</span>
+                      <span>入札日: {bid.createdAt?.slice(0, 10)}</span>
+                      <span>更新日: {bid.updatedAt?.slice(0, 10)}</span>
                     </div>
                   </div>
                 )
@@ -133,11 +200,7 @@ export default function AdminBidDetailPage() {
             <div className="space-y-3 text-sm">
               <div>
                 <p className="text-xs text-neutral-400">売主</p>
-                <p className="font-medium">中村 一郎</p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400">紹介士業</p>
-                <p className="font-medium">山田 太郎（税理士）</p>
+                <p className="font-medium">—</p>
               </div>
             </div>
           </div>
@@ -145,11 +208,43 @@ export default function AdminBidDetailPage() {
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="text-base font-semibold mb-4">承認判断</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-success-500 rounded-xl hover:bg-success-600 transition-colors">
-                <CheckCircle className="w-4 h-4" />
+              {actionError && (
+                <p className="text-xs text-error-600 mb-2">{actionError}</p>
+              )}
+              <button
+                onClick={async () => {
+                  setActionLoading(true)
+                  setActionError(null)
+                  const res = await api.patch(`/admin/properties/${params.id}/approve`, { assignedBrokerId: null })
+                  if (res.success) {
+                    setProperty((prev) => prev ? { ...prev, status: 'published' } : prev)
+                  } else {
+                    setActionError(res.error?.message ?? '承認に失敗しました')
+                  }
+                  setActionLoading(false)
+                }}
+                disabled={actionLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-success-500 rounded-xl hover:bg-success-600 transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 承認する
               </button>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors">
+              <button
+                onClick={async () => {
+                  if (!reason) { setActionError('差戻し理由を入力してください'); return }
+                  setActionLoading(true)
+                  setActionError(null)
+                  const res = await api.patch(`/admin/properties/${params.id}/return`, { status: 'returned', returnReason: reason })
+                  if (res.success) {
+                    setProperty((prev) => prev ? { ...prev, status: 'returned' } : prev)
+                  } else {
+                    setActionError(res.error?.message ?? '差戻しに失敗しました')
+                  }
+                  setActionLoading(false)
+                }}
+                disabled={actionLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors disabled:opacity-50"
+              >
                 <XCircle className="w-4 h-4" />
                 差戻しする
               </button>
@@ -158,6 +253,8 @@ export default function AdminBidDetailPage() {
             <div className="mt-4">
               <label className="block text-sm font-medium mb-1.5">差戻し理由（差戻し時のみ）</label>
               <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="差戻しの理由を記入してください"
                 className="w-full px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors resize-none"

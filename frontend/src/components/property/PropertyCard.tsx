@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Building2, Home, MapPin, Landmark, Flame, Heart, Gavel } from 'lucide-react'
+import Image from 'next/image'
+import { Building2, Home, MapPin, Landmark, Flame, Heart, Gavel, Camera } from 'lucide-react'
 import { type Property, PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 
@@ -33,18 +34,22 @@ export const PropertyCard = ({ property }: { property: Property }) => {
 
   const isBidding = property.status === 'bidding'
   const isHot = property.bidCount >= 5
+  const mainImage = property.images?.[0] ?? property.imageUrl
+  const imageCount = property.images?.length ?? (property.imageUrl ? 1 : 0)
 
   return (
     <div className="relative group">
       <Link href={`/properties/${property.id}`} className="block">
         <div className="bg-white rounded-2xl shadow-card overflow-hidden transition-all hover:shadow-dropdown">
           {/* 画像 */}
-          <div className={`relative aspect-[4/3] ${placeholderColors[property.type]} flex items-center justify-center`}>
-            {property.imageUrl ? (
-              <img
-                src={property.imageUrl}
+          <div className={`relative aspect-[4/3] ${!mainImage ? placeholderColors[property.type] : 'bg-neutral-100'} flex items-center justify-center`}>
+            {mainImage ? (
+              <Image
+                src={mainImage}
                 alt={property.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
               />
             ) : (
               typeIcons[property.type]
@@ -56,6 +61,13 @@ export const PropertyCard = ({ property }: { property: Property }) => {
               <div className="absolute top-3 right-12 flex items-center gap-1 bg-error-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                 <Flame className="w-3 h-3" />
                 人気
+              </div>
+            )}
+            {/* 写真枚数バッジ */}
+            {imageCount > 1 && (
+              <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm">
+                <Camera className="w-3 h-3" />
+                {imageCount}
               </div>
             )}
           </div>

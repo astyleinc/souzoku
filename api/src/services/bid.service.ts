@@ -14,6 +14,25 @@ export const createBidService = (db: Database) => ({
       .orderBy(desc(bids.amount))
   },
 
+  // 買い手自身の入札一覧取得
+  async listByBuyer(buyerId: string) {
+    const rows = await db.select({
+      id: bids.id,
+      propertyId: bids.propertyId,
+      propertyTitle: properties.title,
+      amount: bids.amount,
+      status: bids.status,
+      createdAt: bids.createdAt,
+      updatedAt: bids.updatedAt,
+    })
+      .from(bids)
+      .innerJoin(properties, eq(bids.propertyId, properties.id))
+      .where(eq(bids.buyerId, buyerId))
+      .orderBy(desc(bids.createdAt))
+
+    return { items: rows }
+  },
+
   // 入札する
   async placeBid(input: CreateBidInput, buyerId: string) {
     // 物件の存在確認と入札可能チェック
@@ -55,6 +74,29 @@ export const createBidService = (db: Database) => ({
       amount: input.amount,
       note: input.note,
     }).returning()
+
+    return result[0]
+  },
+
+  // 買い手が自分の入札をキャンセル
+  async cancelBid(bidId: string, buyerId: string) {
+    const bid = await db.select()
+      .from(bids)
+      .where(and(eq(bids.id, bidId), eq(bids.buyerId, buyerId)))
+      .limit(1)
+
+    if (bid.length === 0) {
+      throw notFound('入札')
+    }
+
+    if (bid[0].status !== 'active') {
+      throw new AppError(ERROR_CODE.VALIDATION_ERROR, 'アクティブな入札のみキャンセルできます')
+    }
+
+    const result = await db.update(bids)
+      .set({ status: 'superseded', updatedAt: new Date() })
+      .where(eq(bids.id, bidId))
+      .returning()
 
     return result[0]
   },

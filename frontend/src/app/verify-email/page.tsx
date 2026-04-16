@@ -1,13 +1,39 @@
 'use client'
 
+import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Mail,
   RefreshCw,
   CheckCircle,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function VerifyEmailPage() {
+  const searchParams = useSearchParams()
+  const emailParam = searchParams.get('email')
+
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
+
+  const handleResend = async () => {
+    if (!emailParam) return
+    setResending(true)
+    try {
+      await fetch('/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailParam, callbackURL: `${window.location.origin}/login` }),
+        credentials: 'include',
+      })
+      setResent(true)
+    } catch {
+      // 失敗しても表示は変えない（メールアドレスの存在を漏らさない）
+    }
+    setResending(false)
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -27,16 +53,29 @@ export default function VerifyEmailPage() {
             ご登録いただいたメールアドレスに確認メールを送信しました。メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
 
-          <div className="mt-6 p-4 bg-neutral-50 rounded-xl">
-            <p className="text-xs text-neutral-400">送信先</p>
-            <p className="text-sm font-medium mt-0.5">nakamura@example.com</p>
-          </div>
+          {emailParam && (
+            <div className="mt-6 p-4 bg-neutral-50 rounded-xl">
+              <p className="text-xs text-neutral-400">送信先</p>
+              <p className="text-sm font-medium mt-0.5">{emailParam}</p>
+            </div>
+          )}
 
           <div className="mt-6 space-y-3">
-            <button className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-500 bg-primary-50 rounded-xl hover:bg-primary-100 transition-colors">
-              <RefreshCw className="w-4 h-4" />
-              確認メールを再送する
-            </button>
+            {resent ? (
+              <div className="flex items-center justify-center gap-2 py-2.5 text-sm text-success-600">
+                <CheckCircle className="w-4 h-4" />
+                確認メールを再送しました
+              </div>
+            ) : (
+              <button
+                onClick={handleResend}
+                disabled={resending || !emailParam}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-500 bg-primary-50 rounded-xl hover:bg-primary-100 transition-colors disabled:opacity-60"
+              >
+                {resending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                確認メールを再送する
+              </button>
+            )}
           </div>
 
           <div className="mt-6 pt-6 border-t border-neutral-100 space-y-2 text-xs text-neutral-400">

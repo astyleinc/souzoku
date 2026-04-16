@@ -1,15 +1,18 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   CheckCircle,
   Circle,
   Mail,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { buyerNav } from '@/config/navigation'
-import { mockCases } from '@/data/mock-dashboard'
+import { api } from '@/lib/api'
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -20,15 +23,60 @@ const statusSteps = [
   { key: 'settlement_done', label: '決済完了' },
 ]
 
+type CaseDetail = {
+  id: string
+  propertyTitle: string
+  propertyAddress: string
+  sellerName: string
+  buyerName: string
+  brokerName: string
+  status: string
+  salePrice: number
+  createdAt: string
+  updatedAt: string
+}
+
 export default function BuyerCaseDetailPage() {
-  const caseData = mockCases[1]
+  const params = useParams()
+  const [caseData, setCaseData] = useState<CaseDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<CaseDetail>(`/cases/${params.id}`)
+      if (res.success) {
+        setCaseData(res.data)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="買い手" navItems={buyerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!caseData) {
+    return (
+      <DashboardShell title="案件詳細" roleLabel="買い手" navItems={buyerNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">案件が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
   const currentStepIndex = statusSteps.findIndex((s) => s.key === caseData.status)
+  const amount = caseData.salePrice ? Math.round(caseData.salePrice / 10000) : 0
 
   return (
     <DashboardShell
       title="案件詳細"
       roleLabel="買い手"
-      userName="株式会社山本不動産"
       navItems={buyerNav}
     >
       <Link href="/buyer/cases" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -48,15 +96,15 @@ export default function BuyerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">成約額</p>
-                <p className="price">{caseData.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
+                <p className="price">{amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">案件開始日</p>
-                <p>{caseData.createdAt}</p>
+                <p>{caseData.createdAt?.slice(0, 10)}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">最終更新</p>
-                <p>{caseData.updatedAt}</p>
+                <p>{caseData.updatedAt?.slice(0, 10)}</p>
               </div>
             </div>
           </div>

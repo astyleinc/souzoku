@@ -12,6 +12,7 @@ import {
   revenueDistributions,
   payments,
   auditLogs,
+  authSession,
 } from '../db/schema'
 import { notFound } from '../lib/errors'
 import type { UserQuery, AnalyticsQuery } from '../schemas/admin-extended'
@@ -274,14 +275,21 @@ export const createAdminService = (db: Database) => ({
     }
   },
 
-  // ユーザーステータス更新（監査ログとして記録）
+  // ユーザーステータス更新（停止時はセッション全無効化）
   async updateUserStatus(userId: string, status: 'active' | 'suspended', actorId: string) {
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1)
     if (userResult.length === 0) {
       throw notFound('ユーザー')
     }
 
+    const user = userResult[0]
     const action = status === 'suspended' ? 'user_suspended' as const : 'user_updated' as const
+
+    // 停止時はBetterAuthのセッションを全削除して即時ログアウト
+    if (status === 'suspended' && user.authId) {
+      await db.delete(authSession)
+        .where(eq(authSession.userId, user.authId))
+    }
 
     // 監査ログに記録
     await db.insert(auditLogs).values({
@@ -289,13 +297,12 @@ export const createAdminService = (db: Database) => ({
       action,
       targetType: 'user',
       targetId: userId,
-      details: JSON.stringify({ status, previousStatus: 'active' }),
+      details: JSON.stringify({ status }),
     })
 
     return {
-      user: userResult[0],
+      user,
       appliedStatus: status,
-      note: '現在ステータスは監査ログで管理されています。実装では認証セッションの無効化が必要です。',
     }
   },
 
@@ -400,24 +407,32 @@ export const createAdminService = (db: Database) => ({
     }
   },
 
-  // システム稼働状況（モック）
-  getSystemHealth() {
+  // システム稼働状況
+  async getSystemHealth() {
+    const start = Date.now()
+
+    const [userCount, propertyCount, sessionCount] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(users),
+      db.select({ count: sql<number>`count(*)` }).from(properties),
+      db.select({ count: sql<number>`count(*)` })
+        .from(authSession)
+        .where(gte(authSession.expiresAt, sql`now()`))
+        .catch(() => [{ count: 0 }]),
+    ])
+
+    const dbResponseTime = Date.now() - start
+
     return {
-      status: 'healthy',
+      status: 'healthy' as const,
       timestamp: new Date().toISOString(),
-      uptime: '99.97%',
       services: {
-        api: { status: 'operational', responseTime: 45, errorRate: 0.02 },
-        database: { status: 'operational', responseTime: 12, connectionPool: { active: 3, idle: 7, max: 10 } },
-        storage: { status: 'operational', usedGb: 2.4, limitGb: 50 },
-        auth: { status: 'operational', activeSessions: 142 },
-        email: { status: 'operational', queueSize: 0, sentToday: 28 },
+        api: { status: 'operational' as const },
+        database: { status: 'operational' as const, responseTimeMs: dbResponseTime },
       },
       metrics: {
-        activeUsers24h: 87,
-        apiRequests24h: 12450,
-        averageResponseMs: 52,
-        errorRate24h: 0.03,
+        totalUsers: Number(userCount[0].count),
+        totalProperties: Number(propertyCount[0].count),
+        activeSessions: Number(sessionCount[0].count),
       },
     }
   },

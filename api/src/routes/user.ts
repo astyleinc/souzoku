@@ -24,9 +24,23 @@ userRoutes.put('/me', auth, validateBody(updateProfileSchema), async (c) => {
   return ok(c, updated)
 })
 
-// パスワード変更（プレースホルダー: 実際の処理はBetterAuthで実装予定）
+// パスワード変更（BetterAuth APIに委譲）
 userRoutes.put('/me/password', auth, validateBody(changePasswordSchema), async (c) => {
-  return ok(c, { message: 'パスワード変更はBetterAuth経由で処理されます' })
+  const input = c.get('validatedBody') as ChangePasswordInput
+  const { getAuth } = await import('../lib/auth')
+  const authInstance = getAuth()
+  try {
+    await authInstance.api.changePassword({
+      headers: c.req.raw.headers,
+      body: {
+        currentPassword: input.currentPassword,
+        newPassword: input.newPassword,
+      },
+    })
+    return ok(c, { message: 'パスワードを変更しました' })
+  } catch {
+    return c.json({ success: false, error: { code: 'PASSWORD_CHANGE_FAILED', message: '現在のパスワードが正しくありません' } }, 400)
+  }
 })
 
 // セキュリティログ取得
@@ -36,9 +50,18 @@ userRoutes.get('/me/security-log', auth, async (c) => {
   return ok(c, logs)
 })
 
-// 全セッション無効化（プレースホルダー: 実際の処理はBetterAuthで実装予定）
+// 全セッション無効化（BetterAuth APIに委譲）
 userRoutes.post('/me/sessions/revoke-all', auth, async (c) => {
-  return ok(c, { message: 'セッション無効化はBetterAuth経由で処理されます' })
+  const { getAuth } = await import('../lib/auth')
+  const authInstance = getAuth()
+  try {
+    await authInstance.api.revokeSessions({
+      headers: c.req.raw.headers,
+    })
+    return ok(c, { message: '全セッションを無効化しました' })
+  } catch {
+    return c.json({ success: false, error: { code: 'SESSION_REVOKE_FAILED', message: 'セッション無効化に失敗しました' } }, 500)
+  }
 })
 
 // アカウント削除リクエスト

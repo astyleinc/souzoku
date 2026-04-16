@@ -32,13 +32,17 @@ export const createUserService = (db: Database) => ({
 
   // プロフィール更新
   async updateProfile(userId: string, input: UpdateProfileInput) {
+    const setData: Record<string, unknown> = {
+      name: input.name,
+      phone: input.phone,
+      address: input.address,
+      updatedAt: new Date(),
+    }
+    if (input.role) {
+      setData.role = input.role
+    }
     const result = await db.update(users)
-      .set({
-        name: input.name,
-        phone: input.phone,
-        address: input.address,
-        updatedAt: new Date(),
-      })
+      .set(setData)
       .where(eq(users.id, userId))
       .returning()
 

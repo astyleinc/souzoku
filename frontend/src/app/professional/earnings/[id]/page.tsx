@@ -33,7 +33,6 @@ export default function ProfessionalEarningDetailPage() {
     <DashboardShell
       title="紹介料詳細"
       roleLabel="士業パートナー"
-      userName="山田 太郎"
       navItems={professionalNav}
     >
       <Link href="/professional/earnings" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">

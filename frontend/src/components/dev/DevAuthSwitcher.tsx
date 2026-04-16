@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Bug, X, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Bug, X, ChevronUp, Loader2 } from 'lucide-react'
+import { useAuth } from '@/providers/AuthProvider'
 
 type DevUser = {
   id: string
@@ -18,6 +20,8 @@ const devUsers: DevUser[] = [
   { id: 'u30', name: '松本 大輝', email: 'matsumoto@example.com', role: 'broker', label: '業者' },
   { id: 'u99', name: '田中 太郎', email: 'admin@ouver.jp', role: 'admin', label: '管理者' },
 ]
+
+const DEV_PASSWORD = 'password123'
 
 const roleColor: Record<string, string> = {
   seller: 'bg-primary-500',
@@ -36,28 +40,53 @@ const roleDashboard: Record<string, string> = {
 }
 
 export const DevAuthSwitcher = () => {
+  const router = useRouter()
+  const { user, isLoading, login, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
-  const [currentUser, setCurrentUser] = useState<DevUser | null>(null)
+  const [switching, setSwitching] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
-  // 本番では表示しない
-  if (process.env.NODE_ENV === 'production') return null
+  useEffect(() => { setMounted(true) }, [])
 
-  const handleSwitch = (user: DevUser) => {
-    setCurrentUser(user)
-    // ローカルストレージに保存（他のコンポーネントから参照可能）
-    localStorage.setItem('dev-auth-user', JSON.stringify(user))
-    window.dispatchEvent(new CustomEvent('dev-auth-change', { detail: user }))
+  if (!mounted || process.env.NODE_ENV === 'production') return null
+
+  const currentDevUser = user
+    ? devUsers.find((u) => u.email === user.email) ?? null
+    : null
+
+  const handleSwitch = async (devUser: DevUser) => {
+    setError(null)
+    setSwitching(devUser.id)
+    try {
+      // 既にログイン中なら先にログアウト
+      if (user) {
+        await logout()
+      }
+      const result = await login(devUser.email, DEV_PASSWORD)
+      if (result.success) {
+        router.push(roleDashboard[devUser.role])
+      } else {
+        setError(result.error ?? 'ログイン失敗')
+      }
+    } finally {
+      setSwitching(null)
+    }
   }
 
-  const handleLogout = () => {
-    setCurrentUser(null)
-    localStorage.removeItem('dev-auth-user')
-    window.dispatchEvent(new CustomEvent('dev-auth-change', { detail: null }))
+  const handleLogout = async () => {
+    setError(null)
+    setSwitching('logout')
+    try {
+      await logout()
+      router.push('/')
+    } finally {
+      setSwitching(null)
+    }
   }
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999]">
-      {/* パネル */}
       {isOpen && (
         <div className="mb-2 w-72 bg-white rounded-radius-lg border border-border shadow-modal overflow-hidden">
           {/* ヘッダー */}
@@ -76,16 +105,33 @@ export const DevAuthSwitcher = () => {
             <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">
               ログイン中
             </p>
-            {currentUser ? (
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-neutral-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                確認中...
+              </div>
+            ) : currentDevUser ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${roleColor[currentUser.role]}`} />
-                  <span className="text-sm font-medium">{currentUser.name}</span>
-                  <span className="text-[10px] text-muted-foreground">({currentUser.label})</span>
+                  <span className={`w-2 h-2 rounded-full ${roleColor[currentDevUser.role]}`} />
+                  <span className="text-sm font-medium">{currentDevUser.name}</span>
+                  <span className="text-[10px] text-muted-foreground">({currentDevUser.label})</span>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="text-[10px] text-error-500 hover:underline"
+                  disabled={switching !== null}
+                  className="text-[10px] text-error-500 hover:underline disabled:opacity-50"
+                >
+                  ログアウト
+                </button>
+              </div>
+            ) : user ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  disabled={switching !== null}
+                  className="text-[10px] text-error-500 hover:underline disabled:opacity-50"
                 >
                   ログアウト
                 </button>
@@ -95,48 +141,59 @@ export const DevAuthSwitcher = () => {
             )}
           </div>
 
+          {/* エラー表示 */}
+          {error && (
+            <div className="px-4 py-2 bg-error-50 text-error-600 text-xs">
+              {error}
+            </div>
+          )}
+
           {/* ユーザー一覧 */}
           <div className="p-2">
-            {devUsers.map((user) => {
-              const isActive = currentUser?.id === user.id
+            {devUsers.map((devUser) => {
+              const isActive = user?.email === devUser.email
+              const isSwitching = switching === devUser.id
               return (
                 <button
-                  key={user.id}
-                  onClick={() => handleSwitch(user)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-radius-md text-left transition-colors ${
+                  key={devUser.id}
+                  onClick={() => handleSwitch(devUser)}
+                  disabled={switching !== null}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-radius-md text-left transition-colors disabled:opacity-60 ${
                     isActive
                       ? 'bg-primary-50 border border-primary-200'
                       : 'hover:bg-neutral-50'
                   }`}
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${roleColor[user.role]}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${roleColor[devUser.role]}`} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{user.name}</span>
+                      <span className="text-sm font-medium truncate">{devUser.name}</span>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                         isActive ? 'bg-primary-100 text-primary-700' : 'bg-neutral-100 text-neutral-500'
                       }`}>
-                        {user.label}
+                        {devUser.label}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{devUser.email}</p>
                   </div>
-                  {isActive && (
+                  {isSwitching ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400 shrink-0" />
+                  ) : isActive ? (
                     <span className="text-[10px] text-primary-500 font-medium shrink-0">選択中</span>
-                  )}
+                  ) : null}
                 </button>
               )
             })}
           </div>
 
           {/* ダッシュボードへのリンク */}
-          {currentUser && (
+          {currentDevUser && (
             <div className="px-4 py-2.5 border-t border-border bg-neutral-50">
               <a
-                href={roleDashboard[currentUser.role]}
+                href={roleDashboard[currentDevUser.role]}
                 className="text-xs text-primary-500 hover:underline"
               >
-                {currentUser.label}ダッシュボードへ移動 →
+                {currentDevUser.label}ダッシュボードへ移動 →
               </a>
             </div>
           )}
@@ -147,14 +204,14 @@ export const DevAuthSwitcher = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-dropdown transition-all ${
-          currentUser
-            ? `${roleColor[currentUser.role]} text-white`
+          currentDevUser
+            ? `${roleColor[currentDevUser.role]} text-white`
             : 'bg-neutral-900 text-white'
         }`}
       >
         <Bug className="w-4 h-4" />
         <span className="text-xs font-medium">
-          {currentUser ? `${currentUser.label}: ${currentUser.name}` : 'DEV'}
+          {currentDevUser ? `${currentDevUser.label}: ${currentDevUser.name}` : user ? user.name : 'DEV'}
         </span>
         <ChevronUp className={`w-3.5 h-3.5 transition-transform ${isOpen ? '' : 'rotate-180'}`} />
       </button>

@@ -12,14 +12,8 @@ export const adminRoutes = new Hono()
 adminRoutes.use('*', auth, requireRole('admin'))
 
 adminRoutes.get('/dashboard', async (c) => {
-  // TODO: 実際の集計クエリに差し替え
-  return ok(c, {
-    properties: { total: 0, reviewing: 0, published: 0, bidding: 0, closed: 0 },
-    bids: { total: 0, active: 0 },
-    revenue: { monthlyTotal: 0, monthlyOuver: 0, pendingPayments: 0 },
-    professionals: { total: 0, verified: 0, pending: 0 },
-    brokers: { total: 0, averageRating: 0 },
-  })
+  const result = await services.admin.getDashboard()
+  return ok(c, result)
 })
 
 adminRoutes.get('/professionals', async (c) => {

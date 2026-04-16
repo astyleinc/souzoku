@@ -2,6 +2,7 @@ import { eq, and, desc, sql } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { referralLinks } from '../db/schema/content'
 import { professionals } from '../db/schema/professionals'
+import { properties } from '../db/schema/properties'
 import { sellerProfiles, users } from '../db/schema/users'
 import type { ReferralQuery } from '../schemas/referral'
 import { notFound } from '../lib/errors'
@@ -113,6 +114,57 @@ export const createReferralService = (db: Database) => ({
       page: query.page,
       limit: query.limit,
       totalPages: Math.ceil(total / query.limit),
+    }
+  },
+
+  // 紹介クライアント詳細
+  async getClientDetail(professionalId: string, clientUserId: string) {
+    const clientRows = await db.select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      phone: users.phone,
+      createdAt: sellerProfiles.createdAt,
+    })
+      .from(sellerProfiles)
+      .innerJoin(users, eq(sellerProfiles.userId, users.id))
+      .where(and(
+        eq(sellerProfiles.referredByProfessionalId, professionalId),
+        eq(users.id, clientUserId),
+      ))
+      .limit(1)
+
+    if (clientRows.length === 0) {
+      throw notFound('クライアント')
+    }
+
+    const client = clientRows[0]
+
+    const clientProperties = await db.select({
+      id: properties.id,
+      title: properties.title,
+      status: properties.status,
+      referredAt: properties.createdAt,
+    })
+      .from(properties)
+      .where(eq(properties.sellerId, clientUserId))
+      .orderBy(desc(properties.createdAt))
+
+    const latest = clientProperties[0]
+
+    return {
+      id: client.userId,
+      name: client.name,
+      email: client.email,
+      phone: client.phone ?? '',
+      propertyCount: clientProperties.length,
+      latestPropertyTitle: latest?.title ?? '',
+      latestPropertyStatus: latest?.status ?? 'reviewing',
+      referredAt: client.createdAt,
+      nwRoute: '直接紹介',
+      confirmedRevenue: 0,
+      estimatedRevenue: 0,
+      properties: clientProperties,
     }
   },
 

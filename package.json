@@ -1,0 +1,25 @@
+{
+  "name": "ouver-monorepo",
+  "private": true,
+  "scripts": {
+    "setup": "supabase start && pnpm -r install && cd api && pnpm run db:setup",
+    "dev": "pnpm exec concurrently -n api,web -c blue,green \"pnpm --filter ouver-api dev\" \"pnpm --filter frontend dev\"",
+    "dev:api": "pnpm --filter ouver-api dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "db:seed": "pnpm --filter ouver-api db:seed",
+    "db:reset": "pnpm --filter ouver-api db:reset",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9"
+  }
+}

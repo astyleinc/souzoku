@@ -16,7 +16,6 @@ export default function AdminNewProfessionalPage() {
     <DashboardShell
       title="士業パートナー登録"
       roleLabel="管理者"
-      userName="Ouver運営"
       navItems={adminNav}
     >
       <Link href="/admin/professionals" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">

@@ -10,12 +10,13 @@ const caseStatusStyle: Record<CaseStatus, string> = {
   cancelled: 'bg-error-50 text-error-700',
 }
 
-export const CaseStatusBadge = ({ status }: { status: CaseStatus }) => {
+export const CaseStatusBadge = ({ status }: { status: string }) => {
+  const s = status as CaseStatus
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${caseStatusStyle[status]}`}
+      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${caseStatusStyle[s] ?? 'bg-neutral-100 text-neutral-500'}`}
     >
-      {CASE_STATUS_LABEL[status]}
+      {CASE_STATUS_LABEL[s] ?? status}
     </span>
   )
 }

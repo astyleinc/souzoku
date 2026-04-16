@@ -12,12 +12,13 @@ const statusStyles: Record<PropertyStatus, string> = {
   failed: 'bg-neutral-50 text-neutral-500 border border-neutral-300',
 }
 
-export const StatusBadge = ({ status }: { status: PropertyStatus }) => {
+export const StatusBadge = ({ status }: { status: string }) => {
+  const s = status as PropertyStatus
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[s] ?? 'bg-neutral-100 text-neutral-600'}`}
     >
-      {STATUS_LABEL[status]}
+      {STATUS_LABEL[s] ?? status}
     </span>
   )
 }

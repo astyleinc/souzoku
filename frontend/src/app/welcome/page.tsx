@@ -8,8 +8,12 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/providers/AuthProvider'
+import { api } from '@/lib/api'
 
 const steps = [
   {
@@ -33,7 +37,7 @@ const roles = [
   { key: 'seller', label: '売主（相続人）', description: '相続した不動産を売却したい', href: '/seller', color: 'primary' },
   { key: 'buyer', label: '買い手', description: '相続不動産を購入・投資したい', href: '/buyer', color: 'info' },
   { key: 'professional', label: '士業パートナー', description: '相続案件のクライアントを紹介したい', href: '/professional', color: 'secondary' },
-]
+] as const
 
 const roleColorMap: Record<string, string> = {
   primary: 'border-primary-300 bg-primary-50',
@@ -42,10 +46,41 @@ const roleColorMap: Record<string, string> = {
 }
 
 export default function WelcomePage() {
+  const router = useRouter()
+  const { user, refresh } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [name, setName] = useState(user?.name ?? '')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const selectedRoleData = roles.find((r) => r.key === selectedRole)
+
+  const handleSaveProfile = async () => {
+    if (!name.trim()) {
+      setError('表示名を入力してください')
+      return
+    }
+    setSaving(true)
+    setError('')
+
+    const res = await api.put('/users/me', {
+      name: name.trim(),
+      phone: phone.trim() || undefined,
+      address: address.trim() || undefined,
+      role: selectedRole ?? undefined,
+    })
+
+    if (res.success) {
+      await refresh()
+      setCurrentStep(2)
+    } else {
+      setError('プロフィールの保存に失敗しました。もう一度お試しください。')
+    }
+    setSaving(false)
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-12">
@@ -118,11 +153,16 @@ export default function WelcomePage() {
               <p className="text-sm text-neutral-400 mb-5">
                 {selectedRoleData?.label}として登録します。基本情報を入力してください。
               </p>
+              {error && (
+                <p className="text-sm text-error-500 mb-4">{error}</p>
+              )}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">表示名</label>
+                  <label className="block text-sm font-medium mb-1.5">表示名 <span className="text-error-500">*</span></label>
                   <input
                     type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="お名前または会社名"
                     className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
                   />
@@ -131,6 +171,8 @@ export default function WelcomePage() {
                   <label className="block text-sm font-medium mb-1.5">電話番号</label>
                   <input
                     type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     placeholder="03-1234-5678"
                     className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
                   />
@@ -139,6 +181,8 @@ export default function WelcomePage() {
                   <label className="block text-sm font-medium mb-1.5">住所</label>
                   <input
                     type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                     placeholder="東京都○○区○○"
                     className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
                   />
@@ -156,37 +200,55 @@ export default function WelcomePage() {
               <p className="text-sm text-neutral-400 mb-6">
                 {selectedRoleData?.label}としてOuverをご利用いただけます。
               </p>
-              <Link
-                href={selectedRoleData?.href ?? '/'}
+              <button
+                onClick={() => router.push(selectedRoleData?.href ?? '/')}
                 className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
               >
                 ダッシュボードへ
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
             </div>
           )}
 
           {/* ナビゲーション */}
-          {currentStep < 2 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-100">
-              {currentStep > 0 ? (
-                <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  戻る
-                </button>
-              ) : (
-                <span />
-              )}
+          {currentStep === 0 && (
+            <div className="flex items-center justify-end mt-6 pt-4 border-t border-neutral-100">
               <button
-                onClick={() => setCurrentStep(currentStep + 1)}
-                disabled={currentStep === 0 && !selectedRole}
+                onClick={() => setCurrentStep(1)}
+                disabled={!selectedRole}
                 className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 次へ
                 <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {currentStep === 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-100">
+              <button
+                onClick={() => { setCurrentStep(0); setError('') }}
+                className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                戻る
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving || !name.trim()}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    保存中...
+                  </>
+                ) : (
+                  <>
+                    保存して次へ
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           )}

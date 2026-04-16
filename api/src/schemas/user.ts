@@ -5,6 +5,7 @@ export const updateProfileSchema = z.object({
   name: z.string().min(1).max(100),
   phone: z.string().max(20).optional(),
   address: z.string().optional(),
+  role: z.enum(['seller', 'buyer', 'professional']).optional(),
 })
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

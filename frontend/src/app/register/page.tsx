@@ -1,9 +1,104 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Loader2, Building2, ShoppingCart } from 'lucide-react'
+import { useAuth } from '@/providers/AuthProvider'
+
+type RoleOption = 'seller' | 'buyer'
+
+const roleDashboard: Record<string, string> = {
+  seller: '/seller',
+  buyer: '/buyer',
+}
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const { user, login } = useAuth()
+  const [step, setStep] = useState<'role' | 'form'>('role')
+  const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      router.replace(roleDashboard[user.role] ?? '/')
+    }
+  }, [user, router])
+
+  if (user) return null
+
+  const handleRoleSelect = (role: RoleOption) => {
+    setSelectedRole(role)
+    setStep('form')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!name.trim()) {
+      setError('お名前を入力してください')
+      return
+    }
+    if (!email) {
+      setError('メールアドレスを入力してください')
+      return
+    }
+    if (password.length < 8) {
+      setError('パスワードは8文字以上で設定してください')
+      return
+    }
+    if (password !== passwordConfirm) {
+      setError('パスワードが一致しません')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // BetterAuth でサインアップ
+      const res = await fetch('/api/auth/sign-up/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          name: name.trim(),
+          role: selectedRole,
+        }),
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        setError(data?.message ?? '登録に失敗しました')
+        setLoading(false)
+        return
+      }
+
+      // 登録成功 → ログイン
+      const loginResult = await login(email, password)
+      setLoading(false)
+
+      if (loginResult.success) {
+        router.push(roleDashboard[selectedRole ?? 'buyer'] ?? '/')
+      } else {
+        // 登録は成功したがログイン失敗（稀）
+        router.push('/login')
+      }
+    } catch {
+      setError('ネットワークエラーが発生しました')
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
-      {/* ヘッダー（控えめ） */}
       <header className="py-6">
         <div className="max-w-7xl mx-auto px-4">
           <Link href="/" className="flex items-center gap-2 w-fit">
@@ -15,110 +110,162 @@ export default function RegisterPage() {
         </div>
       </header>
 
-      {/* メイン */}
       <main className="flex-1 flex items-center justify-center px-4 pb-16">
         <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-card p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-xl font-bold text-foreground mb-2">新規登録</h1>
-              <p className="text-sm text-neutral-400">
-                アカウントを作成して、相続不動産の売却・購入を始めましょう
+          {step === 'role' ? (
+            /* ステップ1: ロール選択 */
+            <div>
+              <div className="text-center mb-8">
+                <h1 className="text-xl font-bold text-foreground mb-2">新規登録</h1>
+                <p className="text-sm text-neutral-400">
+                  ご利用目的を選択してください
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleRoleSelect('seller')}
+                  className="w-full bg-white rounded-2xl shadow-card p-6 text-left hover:ring-2 hover:ring-primary-300 transition-all group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary-100 transition-colors">
+                      <Building2 className="w-6 h-6 text-primary-500" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-foreground">不動産を売却したい</p>
+                      <p className="text-sm text-neutral-400 mt-1">
+                        相続した不動産を入札方式で売却できます
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleRoleSelect('buyer')}
+                  className="w-full bg-white rounded-2xl shadow-card p-6 text-left hover:ring-2 hover:ring-cta-300 transition-all group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-cta-50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-cta-100 transition-colors">
+                      <ShoppingCart className="w-6 h-6 text-cta-500" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-foreground">不動産を購入したい</p>
+                      <p className="text-sm text-neutral-400 mt-1">
+                        相続不動産を適正価格で購入・入札できます
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-neutral-400 mt-6">
+                士業・提携業者の方は
+                <Link href="/partners" className="text-primary-500 hover:underline ml-1">パートナー案内</Link>
+                をご覧ください
+              </p>
+
+              <p className="text-center text-sm text-neutral-400 mt-4">
+                すでにアカウントをお持ちの方は
+                <Link href="/login" className="text-primary-500 hover:text-primary-600 font-medium ml-1">ログイン</Link>
               </p>
             </div>
+          ) : (
+            /* ステップ2: 入力フォーム */
+            <div className="bg-white rounded-2xl shadow-card p-8">
+              <div className="mb-6">
+                <button
+                  onClick={() => { setStep('role'); setError(null) }}
+                  className="text-xs text-neutral-400 hover:text-neutral-600 mb-3 inline-block"
+                >
+                  ← 戻る
+                </button>
+                <h1 className="text-xl font-bold text-foreground mb-1">
+                  {selectedRole === 'seller' ? '売主として登録' : '買い手として登録'}
+                </h1>
+                <p className="text-sm text-neutral-400">
+                  基本情報を入力してください
+                </p>
+              </div>
 
-            {/* メールアドレス・パスワード登録 */}
-            <form className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
-                  お名前 <span className="text-error-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="山田 太郎"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
-                  メールアドレス <span className="text-error-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  placeholder="mail@example.com"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
-                  パスワード <span className="text-error-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  placeholder="8文字以上"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
-                />
-                <p className="text-xs text-neutral-400 mt-1.5">8文字以上で設定してください</p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
-                  パスワード（確認） <span className="text-error-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  placeholder="もう一度入力"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all"
-              >
-                アカウントを作成
-              </button>
-            </form>
+              {error && (
+                <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-xl text-sm text-error-600">
+                  {error}
+                </div>
+              )}
 
-            {/* 区切り線 */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-3 text-neutral-400">または</span>
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+                    {selectedRole === 'buyer' ? 'お名前 / 会社名' : 'お名前'} <span className="text-error-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={selectedRole === 'buyer' ? '山田 太郎 / 株式会社〇〇' : '山田 太郎'}
+                    autoComplete="name"
+                    className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+                    メールアドレス <span className="text-error-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="mail@example.com"
+                    autoComplete="email"
+                    className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+                    パスワード <span className="text-error-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="8文字以上"
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  />
+                  <p className="text-xs text-neutral-400 mt-1.5">8文字以上で設定してください</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+                    パスワード（確認） <span className="text-error-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    placeholder="もう一度入力"
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  アカウントを作成
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-[11px] text-neutral-400 leading-relaxed">
+                登録することで、
+                <Link href="/terms" className="text-primary-500 hover:underline">利用規約</Link>
+                および
+                <Link href="/privacy" className="text-primary-500 hover:underline">プライバシーポリシー</Link>
+                に同意したものとみなされます。
+              </p>
             </div>
-
-            {/* OAuth */}
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-foreground hover:bg-neutral-50 active:scale-[0.98] transition-all">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                </svg>
-                Googleで登録
-              </button>
-              <button className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#06C755] rounded-xl text-sm font-medium text-white hover:bg-[#05b34c] active:scale-[0.98] transition-all">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .348-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .349-.281.631-.63.631h-2.386c-.345 0-.627-.282-.627-.631V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.627-.631.627-.346 0-.626-.283-.626-.627V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.627-.631.627-.345 0-.627-.283-.627-.627V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.627H4.917c-.345 0-.63-.282-.63-.627V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .349-.281.631-.629.631M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                </svg>
-                LINEで登録
-              </button>
-            </div>
-
-            <p className="mt-6 text-center text-[11px] text-neutral-400 leading-relaxed">
-              登録することで、
-              <Link href="/terms" className="text-primary-500 hover:underline">利用規約</Link>
-              および
-              <Link href="/privacy" className="text-primary-500 hover:underline">プライバシーポリシー</Link>
-              に同意したものとみなされます。
-            </p>
-          </div>
-
-          <p className="text-center text-sm text-neutral-400 mt-6">
-            すでにアカウントをお持ちの方は
-            <Link href="/login" className="text-primary-500 hover:text-primary-600 font-medium ml-1">ログイン</Link>
-          </p>
+          )}
         </div>
       </main>
     </div>

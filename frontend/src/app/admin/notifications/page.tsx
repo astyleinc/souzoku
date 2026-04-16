@@ -36,7 +36,6 @@ export default function AdminNotificationsPage() {
     <DashboardShell
       title="通知"
       roleLabel="管理画面"
-      userName="田中 太郎"
       navItems={adminNav}
     >
       <div className="flex items-center justify-between mb-6">

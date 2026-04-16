@@ -33,7 +33,6 @@ export default function BrokerInvoiceDetailPage() {
     <DashboardShell
       title="請求書詳細"
       roleLabel="提携業者"
-      userName="松本 大輝"
       navItems={brokerNav}
     >
       <Link href="/broker/invoices" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">

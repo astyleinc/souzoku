@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import {
   ArrowLeft,
   Mail,
@@ -9,31 +11,92 @@ import {
   Briefcase,
   FileText,
   Landmark,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { adminNav } from '@/config/navigation'
-import { mockBrokers, mockCases, CASE_STATUS_LABEL } from '@/data/mock-dashboard'
+import { api, toItems } from '@/lib/api'
 
-const caseStatusStyle: Record<string, string> = {
-  broker_assigned: 'bg-info-50 text-info-700',
-  seller_contacted: 'bg-info-50 text-info-700',
-  buyer_contacted: 'bg-warning-50 text-warning-700',
-  explanation_done: 'bg-warning-50 text-warning-700',
-  contract_signed: 'bg-success-50 text-success-700',
-  settlement_done: 'bg-success-50 text-success-700',
-  cancelled: 'bg-error-50 text-error-700',
+type BrokerDetail = {
+  id: string
+  companyName: string
+  representativeName: string
+  licenseNumber: string
+  email: string
+  phone: string
+  averageRating: number
+  totalDeals: number
+  bankName: string | null
+  branchName: string | null
+  accountType: string | null
+  accountNumber: string | null
+  createdAt: string
 }
 
+type CaseItem = {
+  id: string
+  propertyTitle: string
+  propertyAddress: string
+  sellerName: string
+  buyerName: string
+  status: string
+  amount: number
+}
+
+const toMan = (yen: number) => Math.round(yen / 10000)
+
 export default function AdminBrokerDetailPage() {
-  const broker = mockBrokers[0]
-  const brokerCases = mockCases.filter((c) => c.brokerName === broker.companyName)
+  const params = useParams()
+  const [broker, setBroker] = useState<BrokerDetail | null>(null)
+  const [cases, setCases] = useState<CaseItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const [brokerRes, casesRes] = await Promise.all([
+        api.get<unknown>(`/brokers/${params.id}`),
+        api.get<unknown>('/cases'),
+      ])
+      if (brokerRes.success) {
+        setBroker(brokerRes.data as BrokerDetail)
+        if (casesRes.success) {
+          const brokerCases = toItems<CaseItem>(casesRes.data).filter(
+            (c) => c.propertyTitle
+          )
+          setCases(brokerCases)
+        }
+      }
+      setLoading(false)
+    }
+    load()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <DashboardShell title="宅建業者詳細" roleLabel="管理者" navItems={adminNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (!broker) {
+    return (
+      <DashboardShell title="宅建業者詳細" roleLabel="管理者" navItems={adminNav}>
+        <p className="text-sm text-neutral-400 text-center py-20">業者が見つかりませんでした</p>
+      </DashboardShell>
+    )
+  }
+
+  const feeStage = broker.totalDeals <= 5 ? '60%' : broker.totalDeals <= 20 ? '55%' : '50%'
 
   return (
     <DashboardShell
       title="宅建業者詳細"
       roleLabel="管理者"
-      userName="Ouver運営"
       navItems={adminNav}
     >
       <Link href="/admin/brokers" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
@@ -42,7 +105,6 @@ export default function AdminBrokerDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* メイン情報 */}
         <div className="xl:col-span-2 space-y-6">
           {/* 会社プロフィール */}
           <div className="bg-white rounded-2xl shadow-card p-6">
@@ -72,7 +134,7 @@ export default function AdminBrokerDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-neutral-400" />
-                <span>登録日: {broker.createdAt}</span>
+                <span>登録日: {broker.createdAt?.slice(0, 10)}</span>
               </div>
             </div>
           </div>
@@ -84,7 +146,7 @@ export default function AdminBrokerDetailPage() {
               {[
                 { label: '総取引件数', value: broker.totalDeals, unit: '件' },
                 { label: '平均評価', value: broker.averageRating, unit: '' },
-                { label: '手数料段階', value: broker.totalDeals <= 5 ? '60%' : broker.totalDeals <= 20 ? '55%' : '50%', unit: '' },
+                { label: '手数料段階', value: feeStage, unit: '' },
               ].map((item) => (
                 <div key={item.label} className="text-center p-3 bg-neutral-50 rounded-xl">
                   <p className="text-xs text-neutral-400 mb-1">{item.label}</p>
@@ -102,9 +164,9 @@ export default function AdminBrokerDetailPage() {
                 担当案件
               </h3>
             </div>
-            {brokerCases.length > 0 ? (
+            {cases.length > 0 ? (
               <div className="divide-y divide-neutral-100">
-                {brokerCases.map((c) => (
+                {cases.map((c) => (
                   <div key={c.id} className="px-6 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -116,10 +178,8 @@ export default function AdminBrokerDetailPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${caseStatusStyle[c.status] || 'bg-neutral-100 text-neutral-600'}`}>
-                          {CASE_STATUS_LABEL[c.status]}
-                        </span>
-                        <p className="price text-sm mt-1">{c.amount.toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
+                        <CaseStatusBadge status={c.status} />
+                        <p className="price text-sm mt-1">{toMan(c.amount).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></p>
                       </div>
                     </div>
                   </div>
@@ -138,40 +198,47 @@ export default function AdminBrokerDetailPage() {
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="text-base font-semibold mb-4">管理操作</h3>
             <div className="space-y-3">
-              <button className="w-full px-4 py-2.5 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
+              <Link
+                href={`/admin/brokers/${params.id}/edit`}
+                className="block w-full px-4 py-2.5 text-sm font-medium text-center text-neutral-600 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+              >
                 編集する
-              </button>
-              <button className="w-full px-4 py-2.5 text-sm font-medium text-error-600 bg-error-50 border border-error-200 rounded-xl hover:bg-error-100 transition-colors">
-                提携を解除する
-              </button>
+              </Link>
             </div>
           </div>
 
-          {/* 振込口座 */}
-          <div className="bg-white rounded-2xl shadow-card p-6">
-            <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-              <Landmark className="w-4 h-4 text-cta-500" />
-              振込口座
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-neutral-400">銀行名</span>
-                <span>三菱UFJ銀行</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-400">支店名</span>
-                <span>日本橋支店</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-400">口座種別</span>
-                <span>普通</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-400">口座番号</span>
-                <span>1234567</span>
+          {broker.bankName && (
+            <div className="bg-white rounded-2xl shadow-card p-6">
+              <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+                <Landmark className="w-4 h-4 text-cta-500" />
+                振込口座
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">銀行名</span>
+                  <span>{broker.bankName}</span>
+                </div>
+                {broker.branchName && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">支店名</span>
+                    <span>{broker.branchName}</span>
+                  </div>
+                )}
+                {broker.accountType && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">口座種別</span>
+                    <span>{broker.accountType}</span>
+                  </div>
+                )}
+                {broker.accountNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">口座番号</span>
+                    <span>{broker.accountNumber}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </DashboardShell>

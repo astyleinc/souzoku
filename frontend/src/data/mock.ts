@@ -27,6 +27,7 @@ export type Property = {
   status: PropertyStatus
   urgency: Urgency
   bidCount: number
+  images: string[]
   imageUrl?: string
   description: string
   sellerReason: string
@@ -76,6 +77,12 @@ export const mockProperties: Property[] = [
     status: 'bidding',
     urgency: 'three_months',
     bidCount: 5,
+    images: [
+      '/images/dummy/japanese-house-01.jpg',
+      '/images/dummy/japanese-room-01.jpg',
+      '/images/dummy/japanese-room-02.jpg',
+      '/images/dummy/japanese-room-03.jpg',
+    ],
     description: '西武池袋線練馬駅徒歩5分。スーパー・コンビニ徒歩圏内。日当たり良好な南向き3LDK。',
     sellerReason: '親から相続。現在空室のため早期売却希望。',
     registrationStatus: '相続登記済み',
@@ -94,6 +101,10 @@ export const mockProperties: Property[] = [
     status: 'bidding',
     urgency: 'urgent',
     bidCount: 8,
+    images: [
+      '/images/dummy/japanese-house-02.jpg',
+      '/images/dummy/japanese-house-03.jpg',
+    ],
     description: 'JR中央線荻窪駅徒歩12分。第一種低層住居専用地域。建築条件なし。',
     sellerReason: '相続税納付のため早期現金化が必要。',
     registrationStatus: '相続登記済み',
@@ -114,6 +125,13 @@ export const mockProperties: Property[] = [
     status: 'bidding',
     urgency: 'three_months',
     bidCount: 3,
+    images: [
+      '/images/dummy/japanese-house-04.jpg',
+      '/images/dummy/japanese-house-05.jpg',
+      '/images/dummy/japanese-room-04.jpg',
+      '/images/dummy/japanese-room-05.jpg',
+      '/images/dummy/japanese-room-06.jpg',
+    ],
     description: '小田急線千歳船橋駅徒歩8分。1階・2階分離型の二世帯住宅。駐車場2台分あり。',
     sellerReason: '両親が他界し、維持管理が困難なため売却。',
     registrationStatus: '遺産分割協議済み',
@@ -134,6 +152,11 @@ export const mockProperties: Property[] = [
     status: 'published',
     urgency: 'one_year',
     bidCount: 0,
+    images: [
+      '/images/dummy/japanese-house-06.jpg',
+      '/images/dummy/japanese-room-07.jpg',
+      '/images/dummy/japanese-room-08.jpg',
+    ],
     description: '東急田園都市線たまプラーザ駅徒歩3分。ペット可。管理体制良好。',
     sellerReason: '相続により取得。居住予定なし。',
     registrationStatus: '登記手続き中',
@@ -154,6 +177,11 @@ export const mockProperties: Property[] = [
     status: 'closed',
     urgency: 'urgent',
     bidCount: 12,
+    images: [
+      '/images/dummy/japanese-house-07.jpg',
+      '/images/dummy/japanese-house-08.jpg',
+      '/images/dummy/japanese-room-09.jpg',
+    ],
     description: 'JR蒲田駅徒歩7分。商業地域。店舗兼住宅としても利用可能。',
     sellerReason: '相続人が遠方在住のため管理不能。',
     registrationStatus: '相続登記済み',
@@ -174,6 +202,11 @@ export const mockProperties: Property[] = [
     status: 'bidding',
     urgency: 'three_months',
     bidCount: 7,
+    images: [
+      '/images/dummy/japanese-house-09.jpg',
+      '/images/dummy/japanese-room-10.jpg',
+      '/images/dummy/japanese-room-11.jpg',
+    ],
     description: '東武東上線成増駅徒歩6分。リノベーション向き。管理費・修繕積立金安め。',
     sellerReason: '母が施設入所。維持費の負担軽減のため。',
     registrationStatus: '相続登記済み',
@@ -194,6 +227,13 @@ export const mockProperties: Property[] = [
     status: 'pending_approval',
     urgency: 'three_months',
     bidCount: 4,
+    images: [
+      '/images/dummy/japanese-house-10.jpg',
+      '/images/dummy/japanese-house-11.jpg',
+      '/images/dummy/japanese-room-12.jpg',
+      '/images/dummy/japanese-room-13.jpg',
+      '/images/dummy/japanese-room-14.jpg',
+    ],
     description: '東急田園都市線鷺沼駅バス10分。閑静な住宅街。庭付き。',
     sellerReason: '兄弟で相続。全員売却に合意。',
     registrationStatus: '相続登記済み',
@@ -214,6 +254,10 @@ export const mockProperties: Property[] = [
     status: 'bidding',
     urgency: 'undecided',
     bidCount: 2,
+    images: [
+      '/images/dummy/japanese-house-12.jpg',
+      '/images/dummy/japanese-room-01.jpg',
+    ],
     description: 'JR中野駅徒歩4分。現在賃貸中（利回り5.2%）。オーナーチェンジ。',
     sellerReason: '遺産整理の一環。',
     registrationStatus: '相続登記済み',

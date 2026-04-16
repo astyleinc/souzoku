@@ -1,12 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Clock,
   CheckCircle,
   MessageSquare,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
+import { api, toItems } from '@/lib/api'
 
 type SupportTicket = {
   id: string
@@ -23,22 +26,38 @@ const statusConfig = {
   resolved: { label: '解決済み', icon: CheckCircle, className: 'bg-success-50 text-success-700' },
 }
 
-const mockTickets: SupportTicket[] = [
-  { id: 'tk1', subject: '物件の審査状況について', category: '物件掲載', status: 'resolved', createdAt: '2026-04-10', updatedAt: '2026-04-12' },
-  { id: 'tk2', subject: '入札金額の変更方法を教えてください', category: '入札', status: 'in_progress', createdAt: '2026-04-14', updatedAt: '2026-04-15' },
-  { id: 'tk3', subject: '書類のアップロードでエラーが出ます', category: '書類', status: 'open', createdAt: '2026-04-16', updatedAt: '2026-04-16' },
-]
-
 type SupportTicketListProps = {
   contactHref: string
 }
 
 export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
+  const [tickets, setTickets] = useState<SupportTicket[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/support/tickets')
+      if (res.success) {
+        setTickets(toItems<SupportTicket>(res.data))
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* ヘッダー操作 */}
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-neutral-400">お問い合わせ {mockTickets.length}件</p>
+        <p className="text-sm text-neutral-400">お問い合わせ {tickets.length}件</p>
         <Link
           href={contactHref}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
@@ -48,7 +67,7 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
         </Link>
       </div>
 
-      {mockTickets.length === 0 ? (
+      {tickets.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-card p-12 text-center">
           <MessageSquare className="w-8 h-8 text-neutral-200 mx-auto mb-3" />
           <p className="text-sm font-medium text-neutral-500">お問い合わせ履歴はありません</p>
@@ -70,8 +89,8 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTickets.map((ticket) => {
-                    const sc = statusConfig[ticket.status]
+                  {tickets.map((ticket) => {
+                    const sc = statusConfig[ticket.status] ?? statusConfig.open
                     return (
                       <tr key={ticket.id} className="border-t border-neutral-100 hover:bg-neutral-50/50">
                         <td className="py-3.5 px-5 font-medium">{ticket.subject}</td>
@@ -82,8 +101,8 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
                             {sc.label}
                           </span>
                         </td>
-                        <td className="py-3.5 px-5 text-neutral-400">{ticket.createdAt}</td>
-                        <td className="py-3.5 px-5 text-neutral-400">{ticket.updatedAt}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{ticket.createdAt?.slice(0, 10)}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{ticket.updatedAt?.slice(0, 10)}</td>
                       </tr>
                     )
                   })}
@@ -94,8 +113,8 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
 
           {/* モバイル: カード */}
           <div className="lg:hidden space-y-3">
-            {mockTickets.map((ticket) => {
-              const sc = statusConfig[ticket.status]
+            {tickets.map((ticket) => {
+              const sc = statusConfig[ticket.status] ?? statusConfig.open
               return (
                 <div key={ticket.id} className="bg-white rounded-2xl shadow-card p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -107,7 +126,7 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400">
                     <span>{ticket.category}</span>
-                    <span>{ticket.createdAt}</span>
+                    <span>{ticket.createdAt?.slice(0, 10)}</span>
                   </div>
                 </div>
               )

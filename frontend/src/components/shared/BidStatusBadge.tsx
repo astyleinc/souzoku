@@ -8,12 +8,13 @@ const bidStatusStyle: Record<BidStatus, string> = {
   cancelled: 'bg-neutral-100 text-neutral-400',
 }
 
-export const BidStatusBadge = ({ status }: { status: BidStatus }) => {
+export const BidStatusBadge = ({ status }: { status: string }) => {
+  const s = status as BidStatus
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${bidStatusStyle[status]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${bidStatusStyle[s] ?? 'bg-neutral-100 text-neutral-500'}`}
     >
-      {BID_STATUS_LABEL[status]}
+      {BID_STATUS_LABEL[s] ?? status}
     </span>
   )
 }

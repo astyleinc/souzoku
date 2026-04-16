@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import {
   Gavel,
@@ -12,13 +13,19 @@ import {
 } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { PropertyCard } from '@/components/property/PropertyCard'
-import { mockProperties } from '@/data/mock'
+import { FeaturedProperties } from '@/components/home/FeaturedProperties'
+
+export const metadata: Metadata = {
+  title: 'Ouver｜相続不動産の入札売却プラットフォーム',
+  description: '相続で取得した不動産を、入札方式で適正価格・短期間で売却。士業との連携で相続手続きもワンストップで解決します。',
+  openGraph: {
+    title: 'Ouver｜相続不動産の入札売却プラットフォーム',
+    description: '相続で取得した不動産を、入札方式で適正価格・短期間で売却。',
+    type: 'website',
+  },
+}
 
 export default function HomePage() {
-  const featuredProperties = mockProperties
-    .filter((p) => p.status === 'bidding')
-    .slice(0, 4)
 
   return (
     <>
@@ -196,41 +203,7 @@ export default function HomePage() {
         </section>
 
         {/* 入札中の物件 */}
-        <section className="bg-white py-14 lg:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-end justify-between mb-8">
-              <div>
-                <p className="text-sm font-medium text-cta-600 mb-1">現在入札受付中</p>
-                <h2 className="text-2xl font-bold text-foreground">
-                  {featuredProperties.length}件の物件に入札できます
-                </h2>
-              </div>
-              <Link
-                href="/properties?status=bidding"
-                className="hidden sm:inline-flex items-center text-sm text-primary-500 hover:text-primary-600 font-medium"
-              >
-                すべての物件を見る
-                <ArrowRight className="ml-1 w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-
-            <div className="mt-6 text-center sm:hidden">
-              <Link
-                href="/properties?status=bidding"
-                className="inline-flex items-center text-sm text-primary-500 font-medium"
-              >
-                すべての物件を見る
-                <ArrowRight className="ml-1 w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
+        <FeaturedProperties />
 
         {/* ご利用の流れ — 均等4カラムではなく、番号付きの縦ステップ（大画面では交互レイアウト） */}
         <section id="how-it-works" className="bg-neutral-50 py-14 lg:py-20">

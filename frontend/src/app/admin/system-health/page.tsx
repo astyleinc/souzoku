@@ -1,34 +1,34 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle,
   AlertTriangle,
   XCircle,
   Activity,
-  Clock,
   Users,
   Zap,
   RefreshCw,
+  Loader2,
+  Building2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
+import { api } from '@/lib/api'
 
-const healthCards = [
-  { label: 'API稼働率', value: '99.98%', sub: '過去30日', icon: Activity, color: 'text-success-500', bg: 'bg-success-50' },
-  { label: 'レスポンス時間', value: '142ms', sub: 'p95', icon: Zap, color: 'text-info-500', bg: 'bg-info-50' },
-  { label: 'エラー率', value: '0.02%', sub: '過去24時間', icon: AlertTriangle, color: 'text-warning-500', bg: 'bg-warning-50' },
-  { label: 'アクティブユーザー', value: '284', sub: '現在オンライン', icon: Users, color: 'text-primary-500', bg: 'bg-primary-50' },
-]
-
-const services = [
-  { name: 'Web アプリケーション', status: 'operational' as const, latency: '89ms' },
-  { name: 'API サーバー', status: 'operational' as const, latency: '142ms' },
-  { name: 'データベース', status: 'operational' as const, latency: '12ms' },
-  { name: 'ストレージ', status: 'operational' as const, latency: '45ms' },
-  { name: '認証サービス', status: 'operational' as const, latency: '67ms' },
-  { name: 'メール配信', status: 'degraded' as const, latency: '320ms' },
-  { name: 'PDF生成', status: 'operational' as const, latency: '1.2s' },
-]
+type SystemHealth = {
+  status: 'healthy' | 'degraded' | 'unhealthy'
+  timestamp: string
+  services: {
+    api: { status: 'operational' | 'degraded' | 'down' }
+    database: { status: 'operational' | 'degraded' | 'down'; responseTimeMs: number }
+  }
+  metrics: {
+    totalUsers: number
+    totalProperties: number
+    activeSessions: number
+  }
+}
 
 const serviceStatusConfig = {
   operational: { label: '正常', icon: CheckCircle, className: 'text-success-500' },
@@ -36,87 +36,139 @@ const serviceStatusConfig = {
   down: { label: '停止', icon: XCircle, className: 'text-error-500' },
 }
 
-const incidents = [
-  { date: '2026-04-15 09:30', title: 'メール配信の遅延', status: 'monitoring', detail: '一部のメール配信に最大5分の遅延が発生。原因調査中。' },
-  { date: '2026-04-10 14:00', title: 'API レスポンス低下（解決済み）', status: 'resolved', detail: 'データベース接続プールの枯渇により、APIレスポンスが一時的に低下。接続プール設定を調整し解決。' },
-  { date: '2026-04-02 03:00', title: '定期メンテナンス（完了）', status: 'resolved', detail: 'データベースのバージョンアップグレードを実施。約30分のダウンタイム。' },
-]
-
 export default function AdminSystemHealthPage() {
+  const [health, setHealth] = useState<SystemHealth | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchHealth = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
+    setError(null)
+
+    const res = await api.get<SystemHealth>('/admin/system-health')
+    if (res.success) {
+      setHealth(res.data)
+    } else {
+      setError('システム情報の取得に失敗しました')
+    }
+
+    if (isRefresh) setRefreshing(false)
+    else setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchHealth()
+  }, [fetchHealth])
+
+  if (loading) {
+    return (
+      <DashboardShell title="システム状態" roleLabel="管理者" navItems={adminNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  if (error || !health) {
+    return (
+      <DashboardShell title="システム状態" roleLabel="管理者" navItems={adminNav}>
+        <div className="flex items-center gap-2 p-4 bg-error-50 border border-error-200 rounded-xl mb-6">
+          <XCircle className="w-5 h-5 text-error-500" />
+          <span className="text-sm font-medium text-error-700">{error ?? 'データを取得できませんでした'}</span>
+          <button onClick={() => fetchHealth()} className="ml-auto text-sm text-error-600 hover:underline">再試行</button>
+        </div>
+      </DashboardShell>
+    )
+  }
+
+  const overallOk = health.status === 'healthy'
+  const dbStatus = health.services?.database ?? { status: 'down' as const, responseTimeMs: 0 }
+  const apiStatus = health.services?.api ?? { status: 'down' as const }
+  const dbMs = dbStatus.responseTimeMs ?? 0
+
+  const serviceList = [
+    { name: 'APIサーバー', status: apiStatus.status, latency: '-' },
+    { name: 'データベース', status: dbStatus.status, latency: `${dbMs}ms` },
+  ]
+
   return (
     <DashboardShell
       title="システム状態"
       roleLabel="管理者"
-      userName="管理者"
       navItems={adminNav}
     >
       {/* 全体ステータス */}
-      <div className="flex items-center gap-2 p-4 bg-success-50 border border-success-200 rounded-xl mb-6">
-        <CheckCircle className="w-5 h-5 text-success-500" />
-        <span className="text-sm font-medium text-success-700">すべてのシステムは正常に稼働しています</span>
-        <span className="ml-auto text-xs text-success-600">最終確認: 2026-04-16 14:30</span>
+      <div className={`flex items-center gap-2 p-4 rounded-xl mb-6 ${overallOk ? 'bg-success-50 border border-success-200' : 'bg-warning-50 border border-warning-200'}`}>
+        {overallOk ? (
+          <CheckCircle className="w-5 h-5 text-success-500" />
+        ) : (
+          <AlertTriangle className="w-5 h-5 text-warning-500" />
+        )}
+        <span className={`text-sm font-medium ${overallOk ? 'text-success-700' : 'text-warning-700'}`}>
+          {overallOk ? 'すべてのシステムは正常に稼働しています' : 'システムに異常が検出されています'}
+        </span>
+        <span className={`ml-auto text-xs ${overallOk ? 'text-success-600' : 'text-warning-600'}`}>
+          最終確認: {(health.timestamp ?? '').replace('T', ' ').slice(0, 19) || '—'}
+        </span>
       </div>
 
       {/* KPIカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {healthCards.map((card) => (
+        {[
+          { icon: Activity, color: 'text-success-500', bg: 'bg-success-50', label: 'DB応答時間', value: `${dbMs}ms` },
+          { icon: Zap, color: 'text-info-500', bg: 'bg-info-50', label: 'ステータス', value: overallOk ? '正常' : '要確認' },
+          { icon: Users, color: 'text-primary-500', bg: 'bg-primary-50', label: '登録ユーザー', value: String(health.metrics?.totalUsers ?? 0) },
+          { icon: Building2, color: 'text-cta-500', bg: 'bg-cta-50', label: '登録物件', value: String(health.metrics?.totalProperties ?? 0) },
+        ].map((card) => (
           <div key={card.label} className="bg-white rounded-2xl shadow-card p-5">
             <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center mb-3`}>
               <card.icon className={`w-[18px] h-[18px] ${card.color}`} />
             </div>
             <p className="text-2xl font-bold">{card.value}</p>
-            <p className="text-xs text-neutral-400 mt-0.5">{card.label}（{card.sub}）</p>
+            <p className="text-xs text-neutral-400 mt-0.5">{card.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* サービス別ステータス */}
-        <div className="bg-white rounded-2xl shadow-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold">サービス別ステータス</h2>
-            <button className="p-1.5 text-neutral-400 hover:text-neutral-600 rounded-lg transition-colors">
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {services.map((svc) => {
-              const sc = serviceStatusConfig[svc.status]
-              return (
-                <div key={svc.name} className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <sc.icon className={`w-4 h-4 ${sc.className}`} />
-                    <span className="text-sm">{svc.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-neutral-400 font-mono">{svc.latency}</span>
-                    <span className={`text-xs font-medium ${sc.className}`}>{sc.label}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      {/* サービス別ステータス */}
+      <div className="bg-white rounded-2xl shadow-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold">サービス別ステータス</h2>
+          <button
+            onClick={() => fetchHealth(true)}
+            disabled={refreshing}
+            className="p-1.5 text-neutral-400 hover:text-neutral-600 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-
-        {/* インシデントタイムライン */}
-        <div className="bg-white rounded-2xl shadow-card p-6">
-          <h2 className="text-base font-semibold mb-4">インシデント履歴</h2>
-          <div className="space-y-4">
-            {incidents.map((inc) => (
-              <div key={inc.date} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${inc.status === 'resolved' ? 'bg-success-500' : 'bg-warning-500'}`} />
-                  <div className="w-px flex-1 bg-neutral-200 my-1" />
+        <div className="space-y-2">
+          {serviceList.map((svc) => {
+            const sc = serviceStatusConfig[svc.status]
+            return (
+              <div key={svc.name} className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0">
+                <div className="flex items-center gap-2">
+                  <sc.icon className={`w-4 h-4 ${sc.className}`} />
+                  <span className="text-sm">{svc.name}</span>
                 </div>
-                <div className="pb-4">
-                  <p className="text-sm font-medium">{inc.title}</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">{inc.date}</p>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">{inc.detail}</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-neutral-400 font-mono">{svc.latency}</span>
+                  <span className={`text-xs font-medium ${sc.className}`}>{sc.label}</span>
                 </div>
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
+      </div>
+
+      {/* アクティブセッション */}
+      <div className="mt-6 bg-white rounded-2xl shadow-card p-6">
+        <h2 className="text-base font-semibold mb-2">アクティブセッション</h2>
+        <p className="text-3xl font-bold">{health.metrics?.activeSessions ?? 0}</p>
+        <p className="text-xs text-neutral-400 mt-1">現在有効なセッション数</p>
       </div>
     </DashboardShell>
   )

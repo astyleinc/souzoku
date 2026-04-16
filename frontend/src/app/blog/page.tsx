@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { Calendar, Tag, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Calendar, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { api, toItems } from '@/lib/api'
+
+type BlogPost = {
+  slug: string
+  title: string
+  excerpt: string
+  category: string
+  publishedAt: string
+  thumbnailUrl: string | null
+}
 
 const categories = [
   { key: 'all', label: 'すべて' },
@@ -12,15 +22,6 @@ const categories = [
   { key: 'column', label: '相続コラム' },
   { key: 'case', label: '活用事例' },
   { key: 'update', label: '更新情報' },
-]
-
-const mockArticles = [
-  { slug: 'service-launch', title: 'Ouverサービス開始のお知らせ', excerpt: '相続不動産に特化した入札型マッチングプラットフォーム「Ouver」が正式にサービスを開始しました。', category: 'news', date: '2026-04-15', thumbnail: null },
-  { slug: 'inheritance-tax-basics', title: '相続不動産の税金、基礎から解説', excerpt: '相続で取得した不動産にかかる税金の種類と、知っておくべき控除制度について、わかりやすく解説します。', category: 'column', date: '2026-04-12', thumbnail: null },
-  { slug: 'nerima-apartment-case', title: '練馬区のマンションが入札開始2週間で成約', excerpt: '相続で取得したマンションを、入札方式でスピーディーに売却できた事例をご紹介します。', category: 'case', date: '2026-04-10', thumbnail: null },
-  { slug: 'bid-system-update', title: '入札機能のアップデートについて', excerpt: '入札金額の更新機能、入札履歴の表示など、入札に関する機能を改善しました。', category: 'update', date: '2026-04-08', thumbnail: null },
-  { slug: 'registration-free-guide', title: '相続登記が未完了でも掲載OK。条件付き掲載の仕組み', excerpt: '2024年に義務化された相続登記。手続き中でもOuverに掲載できる「条件付き掲載」について解説します。', category: 'column', date: '2026-04-05', thumbnail: null },
-  { slug: 'professional-network', title: '士業ネットワークとの連携を強化しました', excerpt: '税理士・司法書士・弁護士との提携を拡大し、より多くの相続相談にお応えできるようになりました。', category: 'news', date: '2026-04-01', thumbnail: null },
 ]
 
 const categoryLabel: Record<string, string> = {
@@ -39,10 +40,21 @@ const categoryColor: Record<string, string> = {
 
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = activeCategory === 'all'
-    ? mockArticles
-    : mockArticles.filter((a) => a.category === activeCategory)
+  useEffect(() => {
+    const load = async () => {
+      const params = activeCategory !== 'all' ? `?category=${activeCategory}` : ''
+      const res = await api.get<unknown>(`/blog/posts${params}`)
+      if (res.success) {
+        setPosts(toItems<BlogPost>(res.data))
+      }
+      setLoading(false)
+    }
+    setLoading(true)
+    load()
+  }, [activeCategory])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -71,50 +83,48 @@ export default function BlogPage() {
             ))}
           </div>
 
-          {/* 記事グリッド */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-            {filtered.map((article) => (
-              <Link
-                key={article.slug}
-                href={`/blog/${article.slug}`}
-                className="bg-white rounded-2xl shadow-card overflow-hidden hover:shadow-md transition-shadow group"
-              >
-                <div className="h-40 bg-neutral-100 flex items-center justify-center">
-                  <span className="text-xs text-neutral-400">サムネイル画像</span>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${categoryColor[article.category]}`}>
-                      {categoryLabel[article.category]}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-neutral-400">
-                      <Calendar className="w-3 h-3" />
-                      {article.date}
-                    </span>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+            </div>
+          ) : posts.length === 0 ? (
+            <p className="text-sm text-neutral-400 text-center py-20">記事がありません</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              {posts.map((article) => (
+                <Link
+                  key={article.slug}
+                  href={`/blog/${article.slug}`}
+                  className="bg-white rounded-2xl shadow-card overflow-hidden hover:shadow-md transition-shadow group"
+                >
+                  <div className="h-40 bg-neutral-100 flex items-center justify-center">
+                    {article.thumbnailUrl ? (
+                      <img src={article.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-neutral-400">サムネイル画像</span>
+                    )}
                   </div>
-                  <h2 className="text-sm font-semibold mb-1.5 group-hover:text-primary-500 transition-colors">
-                    {article.title}
-                  </h2>
-                  <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
-                    {article.excerpt}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* ページネーション */}
-          <div className="flex items-center justify-center gap-2">
-            <button className="p-2 text-neutral-400 hover:text-neutral-600 rounded-lg transition-colors" disabled>
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="w-8 h-8 text-sm font-medium text-white bg-primary-500 rounded-lg">1</button>
-            <button className="w-8 h-8 text-sm font-medium text-neutral-500 hover:bg-neutral-100 rounded-lg transition-colors">2</button>
-            <button className="w-8 h-8 text-sm font-medium text-neutral-500 hover:bg-neutral-100 rounded-lg transition-colors">3</button>
-            <button className="p-2 text-neutral-400 hover:text-neutral-600 rounded-lg transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${categoryColor[article.category] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                        {categoryLabel[article.category] ?? article.category}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-neutral-400">
+                        <Calendar className="w-3 h-3" />
+                        {article.publishedAt?.slice(0, 10)}
+                      </span>
+                    </div>
+                    <h2 className="text-sm font-semibold mb-1.5 group-hover:text-primary-500 transition-colors">
+                      {article.title}
+                    </h2>
+                    <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
+                      {article.excerpt}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       <Footer />

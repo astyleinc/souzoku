@@ -1,5 +1,5 @@
 import { CheckCircle, AlertCircle, Clock, Bell } from 'lucide-react'
-import type { Notification } from '@/data/mock-dashboard'
+import type { Notification } from '@/types/dashboard'
 
 const typeIcon = {
   info: Clock,

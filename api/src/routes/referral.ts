@@ -44,6 +44,14 @@ referralRoutes.get('/me/clients', auth, requireRole('professional'), validateQue
   return paginated(c, result)
 })
 
+// 紹介クライアント詳細
+referralRoutes.get('/me/clients/:id', auth, requireRole('professional'), validateUuidParam('id'), async (c) => {
+  const user = c.get('user')
+  const professional = await services.professional.getByUserId(user.id)
+  const result = await services.referral.getClientDetail(professional.id, c.req.param('id'))
+  return ok(c, result)
+})
+
 // 紹介コード検証（公開エンドポイント）
 referralRoutes.get('/validate/:code', async (c) => {
   const code = c.req.param('code')

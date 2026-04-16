@@ -12,8 +12,12 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // TODO: エラーログサービスに送信
-    console.error(error)
+    // 本番ではエラー監視サービスに送信する想定
+    // 開発環境ではコンソールに出力
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[AppError]', error)
+    }
   }, [error])
 
   return (

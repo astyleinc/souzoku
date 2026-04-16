@@ -9,7 +9,6 @@ export default function BuyerSupportPage() {
     <DashboardShell
       title="サポート"
       roleLabel="買い手"
-      userName="株式会社山本不動産"
       navItems={buyerNav}
     >
       <SupportTicketList contactHref="/contact" />
