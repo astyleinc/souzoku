@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   Bell,
   CheckCircle,
@@ -7,10 +8,14 @@ import {
   Info,
   AlertTriangle,
   Check,
+  Loader2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { adminNav } from '@/config/navigation'
+import { api, toItems } from '@/lib/api'
+import { toNotification } from '@/types/dashboard'
+import type { ApiNotification } from '@/types/dashboard'
 
 const typeConfig = {
   info: { icon: Info, iconColor: 'text-info-500', bgColor: 'bg-info-50' },
@@ -19,18 +24,56 @@ const typeConfig = {
   error: { icon: AlertCircle, iconColor: 'text-error-500', bgColor: 'bg-error-50' },
 }
 
-const adminNotifications = [
-  { id: 'an1', message: '新しい物件が審査待ちです: 港区 タワーマンション', type: 'info' as const, isRead: false, createdAt: '2026-04-16 09:00' },
-  { id: 'an2', message: '売主が入札者を選択しました（最高額以外）: 練馬区 駅近マンション', type: 'warning' as const, isRead: false, createdAt: '2026-04-15 16:30' },
-  { id: 'an3', message: '即決価格に到達しました: 杉並区 閑静な住宅地の土地', type: 'warning' as const, isRead: false, createdAt: '2026-04-15 14:00' },
-  { id: 'an4', message: '新規士業パートナーの認証申請: 木村 美紀（行政書士）', type: 'info' as const, isRead: false, createdAt: '2026-04-15 10:00' },
-  { id: 'an5', message: '決済完了: 大田区 商業地の一戸建て（収益配分を確認してください）', type: 'success' as const, isRead: true, createdAt: '2026-04-14 16:00' },
-  { id: 'an6', message: '登記未完了の物件が2ヶ月経過: 板橋区 リノベ向きマンション', type: 'error' as const, isRead: true, createdAt: '2026-04-14 09:00' },
-  { id: 'an7', message: '新しい物件が代理登録されました: 新宿区 投資用マンション', type: 'info' as const, isRead: true, createdAt: '2026-04-13 15:00' },
-]
+type Notification = {
+  id: string
+  message: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  isRead: boolean
+  createdAt: string
+}
 
 export default function AdminNotificationsPage() {
-  const unreadCount = adminNotifications.filter((n) => !n.isRead).length
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/notifications?limit=50')
+      if (res.success) {
+        setNotifications(
+          toItems<ApiNotification>(res.data).map((n) => {
+            const mapped = toNotification(n)
+            return {
+              id: mapped.id,
+              message: mapped.message,
+              type: mapped.type as Notification['type'],
+              isRead: mapped.isRead,
+              createdAt: mapped.createdAt,
+            }
+          })
+        )
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const handleReadAll = async () => {
+    await api.post('/notifications/read-all')
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
+  if (loading) {
+    return (
+      <DashboardShell title="通知" roleLabel="管理画面" navItems={adminNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell
@@ -43,14 +86,17 @@ export default function AdminNotificationsPage() {
           未読 <span className="font-medium text-foreground">{unreadCount}</span> 件
         </p>
         {unreadCount > 0 && (
-          <button className="inline-flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium transition-colors">
+          <button
+            onClick={handleReadAll}
+            className="inline-flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium transition-colors"
+          >
             <Check className="w-3.5 h-3.5" />
             すべて既読にする
           </button>
         )}
       </div>
 
-      {adminNotifications.length === 0 ? (
+      {notifications.length === 0 ? (
         <EmptyState
           icon={Bell}
           title="通知はありません"
@@ -58,8 +104,8 @@ export default function AdminNotificationsPage() {
         />
       ) : (
         <div className="bg-white rounded-2xl shadow-card divide-y divide-neutral-100">
-          {adminNotifications.map((notification) => {
-            const config = typeConfig[notification.type]
+          {notifications.map((notification) => {
+            const config = typeConfig[notification.type] ?? typeConfig.info
             return (
               <div
                 key={notification.id}

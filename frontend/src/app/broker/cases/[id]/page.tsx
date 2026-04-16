@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import {
   Upload,
@@ -23,6 +23,48 @@ const statusSteps = [
   { key: 'contract_signed', label: '契約締結' },
   { key: 'settlement_done', label: '決済完了' },
 ]
+
+const DocUploadRow = ({ label, caseId }: { label: string; caseId: string }) => {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploaded, setUploaded] = useState(false)
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('name', label)
+    formData.append('caseId', caseId)
+    const res = await api.upload(`/documents/upload`, formData)
+    setUploading(false)
+    if (res.success) setUploaded(true)
+    e.target.value = ''
+  }
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
+      <span className="text-sm">{label}</span>
+      <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUpload} />
+      {uploaded ? (
+        <span className="inline-flex items-center gap-1.5 text-xs text-success-600 font-medium">
+          <CheckCircle className="w-3.5 h-3.5" />
+          アップロード済み
+        </span>
+      ) : (
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-primary-500 bg-white border border-neutral-200 rounded-xl hover:bg-primary-50 transition-colors disabled:opacity-50"
+        >
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          アップロード
+        </button>
+      )}
+    </div>
+  )
+}
 
 type CaseDetail = {
   id: string
@@ -195,13 +237,7 @@ export default function BrokerCaseDetailPage() {
                 { label: '売買契約書', required: currentStepIndex >= 4 },
                 { label: '決済完了証明書類', required: caseData.status === 'settlement_done' },
               ].map((doc) => (
-                <div key={doc.label} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
-                  <span className="text-sm">{doc.label}</span>
-                  <button className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-primary-500 bg-white border border-neutral-200 rounded-xl hover:bg-primary-50 transition-colors">
-                    <Upload className="w-3.5 h-3.5" />
-                    アップロード
-                  </button>
-                </div>
+                <DocUploadRow key={doc.label} label={doc.label} caseId={String(caseData.id)} />
               ))}
             </div>
           </div>

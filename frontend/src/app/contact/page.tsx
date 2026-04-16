@@ -205,7 +205,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs text-neutral-400">電話（平日 10:00-18:00）</p>
-                    <p className="text-sm font-medium">03-0000-0000</p>
+                    <p className="text-sm font-medium">お問い合わせフォームをご利用ください</p>
                   </div>
                 </div>
               </div>

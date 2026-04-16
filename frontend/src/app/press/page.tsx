@@ -35,10 +35,10 @@ export default function PressPage() {
             <p className="text-sm text-neutral-500 mb-4">
               ロゴデータ、サービス概要、代表者プロフィールなどをまとめたプレスキットをダウンロードいただけます。
             </p>
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-primary-500 bg-primary-50 rounded-xl hover:bg-primary-100 transition-colors">
+            <span className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-neutral-400 bg-neutral-100 rounded-xl cursor-not-allowed">
               <Download className="w-4 h-4" />
-              プレスキットをダウンロード（ZIP）
-            </button>
+              プレスキット準備中
+            </span>
           </section>
 
           {/* プレスリリース */}

@@ -8,6 +8,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { useState } from 'react'
+import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 
@@ -108,10 +109,13 @@ export default function ProfessionalReferralLinkPage() {
           <p className="text-sm text-neutral-400 mb-5">
             売主に代わって物件情報を登録できます。売主のメールアドレスに確認メールが送信されます。
           </p>
-          <button className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-cta-500 hover:bg-cta-600 rounded-xl transition-colors">
+          <Link
+            href="/seller/properties/new?proxy=true"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-cta-500 hover:bg-cta-600 rounded-xl transition-colors"
+          >
             <ExternalLink className="w-4 h-4" />
             代理登録を開始する
-          </button>
+          </Link>
         </div>
 
         {/* 報酬配分の説明 */}

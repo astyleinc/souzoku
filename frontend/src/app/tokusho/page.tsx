@@ -17,7 +17,7 @@ export default function TokushoPage() {
                   ['販売業者', '株式会社Ouver'],
                   ['代表者', '代表取締役 ○○ ○○'],
                   ['所在地', '東京都○○区○○ ○丁目○番○号'],
-                  ['電話番号', '03-XXXX-XXXX（平日10:00〜18:00）'],
+                  ['電話番号', '050-XXXX-XXXX（平日10:00〜18:00）'],
                   ['メールアドレス', 'info@ouver.jp'],
                   ['URL', 'https://ouver.jp'],
                 ].map(([label, value]) => (
@@ -96,7 +96,7 @@ export default function TokushoPage() {
                 <div className="p-4 bg-neutral-50 rounded-xl text-sm text-neutral-600">
                   <p>株式会社Ouver カスタマーサポート</p>
                   <p>メール: support@ouver.jp</p>
-                  <p>電話: 03-XXXX-XXXX（平日10:00〜18:00）</p>
+                  <p>電話: 050-XXXX-XXXX（平日10:00〜18:00）</p>
                 </div>
               </section>
             </div>

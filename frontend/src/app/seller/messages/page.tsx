@@ -1,26 +1,68 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   MessageSquare,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { sellerNav } from '@/config/navigation'
+import { api, toItems } from '@/lib/api'
 
-const sellerThreads = [
-  { id: 'smt1', caseId: 'c1', propertyTitle: '大田区 商業地の一戸建て', brokerName: '東京中央不動産株式会社', lastMessage: '重要事項説明の日程は来週水曜日14時でよろしいでしょうか。', lastMessageAt: '2026-04-14 10:00', unreadCount: 1 },
-]
+type Thread = {
+  id: string
+  propertyTitle: string
+  brokerName: string
+  lastMessage: string
+  lastMessageAt: string
+  unreadCount: number
+}
 
 export default function SellerMessagesPage() {
+  const [threads, setThreads] = useState<Thread[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/cases?role=seller')
+      if (res.success) {
+        const cases = toItems<Record<string, unknown>>(res.data)
+        setThreads(
+          cases.map((c) => ({
+            id: String(c.id),
+            propertyTitle: String(c.property_title ?? c.propertyTitle ?? ''),
+            brokerName: String(c.broker_name ?? c.brokerName ?? '担当業者'),
+            lastMessage: String(c.last_message ?? c.lastMessage ?? ''),
+            lastMessageAt: String(c.last_message_at ?? c.lastMessageAt ?? c.updated_at ?? c.updatedAt ?? ''),
+            unreadCount: Number(c.unread_count ?? c.unreadCount ?? 0),
+          }))
+        )
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardShell title="メッセージ" roleLabel="売主" navItems={sellerNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
   return (
     <DashboardShell
       title="メッセージ"
       roleLabel="売主"
       navItems={sellerNav}
     >
-      {sellerThreads.length === 0 ? (
+      {threads.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
           title="メッセージはありません"
@@ -28,7 +70,7 @@ export default function SellerMessagesPage() {
         />
       ) : (
         <div className="bg-white rounded-2xl shadow-card divide-y divide-neutral-100">
-          {sellerThreads.map((thread) => (
+          {threads.map((thread) => (
             <Link
               key={thread.id}
               href={`/seller/messages/${thread.id}`}
@@ -67,7 +109,7 @@ export default function SellerMessagesPage() {
 
               <div className="shrink-0 text-right flex items-center gap-2">
                 <span className="text-xs text-neutral-400">
-                  {thread.lastMessageAt.split(' ')[0]}
+                  {thread.lastMessageAt.split(' ')[0]?.split('T')[0]}
                 </span>
                 <ChevronRight className="w-4 h-4 text-neutral-300" />
               </div>

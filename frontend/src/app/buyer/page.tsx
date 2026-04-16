@@ -36,15 +36,18 @@ export default function BuyerDashboardPage() {
   const [properties, setProperties] = useState<ReturnType<typeof toProperty>[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [favCount, setFavCount] = useState(0)
+  const [biddingCount, setBiddingCount] = useState(0)
+  const [wonCount, setWonCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     const load = async () => {
-      const [propRes, notifRes, favRes] = await Promise.all([
+      const [propRes, notifRes, favRes, bidRes] = await Promise.all([
         api.get<unknown>('/properties?limit=6'),
         api.get<unknown>('/notifications?limit=5'),
         api.get<{ items?: unknown[]; total?: number }>('/users/me/favorites?limit=1'),
+        api.get<unknown>('/bids/me'),
       ])
 
       if (propRes.success) {
@@ -55,6 +58,11 @@ export default function BuyerDashboardPage() {
       }
       if (favRes.success) {
         setFavCount(favRes.data.total ?? 0)
+      }
+      if (bidRes.success) {
+        const bids = toItems<ApiBid>(bidRes.data)
+        setBiddingCount(bids.filter((b) => b.status === 'active').length)
+        setWonCount(bids.filter((b) => b.status === 'accepted' || b.status === 'won').length)
       }
       if (!propRes.success && !notifRes.success) {
         setFetchError(true)
@@ -84,8 +92,8 @@ export default function BuyerDashboardPage() {
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: Gavel, color: 'text-cta-500', bg: 'bg-cta-50', label: '入札中', value: '—' },
-          { icon: Building2, color: 'text-success-500', bg: 'bg-success-50', label: '落札', value: '—' },
+          { icon: Gavel, color: 'text-cta-500', bg: 'bg-cta-50', label: '入札中', value: String(biddingCount) },
+          { icon: Building2, color: 'text-success-500', bg: 'bg-success-50', label: '落札', value: String(wonCount) },
           { icon: Heart, color: 'text-error-500', bg: 'bg-error-50', label: 'お気に入り', value: String(favCount) },
           { icon: TrendingUp, color: 'text-primary-500', bg: 'bg-primary-50', label: '公開中の物件', value: String(properties.length) },
         ].map((card) => (

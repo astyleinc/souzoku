@@ -1,27 +1,68 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   MessageSquare,
   ChevronRight,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { professionalNav } from '@/config/navigation'
+import { api, toItems } from '@/lib/api'
 
-const professionalThreads = [
-  { id: 'pt1', clientName: '中村 一郎', propertyTitle: '練馬区 駅近マンション 3LDK', lastMessage: '書類の確認が完了しました。ご質問があればお知らせください。', lastMessageAt: '2026-04-15 10:00', unreadCount: 0 },
-  { id: 'pt2', clientName: '佐々木 恵', propertyTitle: '新宿区 投資用マンション', lastMessage: '審査が完了し、物件が公開されました。', lastMessageAt: '2026-04-13 14:00', unreadCount: 1 },
-]
+type Thread = {
+  id: string
+  clientName: string
+  propertyTitle: string
+  lastMessage: string
+  lastMessageAt: string
+  unreadCount: number
+}
 
 export default function ProfessionalMessagesPage() {
+  const [threads, setThreads] = useState<Thread[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/cases?role=professional')
+      if (res.success) {
+        const cases = toItems<Record<string, unknown>>(res.data)
+        setThreads(
+          cases.map((c) => ({
+            id: String(c.id),
+            clientName: String(c.client_name ?? c.clientName ?? ''),
+            propertyTitle: String(c.property_title ?? c.propertyTitle ?? ''),
+            lastMessage: String(c.last_message ?? c.lastMessage ?? ''),
+            lastMessageAt: String(c.last_message_at ?? c.lastMessageAt ?? c.updated_at ?? c.updatedAt ?? ''),
+            unreadCount: Number(c.unread_count ?? c.unreadCount ?? 0),
+          }))
+        )
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardShell title="メッセージ" roleLabel="士業パートナー" navItems={professionalNav}>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
+        </div>
+      </DashboardShell>
+    )
+  }
+
   return (
     <DashboardShell
       title="メッセージ"
       roleLabel="士業パートナー"
       navItems={professionalNav}
     >
-      {professionalThreads.length === 0 ? (
+      {threads.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
           title="メッセージはありません"
@@ -29,7 +70,7 @@ export default function ProfessionalMessagesPage() {
         />
       ) : (
         <div className="bg-white rounded-2xl shadow-card divide-y divide-neutral-100">
-          {professionalThreads.map((thread) => (
+          {threads.map((thread) => (
             <Link
               key={thread.id}
               href={`/professional/messages/${thread.id}`}
@@ -66,7 +107,7 @@ export default function ProfessionalMessagesPage() {
 
               <div className="shrink-0 text-right flex items-center gap-2">
                 <span className="text-xs text-neutral-400">
-                  {thread.lastMessageAt.split(' ')[0]}
+                  {thread.lastMessageAt.split(' ')[0]?.split('T')[0]}
                 </span>
                 <ChevronRight className="w-4 h-4 text-neutral-300" />
               </div>
