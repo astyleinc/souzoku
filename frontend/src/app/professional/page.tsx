@@ -1,31 +1,22 @@
 'use client'
 
 import {
-  LayoutDashboard,
   Users,
   DollarSign,
-  Link2,
-  Bell,
-  FileText,
   ChevronRight,
   TrendingUp,
   Copy,
   CheckCircle,
+  Bell,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { NotificationList } from '@/components/shared/NotificationList'
+import { SummaryCard } from '@/components/shared/SummaryCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { professionalNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockNotifications } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/professional' },
-  { icon: Users, label: '紹介案件', href: '/professional/referrals' },
-  { icon: DollarSign, label: '紹介料実績', href: '/professional/earnings' },
-  { icon: Link2, label: '紹介リンク', href: '/professional/referral-link' },
-  { icon: FileText, label: '書類閲覧', href: '/professional/documents' },
-  { icon: Bell, label: '通知', href: '/professional/notifications' },
-]
 
 export default function ProfessionalDashboardPage() {
   const referredProperties = mockProperties.slice(0, 3)
@@ -35,32 +26,14 @@ export default function ProfessionalDashboardPage() {
       title="ダッシュボード"
       roleLabel="士業パートナー"
       userName="山田 太郎"
-      navItems={navItems}
+      navItems={professionalNav}
     >
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { icon: Users, color: 'text-primary-500', bg: 'bg-primary-50', label: '紹介件数', value: '8', sub: '今月 +2件', subIcon: TrendingUp, subColor: 'text-success-500' },
-          { icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-50', label: '成約件数', value: '6', sub: '成約率 75%' },
-          { icon: DollarSign, color: 'text-cta-500', bg: 'bg-cta-50', label: '累計紹介料', value: '128.4', sub: '万円' },
-          { icon: DollarSign, color: 'text-warning-500', bg: 'bg-warning-50', label: '未入金', value: '15.3', sub: '万円（1件）' },
-        ].map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl shadow-card p-5">
-            <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center mb-3`}>
-              <card.icon className={`w-[18px] h-[18px] ${card.color}`} />
-            </div>
-            <p className="text-xs text-neutral-400 mb-1">{card.label}</p>
-            <p className="price text-2xl text-foreground">{card.value}</p>
-            {card.subIcon ? (
-              <p className={`text-xs ${card.subColor} flex items-center gap-1 mt-1`}>
-                <card.subIcon className="w-3 h-3" />
-                {card.sub}
-              </p>
-            ) : (
-              <p className="text-xs text-neutral-400 mt-1">{card.sub}</p>
-            )}
-          </div>
-        ))}
+        <SummaryCard icon={Users} iconColor="text-primary-500" iconBg="bg-primary-50" label="紹介件数" value="8" sub="今月 +2件" subIcon={TrendingUp} subColor="text-success-500" />
+        <SummaryCard icon={CheckCircle} iconColor="text-success-500" iconBg="bg-success-50" label="成約件数" value="6" sub="成約率 75%" />
+        <SummaryCard icon={DollarSign} iconColor="text-cta-500" iconBg="bg-cta-50" label="累計紹介料" value="128.4" sub="万円" />
+        <SummaryCard icon={DollarSign} iconColor="text-warning-500" iconBg="bg-warning-50" label="未入金" value="15.3" sub="万円（1件）" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -164,16 +137,8 @@ export default function ProfessionalDashboardPage() {
             <div className="px-5 py-4">
               <h2 className="text-base font-semibold">通知</h2>
             </div>
-            <div className="px-5 pb-5 space-y-4">
-              {mockNotifications.slice(0, 3).map((n) => (
-                <div key={n.id} className={`flex items-start gap-3 ${n.isRead ? 'opacity-50' : ''}`}>
-                  <Bell className="w-4 h-4 mt-0.5 shrink-0 text-info-500" />
-                  <div>
-                    <p className="text-sm leading-snug">{n.message}</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">{n.createdAt}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="px-5 pb-5">
+              <NotificationList notifications={mockNotifications.slice(0, 3)} variant="compact" />
             </div>
           </div>
         </div>

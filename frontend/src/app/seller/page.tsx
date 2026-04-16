@@ -4,28 +4,19 @@ import {
   Building2,
   Gavel,
   FileText,
-  LayoutDashboard,
   Bell,
   Plus,
   TrendingUp,
-  CheckCircle,
-  AlertCircle,
-  Clock,
   ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { NotificationList } from '@/components/shared/NotificationList'
+import { SummaryCard } from '@/components/shared/SummaryCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { sellerNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockBids, mockNotifications } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
-  { icon: Building2, label: '出品物件', href: '/seller/properties' },
-  { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
-  { icon: FileText, label: '書類管理', href: '/seller/documents' },
-  { icon: Bell, label: '通知', href: '/seller/notifications' },
-]
 
 export default function SellerDashboardPage() {
   const myProperties = mockProperties.slice(0, 4)
@@ -37,32 +28,14 @@ export default function SellerDashboardPage() {
       title="ダッシュボード"
       roleLabel="売主"
       userName="中村 一郎"
-      navItems={navItems}
+      navItems={sellerNav}
     >
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { icon: Building2, color: 'text-primary-500', bg: 'bg-primary-50', label: '出品物件', value: '4', sub: '公開中 2 / 審査中 1 / 入札中 1' },
-          { icon: Gavel, color: 'text-cta-500', bg: 'bg-cta-50', label: '受付中の入札', value: '8', sub: '今週 +3件', subIcon: TrendingUp, subColor: 'text-success-500' },
-          { icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-50', label: '成約済み', value: '1', sub: '累計売却額 3,200万円' },
-          { icon: Bell, color: 'text-warning-500', bg: 'bg-warning-50', label: '未読通知', value: String(unreadNotifications.length), sub: '要確認あり' },
-        ].map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl shadow-card p-5">
-            <div className={`w-9 h-9 ${card.bg} rounded-xl flex items-center justify-center mb-3`}>
-              <card.icon className={`w-[18px] h-[18px] ${card.color}`} />
-            </div>
-            <p className="text-xs text-neutral-400 mb-1">{card.label}</p>
-            <p className="price text-2xl text-foreground">{card.value}</p>
-            {card.subIcon ? (
-              <p className={`text-xs ${card.subColor} flex items-center gap-1 mt-1`}>
-                <card.subIcon className="w-3 h-3" />
-                {card.sub}
-              </p>
-            ) : (
-              <p className="text-xs text-neutral-400 mt-1">{card.sub}</p>
-            )}
-          </div>
-        ))}
+        <SummaryCard icon={Building2} iconColor="text-primary-500" iconBg="bg-primary-50" label="出品物件" value="4" sub="公開中 2 / 審査中 1 / 入札中 1" />
+        <SummaryCard icon={Gavel} iconColor="text-cta-500" iconBg="bg-cta-50" label="受付中の入札" value="8" sub="今週 +3件" subIcon={TrendingUp} subColor="text-success-500" />
+        <SummaryCard icon={Building2} iconColor="text-success-500" iconBg="bg-success-50" label="成約済み" value="1" sub="累計売却額 3,200万円" />
+        <SummaryCard icon={Bell} iconColor="text-warning-500" iconBg="bg-warning-50" label="未読通知" value={String(unreadNotifications.length)} sub="要確認あり" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -176,19 +149,8 @@ export default function SellerDashboardPage() {
                 すべて
               </Link>
             </div>
-            <div className="px-5 pb-5 space-y-4">
-              {mockNotifications.slice(0, 5).map((n) => (
-                <div key={n.id} className={`flex items-start gap-3 ${n.isRead ? 'opacity-50' : ''}`}>
-                  {n.type === 'success' && <CheckCircle className="w-4 h-4 mt-0.5 shrink-0 text-success-500" />}
-                  {n.type === 'warning' && <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-warning-500" />}
-                  {n.type === 'info' && <Clock className="w-4 h-4 mt-0.5 shrink-0 text-info-500" />}
-                  {n.type === 'error' && <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-error-500" />}
-                  <div>
-                    <p className="text-sm leading-snug">{n.message}</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">{n.createdAt}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="px-5 pb-5">
+              <NotificationList notifications={mockNotifications.slice(0, 5)} variant="compact" />
             </div>
           </div>
 

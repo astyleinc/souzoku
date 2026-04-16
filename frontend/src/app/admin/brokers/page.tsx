@@ -1,30 +1,12 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
-  Users,
   Plus,
   Star,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { adminNav } from '@/config/navigation'
 import { mockBrokers } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
 
 export default function AdminBrokersPage() {
   return (
@@ -32,7 +14,7 @@ export default function AdminBrokersPage() {
       title="業者管理"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-neutral-400">{mockBrokers.length}社</p>

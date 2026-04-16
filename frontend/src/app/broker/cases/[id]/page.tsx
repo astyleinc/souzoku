@@ -1,10 +1,6 @@
 'use client'
 
 import {
-  LayoutDashboard,
-  Briefcase,
-  MessageSquare,
-  Bell,
   Upload,
   Send,
   ArrowLeft,
@@ -13,14 +9,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { brokerNav } from '@/config/navigation'
 import { mockCases, mockCaseMessages } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/broker' },
-  { icon: Briefcase, label: '案件管理', href: '/broker/cases' },
-  { icon: MessageSquare, label: 'メッセージ', href: '/broker/messages' },
-  { icon: Bell, label: '通知', href: '/broker/notifications' },
-]
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -40,7 +30,7 @@ export default function BrokerCaseDetailPage() {
       title="案件詳細"
       roleLabel="提携業者"
       userName="松本 大輝"
-      navItems={navItems}
+      navItems={brokerNav}
     >
       <Link href="/broker/cases" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
         <ArrowLeft className="w-4 h-4" />

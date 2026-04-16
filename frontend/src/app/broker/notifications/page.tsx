@@ -1,15 +1,15 @@
 'use client'
 
 import { NotificationPage } from '@/components/shared/NotificationPage'
-import { sellerNav } from '@/config/navigation'
+import { brokerNav } from '@/config/navigation'
 import { mockNotifications } from '@/data/mock-dashboard'
 
-export default function SellerNotificationsPage() {
+export default function BrokerNotificationsPage() {
   return (
     <NotificationPage
-      roleLabel="売主"
-      userName="中村 一郎"
-      navItems={sellerNav}
+      roleLabel="提携業者"
+      userName="松本 大輝"
+      navItems={brokerNav}
       notifications={mockNotifications}
     />
   )

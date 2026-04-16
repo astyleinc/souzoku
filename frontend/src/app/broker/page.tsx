@@ -1,34 +1,18 @@
 'use client'
 
 import {
-  LayoutDashboard,
   Briefcase,
-  MessageSquare,
-  Bell,
   ChevronRight,
   TrendingUp,
   Star,
+  MessageSquare,
+  Bell,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
-import { mockCases, CASE_STATUS_LABEL, mockNotifications } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/broker' },
-  { icon: Briefcase, label: '案件管理', href: '/broker/cases' },
-  { icon: MessageSquare, label: 'メッセージ', href: '/broker/messages' },
-  { icon: Bell, label: '通知', href: '/broker/notifications' },
-]
-
-const caseStatusStyle: Record<string, string> = {
-  broker_assigned: 'bg-info-50 text-info-700',
-  seller_contacted: 'bg-primary-50 text-primary-700',
-  buyer_contacted: 'bg-primary-50 text-primary-700',
-  explanation_done: 'bg-warning-50 text-warning-700',
-  contract_signed: 'bg-cta-50 text-cta-700',
-  settlement_done: 'bg-success-50 text-success-700',
-  cancelled: 'bg-error-50 text-error-700',
-}
+import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
+import { brokerNav } from '@/config/navigation'
+import { mockCases, CASE_STATUS_LABEL, mockNotifications, type CaseStatus } from '@/data/mock-dashboard'
 
 export default function BrokerDashboardPage() {
   const activeCases = mockCases.filter((c) => c.status !== 'settlement_done' && c.status !== 'cancelled')
@@ -38,7 +22,7 @@ export default function BrokerDashboardPage() {
       title="ダッシュボード"
       roleLabel="提携業者"
       userName="松本 大輝"
-      navItems={navItems}
+      navItems={brokerNav}
     >
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -98,9 +82,7 @@ export default function BrokerDashboardPage() {
                         <span className="text-xs text-neutral-400 ml-1">万円</span>
                       </td>
                       <td className="py-3.5 px-5">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${caseStatusStyle[c.status]}`}>
-                          {CASE_STATUS_LABEL[c.status]}
-                        </span>
+                        <CaseStatusBadge status={c.status} />
                       </td>
                     </tr>
                   ))}
@@ -117,9 +99,7 @@ export default function BrokerDashboardPage() {
                       <p className="font-medium text-sm truncate">{c.propertyTitle}</p>
                       <p className="text-xs text-neutral-400 mt-0.5">{c.propertyAddress}</p>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 ${caseStatusStyle[c.status]}`}>
-                      {CASE_STATUS_LABEL[c.status]}
-                    </span>
+                    <CaseStatusBadge status={c.status} />
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400">
                     <span>売主: {c.sellerName}</span>

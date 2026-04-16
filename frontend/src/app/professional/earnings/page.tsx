@@ -1,27 +1,13 @@
 'use client'
 
 import {
-  LayoutDashboard,
-  Users,
-  DollarSign,
-  Link2,
-  Bell,
-  FileText,
   CheckCircle,
   Clock,
   AlertCircle,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { professionalNav } from '@/config/navigation'
 import { mockRevenue } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/professional' },
-  { icon: Users, label: '紹介案件', href: '/professional/referrals' },
-  { icon: DollarSign, label: '紹介料実績', href: '/professional/earnings' },
-  { icon: Link2, label: '紹介リンク', href: '/professional/referral-link' },
-  { icon: FileText, label: '書類閲覧', href: '/professional/documents' },
-  { icon: Bell, label: '通知', href: '/professional/notifications' },
-]
 
 const paymentStatusConfig = {
   paid: { label: '入金済み', icon: CheckCircle, color: 'text-success-500', bg: 'bg-success-50 text-success-700' },
@@ -39,7 +25,7 @@ export default function ProfessionalEarningsPage() {
       title="紹介料実績"
       roleLabel="士業パートナー"
       userName="山田 太郎"
-      navItems={navItems}
+      navItems={professionalNav}
     >
       {/* サマリ */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

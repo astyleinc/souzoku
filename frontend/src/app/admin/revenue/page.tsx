@@ -1,31 +1,13 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
-  Users,
   CheckCircle,
   Clock,
   AlertCircle,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { adminNav } from '@/config/navigation'
 import { mockRevenue } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
 
 const paymentStatusConfig = {
   paid: { label: '入金確認済み', icon: CheckCircle, bg: 'bg-success-50 text-success-700' },
@@ -45,7 +27,7 @@ export default function AdminRevenuePage() {
       title="収益管理"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       {/* サマリ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

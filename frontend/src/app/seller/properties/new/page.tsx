@@ -1,24 +1,12 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  FileText,
-  LayoutDashboard,
-  Bell,
   Upload,
   Info,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
-  { icon: Building2, label: '出品物件', href: '/seller/properties' },
-  { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
-  { icon: FileText, label: '書類管理', href: '/seller/documents' },
-  { icon: Bell, label: '通知', href: '/seller/notifications' },
-]
+import { sellerNav } from '@/config/navigation'
 
 const inputClass = 'w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors'
 const selectClass = `${inputClass} bg-white`
@@ -30,7 +18,7 @@ export default function NewPropertyPage() {
       title="新規出品"
       roleLabel="売主"
       userName="中村 一郎"
-      navItems={navItems}
+      navItems={sellerNav}
     >
       <div className="max-w-2xl">
         {/* 注意事項 */}

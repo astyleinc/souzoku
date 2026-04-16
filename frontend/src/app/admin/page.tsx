@@ -4,33 +4,17 @@ import Link from 'next/link'
 import {
   Building2,
   Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
   TrendingUp,
   TrendingDown,
   ChevronRight,
   CheckCircle,
   AlertCircle,
   Clock,
-  Users,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { adminNav } from '@/config/navigation'
 import { mockProperties, mockKpis } from '@/data/mock'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
 
 const recentActivities = [
   { icon: CheckCircle, color: 'text-success-500', message: '世田谷区 二世帯住宅が成約しました', time: '2時間前' },
@@ -53,7 +37,7 @@ export default function AdminDashboardPage() {
       title="ダッシュボード"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       {/* KPIカード */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">

@@ -1,25 +1,11 @@
 'use client'
 
-import {
-  Search,
-  Gavel,
-  LayoutDashboard,
-  Bell,
-  Heart,
-  X,
-} from 'lucide-react'
+import { X, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { buyerNav } from '@/config/navigation'
 import { mockProperties, PROPERTY_TYPE_LABEL } from '@/data/mock'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/buyer' },
-  { icon: Search, label: '物件を探す', href: '/properties' },
-  { icon: Gavel, label: '入札履歴', href: '/buyer/bids' },
-  { icon: Heart, label: 'お気に入り', href: '/buyer/favorites' },
-  { icon: Bell, label: '通知', href: '/buyer/notifications' },
-]
 
 export default function BuyerFavoritesPage() {
   const favorites = mockProperties.filter((p) =>
@@ -31,7 +17,7 @@ export default function BuyerFavoritesPage() {
       title="お気に入り"
       roleLabel="買い手"
       userName="株式会社山本不動産"
-      navItems={navItems}
+      navItems={buyerNav}
     >
       <p className="text-sm text-neutral-400 mb-6">
         {favorites.length}件のお気に入り物件

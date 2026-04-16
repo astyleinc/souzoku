@@ -1,31 +1,10 @@
 'use client'
 
-import {
-  LayoutDashboard,
-  Briefcase,
-  MessageSquare,
-  Bell,
-} from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
+import { brokerNav } from '@/config/navigation'
 import { mockCases, CASE_STATUS_LABEL } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/broker' },
-  { icon: Briefcase, label: '案件管理', href: '/broker/cases' },
-  { icon: MessageSquare, label: 'メッセージ', href: '/broker/messages' },
-  { icon: Bell, label: '通知', href: '/broker/notifications' },
-]
-
-const caseStatusStyle: Record<string, string> = {
-  broker_assigned: 'bg-info-50 text-info-700',
-  seller_contacted: 'bg-primary-50 text-primary-700',
-  buyer_contacted: 'bg-primary-50 text-primary-700',
-  explanation_done: 'bg-warning-50 text-warning-700',
-  contract_signed: 'bg-cta-50 text-cta-700',
-  settlement_done: 'bg-success-50 text-success-700',
-  cancelled: 'bg-error-50 text-error-700',
-}
 
 export default function BrokerCasesPage() {
   return (
@@ -33,7 +12,7 @@ export default function BrokerCasesPage() {
       title="案件管理"
       roleLabel="提携業者"
       userName="松本 大輝"
-      navItems={navItems}
+      navItems={brokerNav}
     >
       {/* フィルタ */}
       <div className="flex items-center gap-3 mb-6">
@@ -74,9 +53,7 @@ export default function BrokerCasesPage() {
                     <span className="text-xs text-neutral-400 ml-1">万円</span>
                   </td>
                   <td className="py-3.5 px-5">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${caseStatusStyle[c.status]}`}>
-                      {CASE_STATUS_LABEL[c.status]}
-                    </span>
+                    <CaseStatusBadge status={c.status} />
                   </td>
                   <td className="py-3.5 px-5 text-neutral-400">{c.updatedAt}</td>
                   <td className="py-3.5 px-5">
@@ -100,9 +77,7 @@ export default function BrokerCasesPage() {
                 <p className="text-sm font-medium truncate">{c.propertyTitle}</p>
                 <p className="text-xs text-neutral-400 mt-0.5">{c.propertyAddress}</p>
               </div>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 ${caseStatusStyle[c.status]}`}>
-                {CASE_STATUS_LABEL[c.status]}
-              </span>
+              <CaseStatusBadge status={c.status} />
             </div>
             <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400">
               <span>売主: {c.sellerName}</span>

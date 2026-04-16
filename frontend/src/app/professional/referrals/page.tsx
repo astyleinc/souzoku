@@ -1,25 +1,9 @@
 'use client'
 
-import {
-  LayoutDashboard,
-  Users,
-  DollarSign,
-  Link2,
-  Bell,
-  FileText,
-} from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { professionalNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/professional' },
-  { icon: Users, label: '紹介案件', href: '/professional/referrals' },
-  { icon: DollarSign, label: '紹介料実績', href: '/professional/earnings' },
-  { icon: Link2, label: '紹介リンク', href: '/professional/referral-link' },
-  { icon: FileText, label: '書類閲覧', href: '/professional/documents' },
-  { icon: Bell, label: '通知', href: '/professional/notifications' },
-]
 
 const sellerNames = ['中村 一郎', '小林 誠', '加藤 裕子', '佐々木 恵', '渡辺 健', '石田 美咲']
 
@@ -29,7 +13,7 @@ export default function ProfessionalReferralsPage() {
       title="紹介案件"
       roleLabel="士業パートナー"
       userName="山田 太郎"
-      navItems={navItems}
+      navItems={professionalNav}
     >
       {/* フィルタ */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
