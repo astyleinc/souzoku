@@ -1,0 +1,83 @@
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { secureHeaders } from 'hono/secure-headers'
+import { bodyLimit } from 'hono/body-limit'
+import { errorHandler } from './middleware/error-handler'
+import { requestId } from './middleware/request-id'
+import { requestLogger } from './middleware/request-logger'
+import { rateLimit } from './middleware/rate-limit'
+import { propertyRoutes } from './routes/property'
+import { bidRoutes } from './routes/bid'
+import { professionalRoutes } from './routes/professional'
+import { brokerRoutes } from './routes/broker'
+import { caseRoutes } from './routes/case'
+import { revenueRoutes } from './routes/revenue'
+import { notificationRoutes } from './routes/notification'
+import { adminRoutes } from './routes/admin'
+import { getAuth } from './lib/auth'
+import { logger } from './lib/logger'
+
+const app = new Hono()
+
+// グローバルミドルウェア
+app.use('*', requestId)
+app.use('*', cors({
+  origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}))
+app.use('*', secureHeaders())
+app.use('*', requestLogger)
+
+// ボディサイズ制限（1MB）
+app.use('*', bodyLimit({ maxSize: 1024 * 1024 }))
+
+// レート制限: API全体に15分あたり100リクエスト
+app.use('/api/*', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }))
+
+// 入札・認証系はより厳格: 1分あたり10リクエスト
+app.use('/api/bids', rateLimit({ windowMs: 60 * 1000, max: 10 }))
+app.use('/api/auth/*', rateLimit({ windowMs: 60 * 1000, max: 20 }))
+
+// エラーハンドラ
+app.onError(errorHandler)
+
+// ヘルスチェック
+app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
+
+// BetterAuth認証エンドポイント
+app.on(['POST', 'GET'], '/api/auth/*', (c) => {
+  const auth = getAuth()
+  return auth.handler(c.req.raw)
+})
+
+// ルート登録
+app.route('/api/properties', propertyRoutes)
+app.route('/api/bids', bidRoutes)
+app.route('/api/professionals', professionalRoutes)
+app.route('/api/brokers', brokerRoutes)
+app.route('/api/cases', caseRoutes)
+app.route('/api/revenue', revenueRoutes)
+app.route('/api/notifications', notificationRoutes)
+app.route('/api/admin', adminRoutes)
+
+// 404
+app.notFound((c) =>
+  c.json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: 'エンドポイントが見つかりません',
+      requestId: c.get('requestId') ?? 'unknown',
+    },
+  }, 404),
+)
+
+const port = Number(process.env.PORT ?? 8787)
+logger.info('APIサーバー起動', { port })
+
+export default {
+  port,
+  fetch: app.fetch,
+}
