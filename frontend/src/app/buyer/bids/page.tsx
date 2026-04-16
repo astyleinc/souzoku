@@ -1,31 +1,10 @@
 'use client'
 
-import {
-  Search,
-  Gavel,
-  LayoutDashboard,
-  Bell,
-  Heart,
-} from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
-import { mockBids, BID_STATUS_LABEL } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/buyer' },
-  { icon: Search, label: '物件を探す', href: '/properties' },
-  { icon: Gavel, label: '入札履歴', href: '/buyer/bids' },
-  { icon: Heart, label: 'お気に入り', href: '/buyer/favorites' },
-  { icon: Bell, label: '通知', href: '/buyer/notifications' },
-]
-
-const bidStatusStyle: Record<string, string> = {
-  active: 'bg-cta-50 text-cta-700',
-  superseded: 'bg-neutral-100 text-neutral-500',
-  selected: 'bg-success-50 text-success-700',
-  rejected: 'bg-error-50 text-error-700',
-  cancelled: 'bg-neutral-100 text-neutral-400',
-}
+import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
+import { buyerNav } from '@/config/navigation'
+import { mockBids, type BidStatus } from '@/data/mock-dashboard'
 
 export default function BuyerBidsPage() {
   return (
@@ -33,7 +12,7 @@ export default function BuyerBidsPage() {
       title="入札履歴"
       roleLabel="買い手"
       userName="株式会社山本不動産"
-      navItems={navItems}
+      navItems={buyerNav}
     >
       {/* フィルタ */}
       <div className="flex items-center gap-3 mb-6">
@@ -72,9 +51,7 @@ export default function BuyerBidsPage() {
                     <span className="text-xs text-neutral-400 ml-1">万円</span>
                   </td>
                   <td className="py-3.5 px-5">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${bidStatusStyle[bid.status]}`}>
-                      {BID_STATUS_LABEL[bid.status]}
-                    </span>
+                    <BidStatusBadge status={bid.status as BidStatus} />
                   </td>
                   <td className="py-3.5 px-5 text-neutral-400">{bid.createdAt}</td>
                   <td className="py-3.5 px-5 text-neutral-400">{bid.updatedAt}</td>
@@ -102,9 +79,7 @@ export default function BuyerBidsPage() {
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-medium">{bid.propertyTitle}</p>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 ${bidStatusStyle[bid.status]}`}>
-                {BID_STATUS_LABEL[bid.status]}
-              </span>
+              <BidStatusBadge status={bid.status as BidStatus} />
             </div>
             <div className="flex items-center justify-between mt-2 text-xs text-neutral-400">
               <span>入札日: {bid.createdAt}</span>

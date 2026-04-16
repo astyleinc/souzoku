@@ -1,26 +1,14 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  FileText,
-  LayoutDashboard,
-  Bell,
   Plus,
   Search,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { sellerNav } from '@/config/navigation'
 import { mockProperties, PROPERTY_TYPE_LABEL } from '@/data/mock'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
-  { icon: Building2, label: '出品物件', href: '/seller/properties' },
-  { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
-  { icon: FileText, label: '書類管理', href: '/seller/documents' },
-  { icon: Bell, label: '通知', href: '/seller/notifications' },
-]
 
 export default function SellerPropertiesPage() {
   return (
@@ -28,7 +16,7 @@ export default function SellerPropertiesPage() {
       title="出品物件"
       roleLabel="売主"
       userName="中村 一郎"
-      navItems={navItems}
+      navItems={sellerNav}
     >
       {/* ヘッダーアクション */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">

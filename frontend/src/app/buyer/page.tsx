@@ -3,25 +3,17 @@
 import {
   Search,
   Gavel,
-  LayoutDashboard,
-  Bell,
   Heart,
   Building2,
+  Bell,
   TrendingUp,
   ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { buyerNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockBids, BID_STATUS_LABEL, mockNotifications } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/buyer' },
-  { icon: Search, label: '物件を探す', href: '/properties' },
-  { icon: Gavel, label: '入札履歴', href: '/buyer/bids' },
-  { icon: Heart, label: 'お気に入り', href: '/buyer/favorites' },
-  { icon: Bell, label: '通知', href: '/buyer/notifications' },
-]
 
 export default function BuyerDashboardPage() {
   const myBids = mockBids.filter((b) => b.bidderId === 'u10')
@@ -32,7 +24,7 @@ export default function BuyerDashboardPage() {
       title="ダッシュボード"
       roleLabel="買い手"
       userName="株式会社山本不動産"
-      navItems={navItems}
+      navItems={buyerNav}
     >
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

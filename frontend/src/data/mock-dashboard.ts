@@ -213,6 +213,43 @@ export const mockCaseMessages: CaseMessage[] = [
   { id: 'm4', senderName: '松本 大輝', senderRole: '業者', content: '買い手（株式会社アーバン）との内見を4/10に実施予定です。', createdAt: '2026-04-08 09:00' },
 ]
 
+// メッセージスレッド型
+export type MessageThread = {
+  id: string
+  caseId: string
+  propertyTitle: string
+  buyerName: string
+  lastMessage: string
+  lastMessageAt: string
+  unreadCount: number
+}
+
+export const mockMessageThreads: MessageThread[] = [
+  { id: 'mt1', caseId: 'c1', propertyTitle: '大田区 商業地の一戸建て', buyerName: '株式会社アーバン', lastMessage: '買い手との内見を4/10に実施予定です。', lastMessageAt: '2026-04-08 09:00', unreadCount: 0 },
+  { id: 'mt2', caseId: 'c2', propertyTitle: '品川区 駅近オフィスビル', buyerName: '株式会社山本不動産', lastMessage: '内見のご希望日時を教えてください。', lastMessageAt: '2026-04-12 14:00', unreadCount: 2 },
+  { id: 'mt3', caseId: 'c4', propertyTitle: '新宿区 投資用マンション', buyerName: '合同会社KS投資', lastMessage: '物件資料をお送りしました。ご確認ください。', lastMessageAt: '2026-04-13 16:30', unreadCount: 1 },
+]
+
+// 士業クライアント型
+export type ProfessionalClient = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  propertyCount: number
+  latestPropertyTitle: string
+  latestPropertyStatus: string
+  referredAt: string
+  nwRoute: string
+}
+
+export const mockProfessionalClients: ProfessionalClient[] = [
+  { id: 'pc1', name: '中村 一郎', email: 'nakamura@example.com', phone: '03-1234-5678', propertyCount: 2, latestPropertyTitle: '練馬区 駅近マンション 3LDK', latestPropertyStatus: 'bidding', referredAt: '2026-03-01', nwRoute: 'awaka cross' },
+  { id: 'pc2', name: '小林 誠', email: 'kobayashi@example.com', phone: '03-2345-6789', propertyCount: 1, latestPropertyTitle: '品川区 駅近オフィスビル', latestPropertyStatus: 'published', referredAt: '2026-03-10', nwRoute: '直接紹介' },
+  { id: 'pc3', name: '加藤 裕子', email: 'kato@example.com', phone: '03-3456-7890', propertyCount: 1, latestPropertyTitle: '目黒区 一戸建て', latestPropertyStatus: 'closed', referredAt: '2026-02-15', nwRoute: 'awaka cross' },
+  { id: 'pc4', name: '佐々木 恵', email: 'sasaki@example.com', phone: '03-4567-8901', propertyCount: 1, latestPropertyTitle: '新宿区 投資用マンション', latestPropertyStatus: 'reviewing', referredAt: '2026-04-01', nwRoute: '直接紹介' },
+]
+
 export const mockDocuments: Document[] = [
   { id: 'd1', name: '登記事項証明書.pdf', type: '登記簿謄本', size: '2.4 MB', uploadedAt: '2026-04-10', status: 'approved' },
   { id: 'd2', name: '遺産分割協議書.pdf', type: '遺産分割協議書', size: '1.8 MB', uploadedAt: '2026-04-10', status: 'approved' },

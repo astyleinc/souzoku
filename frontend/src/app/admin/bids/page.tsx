@@ -1,37 +1,10 @@
 'use client'
 
-import {
-  Building2,
-  Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
-  Users,
-  Search,
-} from 'lucide-react'
+import { Search } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
-import { mockBids, BID_STATUS_LABEL } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
-
-const bidStatusStyle: Record<string, string> = {
-  active: 'bg-cta-50 text-cta-700 ',
-  superseded: 'bg-neutral-50 text-neutral-500 ',
-  selected: 'bg-success-50 text-success-700 ',
-  rejected: 'bg-error-50 text-error-700 ',
-  cancelled: 'bg-neutral-50 text-neutral-400 border border-neutral-200',
-}
+import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
+import { adminNav } from '@/config/navigation'
+import { mockBids, BID_STATUS_LABEL, type BidStatus } from '@/data/mock-dashboard'
 
 export default function AdminBidsPage() {
   return (
@@ -39,7 +12,7 @@ export default function AdminBidsPage() {
       title="入札管理"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -88,9 +61,7 @@ export default function AdminBidsPage() {
                     <span className="text-xs text-neutral-400 ml-1">万円</span>
                   </td>
                   <td className="py-3 px-5">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${bidStatusStyle[bid.status]}`}>
-                      {BID_STATUS_LABEL[bid.status]}
-                    </span>
+                    <BidStatusBadge status={bid.status as BidStatus} />
                   </td>
                   <td className="py-3 px-5 text-neutral-400">{bid.createdAt}</td>
                   <td className="py-3 px-5 text-neutral-400">{bid.updatedAt}</td>

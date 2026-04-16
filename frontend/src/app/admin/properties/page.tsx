@@ -1,14 +1,6 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
-  Users,
   Search,
   Eye,
   CheckCircle,
@@ -17,18 +9,8 @@ import {
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { adminNav } from '@/config/navigation'
 import { mockProperties, PROPERTY_TYPE_LABEL } from '@/data/mock'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
 
 export default function AdminPropertiesPage() {
   return (
@@ -36,7 +18,7 @@ export default function AdminPropertiesPage() {
       title="物件管理"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       {/* フィルタ・検索 */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 mb-6">

@@ -1,28 +1,17 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  FileText,
-  LayoutDashboard,
-  Bell,
   Upload,
   Download,
   Eye,
+  FileText,
   CheckCircle,
   Clock,
   XCircle,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { sellerNav } from '@/config/navigation'
 import { mockDocuments } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
-  { icon: Building2, label: '出品物件', href: '/seller/properties' },
-  { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
-  { icon: FileText, label: '書類管理', href: '/seller/documents' },
-  { icon: Bell, label: '通知', href: '/seller/notifications' },
-]
 
 const docStatusIcon = {
   approved: <CheckCircle className="w-4 h-4 text-success-500" />,
@@ -42,7 +31,7 @@ export default function SellerDocumentsPage() {
       title="書類管理"
       roleLabel="売主"
       userName="中村 一郎"
-      navItems={navItems}
+      navItems={sellerNav}
     >
       {/* アップロードエリア */}
       <div className="bg-white rounded-2xl shadow-card p-6 mb-6">

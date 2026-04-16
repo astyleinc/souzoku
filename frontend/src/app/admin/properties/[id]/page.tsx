@@ -1,14 +1,6 @@
 'use client'
 
 import {
-  Building2,
-  Gavel,
-  Briefcase,
-  Handshake,
-  DollarSign,
-  LayoutDashboard,
-  Settings,
-  Users,
   ArrowLeft,
   FileText,
   CheckCircle,
@@ -21,19 +13,9 @@ import {
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { adminNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockDocuments, mockBids, mockBrokers } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/admin' },
-  { icon: Building2, label: '物件管理', href: '/admin/properties' },
-  { icon: Gavel, label: '入札管理', href: '/admin/bids' },
-  { icon: Briefcase, label: '士業管理', href: '/admin/professionals' },
-  { icon: Handshake, label: '業者管理', href: '/admin/brokers' },
-  { icon: DollarSign, label: '収益管理', href: '/admin/revenue' },
-  { icon: Users, label: 'ユーザー', href: '/admin/users' },
-  { icon: Settings, label: '設定', href: '/admin/settings' },
-]
 
 export default function AdminPropertyDetailPage() {
   const property = mockProperties[0]
@@ -44,7 +26,7 @@ export default function AdminPropertyDetailPage() {
       title="物件審査"
       roleLabel="管理画面"
       userName="田中 太郎"
-      navItems={navItems}
+      navItems={adminNav}
     >
       <Link href="/admin/properties" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-foreground mb-6">
         <ArrowLeft className="w-4 h-4" />

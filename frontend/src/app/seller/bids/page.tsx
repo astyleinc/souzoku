@@ -1,30 +1,9 @@
 'use client'
 
-import {
-  Building2,
-  Gavel,
-  FileText,
-  LayoutDashboard,
-  Bell,
-} from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
-import { mockBids, BID_STATUS_LABEL } from '@/data/mock-dashboard'
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'ダッシュボード', href: '/seller' },
-  { icon: Building2, label: '出品物件', href: '/seller/properties' },
-  { icon: Gavel, label: '入札一覧', href: '/seller/bids' },
-  { icon: FileText, label: '書類管理', href: '/seller/documents' },
-  { icon: Bell, label: '通知', href: '/seller/notifications' },
-]
-
-const bidStatusStyle: Record<string, string> = {
-  active: 'bg-cta-50 text-cta-700',
-  superseded: 'bg-neutral-100 text-neutral-500',
-  selected: 'bg-success-50 text-success-700',
-  rejected: 'bg-error-50 text-error-700',
-  cancelled: 'bg-neutral-100 text-neutral-400',
-}
+import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
+import { sellerNav } from '@/config/navigation'
+import { mockBids, type BidStatus } from '@/data/mock-dashboard'
 
 export default function SellerBidsPage() {
   const grouped = mockBids.reduce<Record<string, typeof mockBids>>((acc, bid) => {
@@ -38,7 +17,7 @@ export default function SellerBidsPage() {
       title="入札一覧"
       roleLabel="売主"
       userName="中村 一郎"
-      navItems={navItems}
+      navItems={sellerNav}
     >
       <div className="space-y-6">
         {Object.entries(grouped).map(([propertyId, bids]) => (
@@ -78,9 +57,7 @@ export default function SellerBidsPage() {
                           {i === 0 && <span className="text-xs text-cta-500 ml-2">最高額</span>}
                         </td>
                         <td className="py-3.5 px-5">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${bidStatusStyle[bid.status]}`}>
-                            {BID_STATUS_LABEL[bid.status]}
-                          </span>
+                          <BidStatusBadge status={bid.status as BidStatus} />
                         </td>
                         <td className="py-3.5 px-5 text-neutral-400">{bid.updatedAt}</td>
                         <td className="py-3.5 px-5">
@@ -107,9 +84,7 @@ export default function SellerBidsPage() {
                         <p className="text-sm font-medium">{bid.bidderName}</p>
                         <p className="text-xs text-neutral-400">{bid.bidderType}</p>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium ${bidStatusStyle[bid.status]}`}>
-                        {BID_STATUS_LABEL[bid.status]}
-                      </span>
+                      <BidStatusBadge status={bid.status as BidStatus} />
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="price text-sm">
