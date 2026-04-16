@@ -6,6 +6,7 @@ import { updateProfileSchema, changePasswordSchema, deletionRequestSchema } from
 import type { UpdateProfileInput, ChangePasswordInput, DeletionRequestInput } from '../schemas/user'
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
+import { AppError, ERROR_CODE } from '../lib/errors'
 
 export const userRoutes = new Hono()
 
@@ -39,7 +40,7 @@ userRoutes.put('/me/password', auth, validateBody(changePasswordSchema), async (
     })
     return ok(c, { message: 'パスワードを変更しました' })
   } catch {
-    return c.json({ success: false, error: { code: 'PASSWORD_CHANGE_FAILED', message: '現在のパスワードが正しくありません' } }, 400)
+    throw new AppError(ERROR_CODE.VALIDATION_ERROR, '現在のパスワードが正しくありません', 400)
   }
 })
 
@@ -60,7 +61,7 @@ userRoutes.post('/me/sessions/revoke-all', auth, async (c) => {
     })
     return ok(c, { message: '全セッションを無効化しました' })
   } catch {
-    return c.json({ success: false, error: { code: 'SESSION_REVOKE_FAILED', message: 'セッション無効化に失敗しました' } }, 500)
+    throw new AppError(ERROR_CODE.INTERNAL_ERROR, 'セッション無効化に失敗しました', 500)
   }
 })
 

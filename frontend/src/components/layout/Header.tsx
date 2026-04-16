@@ -97,7 +97,10 @@ export const Header = () => {
 
           {/* 右側アクション */}
           <div className="flex items-center gap-2">
-            <button className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-xl transition-colors">
+            <button
+              onClick={() => router.push('/properties')}
+              className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-xl transition-colors"
+            >
               <Search className="w-5 h-5" />
             </button>
 

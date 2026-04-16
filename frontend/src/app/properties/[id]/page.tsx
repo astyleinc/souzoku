@@ -126,14 +126,32 @@ export default function PropertyDetailPage({
               {/* アクションボタン */}
               <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <button
-                  onClick={() => setSaved(!saved)}
+                  onClick={() => {
+                    const next = !saved
+                    setSaved(next)
+                    if (next) {
+                      api.post(`/users/me/favorites/${id}`)
+                    } else {
+                      api.delete(`/users/me/favorites/${id}`)
+                    }
+                  }}
                   className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                     saved ? 'bg-white text-error-500' : 'bg-black/20 text-white hover:bg-black/40'
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
                 </button>
-                <button className="w-9 h-9 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center transition-all">
+                <button
+                  onClick={async () => {
+                    const url = window.location.href
+                    if (navigator.share) {
+                      await navigator.share({ title: property.title, url })
+                    } else {
+                      await navigator.clipboard.writeText(url)
+                    }
+                  }}
+                  className="w-9 h-9 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center transition-all"
+                >
                   <Share2 className="w-4 h-4" />
                 </button>
               </div>

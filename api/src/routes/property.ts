@@ -8,6 +8,7 @@ import type { CreatePropertyInput, UpdatePropertyInput, PropertyQuery } from '..
 import type { UpdateStatusInput } from '../schemas/admin'
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
+import { forbidden } from '../lib/errors'
 
 export const propertyRoutes = new Hono()
 
@@ -39,7 +40,7 @@ propertyRoutes.put('/:id', auth, requireRole('seller', 'admin'), validateBody(up
   if (user.role !== 'admin') {
     const existing = await services.property.getById(c.req.param('id'))
     if (existing.sellerId !== user.id) {
-      return c.json({ success: false, error: { code: 'FORBIDDEN', message: '他のユーザーの物件は更新できません' } }, 403)
+      throw forbidden('他のユーザーの物件は更新できません')
     }
   }
 

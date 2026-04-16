@@ -32,6 +32,13 @@ export const validateEnv = () => {
     if (!process.env.FRONTEND_URL || process.env.FRONTEND_URL.includes('localhost')) {
       throw new Error('本番環境では FRONTEND_URL に本番URLを設定してください')
     }
+
+    if (!process.env.SUPABASE_URL) {
+      throw new Error('SUPABASE_URL is required in production')
+    }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is required in production')
+    }
   }
 
   // 開発環境でのフォールバック警告

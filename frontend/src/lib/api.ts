@@ -72,6 +72,37 @@ export const api = {
     request<T>('PATCH', path, body, options),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>('DELETE', path, undefined, options),
+  upload: async <T = unknown>(path: string, formData: FormData): Promise<ApiResponse<T>> => {
+    const url = `${BASE}${path}`
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        signal: AbortSignal.timeout(30000),
+      })
+      if (!res.ok) {
+        if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+          const current = window.location.pathname
+          if (current !== '/login') {
+            window.location.href = `/login?redirect=${encodeURIComponent(current)}`
+          }
+        }
+        const json = await res.json().catch(() => null)
+        return {
+          success: false,
+          error: json?.error ?? { code: 'UNKNOWN', message: `HTTP ${res.status}` },
+        }
+      }
+      const json = await res.json()
+      return { success: true, data: json.data ?? json }
+    } catch {
+      return {
+        success: false,
+        error: { code: 'NETWORK_ERROR', message: 'サーバーに接続できませんでした' },
+      }
+    }
+  },
 }
 
 // APIレスポンスから配列を安全に取り出すヘルパー

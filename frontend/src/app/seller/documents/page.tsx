@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Upload,
   Download,
@@ -11,6 +11,8 @@ import {
   XCircle,
   Shield,
   Loader2,
+  X,
+  AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -38,20 +40,62 @@ const docStatusLabel = {
   rejected: '再提出要',
 }
 
+const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
 export default function SellerDocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadDocuments = useCallback(async () => {
+    const res = await api.get<unknown>('/documents/properties/seller/me')
+    if (res.success) {
+      setDocuments(toItems<Document>(res.data))
+    }
+  }, [])
 
   useEffect(() => {
-    const load = async () => {
-      const res = await api.get<unknown>('/documents/properties/seller/me')
-      if (res.success) {
-        setDocuments(toItems<Document>(res.data))
-      }
-      setLoading(false)
+    loadDocuments().then(() => setLoading(false))
+  }, [loadDocuments])
+
+  const uploadFiles = async (files: File[]) => {
+    const valid = files.filter((f) => {
+      if (!ACCEPTED_TYPES.includes(f.type)) return false
+      if (f.size > MAX_FILE_SIZE) return false
+      return true
+    })
+    if (valid.length === 0) {
+      setUploadError('対応形式（PDF, JPG, PNG）で10MB以下のファイルを選択してください')
+      return
     }
-    load()
-  }, [])
+    setUploadError(null)
+    setUploading(true)
+    for (const file of valid) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('name', file.name)
+      await api.upload('/documents/upload', formData)
+    }
+    await loadDocuments()
+    setUploading(false)
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length > 0) uploadFiles(files)
+    e.target.value = ''
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) uploadFiles(files)
+  }
 
   if (loading) {
     return (
@@ -82,13 +126,41 @@ export default function SellerDocumentsPage() {
 
       {/* アップロードエリア */}
       <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
-        <div className="border-2 border-dashed border-neutral-200 rounded-xl p-8 text-center hover:border-primary-300 transition-colors cursor-pointer">
-          <Upload className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-foreground mb-1">書類をアップロード</p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
+            dragOver ? 'border-primary-400 bg-primary-50' : 'border-neutral-200 hover:border-primary-300'
+          }`}
+        >
+          {uploading ? (
+            <Loader2 className="w-8 h-8 text-primary-400 mx-auto mb-3 animate-spin" />
+          ) : (
+            <Upload className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+          )}
+          <p className="text-sm font-medium text-foreground mb-1">
+            {uploading ? 'アップロード中...' : '書類をアップロード'}
+          </p>
           <p className="text-xs text-neutral-400">
             クリックまたはドラッグ&ドロップ（PDF, JPG, PNG / 最大10MB）
           </p>
         </div>
+        {uploadError && (
+          <div className="flex items-center gap-2 mt-3 text-sm text-error-500">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {uploadError}
+          </div>
+        )}
       </div>
 
       {documents.length === 0 ? (

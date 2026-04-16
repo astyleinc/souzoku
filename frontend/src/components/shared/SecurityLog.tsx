@@ -25,12 +25,15 @@ type LoginEntry = {
 export const SecurityLog = () => {
   const [entries, setEntries] = useState<LoginEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       const res = await api.get<unknown>('/users/me/security-log')
       if (res.success) {
         setEntries(toItems<LoginEntry>(res.data))
+      } else {
+        setFetchError(true)
       }
       setLoading(false)
     }
@@ -49,6 +52,12 @@ export const SecurityLog = () => {
 
   return (
     <div className="max-w-3xl space-y-6">
+      {fetchError && (
+        <div className="flex items-center gap-2 p-3 mb-6 text-sm text-error-700 bg-error-50 rounded-xl">
+          データの取得に失敗しました。ページを更新してください。
+        </div>
+      )}
+
       {/* 現在のセッション */}
       {currentEntry && (
         <div className="bg-white rounded-2xl shadow-card p-5 border-2 border-success-200">
@@ -149,7 +158,15 @@ export const SecurityLog = () => {
 
       {/* アクション */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <button className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors">
+        <button
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-error-500 bg-error-50 rounded-xl hover:bg-error-100 transition-colors"
+          onClick={async () => {
+            const res = await api.post<unknown>('/users/me/sessions/revoke-all')
+            if (res.success) {
+              window.location.href = '/login'
+            }
+          }}
+        >
           <LogOut className="w-4 h-4" />
           すべてのセッションからログアウト
         </button>

@@ -33,12 +33,15 @@ type SupportTicketListProps = {
 export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       const res = await api.get<unknown>('/support/tickets')
       if (res.success) {
         setTickets(toItems<SupportTicket>(res.data))
+      } else {
+        setFetchError(true)
       }
       setLoading(false)
     }
@@ -55,6 +58,12 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
 
   return (
     <div>
+      {fetchError && (
+        <div className="flex items-center gap-2 p-3 mb-6 text-sm text-error-700 bg-error-50 rounded-xl">
+          データの取得に失敗しました。ページを更新してください。
+        </div>
+      )}
+
       {/* ヘッダー操作 */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-neutral-400">お問い合わせ {tickets.length}件</p>

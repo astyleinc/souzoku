@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Building2, Home, MapPin, Landmark, Flame, Heart, Gavel, Camera } from 'lucide-react'
 import { type Property, PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { api } from '@/lib/api'
 
 const typeIcons: Record<string, React.ReactNode> = {
   house: <Home className="w-8 h-8 text-neutral-300" />,
@@ -104,7 +105,13 @@ export const PropertyCard = ({ property }: { property: Property }) => {
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          setSaved(!saved)
+          const next = !saved
+          setSaved(next)
+          if (next) {
+            api.post(`/users/me/favorites/${property.id}`)
+          } else {
+            api.delete(`/users/me/favorites/${property.id}`)
+          }
         }}
         className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
           saved
