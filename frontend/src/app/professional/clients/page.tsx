@@ -36,16 +36,27 @@ export default function ProfessionalClientsPage() {
       userName="山田 太郎"
       navItems={professionalNav}
     >
-      {/* フィルタ */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <SearchInput placeholder="クライアント名で検索" className="w-full sm:w-64" />
-        <FilterSelect
-          options={[
-            { value: 'awaka', label: 'awaka cross' },
-            { value: 'direct', label: '直接紹介' },
-          ]}
-          placeholder="すべての経路"
-        />
+      {/* ヘッダー操作 */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchInput placeholder="クライアント名で検索" className="w-full sm:w-64" />
+          <FilterSelect
+            options={[
+              { value: 'awaka', label: 'awaka cross' },
+              { value: 'direct', label: '直接紹介' },
+            ]}
+            placeholder="すべての経路"
+          />
+          <button className="px-4 py-2.5 text-sm font-medium text-neutral-600 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition-colors">
+            検索
+          </button>
+        </div>
+        <Link
+          href="/professional/clients/new"
+          className="px-4 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors shrink-0"
+        >
+          代理登録
+        </Link>
       </div>
 
       {mockProfessionalClients.length === 0 ? (
@@ -74,6 +85,7 @@ export default function ProfessionalClientsPage() {
                     <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">紹介経路</th>
                     <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">紹介日</th>
                     <th className="text-left py-3 px-5 text-xs text-neutral-400 font-medium">連絡先</th>
+                    <th className="py-3 px-5"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,6 +112,11 @@ export default function ProfessionalClientsPage() {
                             <Phone className="w-4 h-4" />
                           </a>
                         </div>
+                      </td>
+                      <td className="py-3.5 px-5">
+                        <Link href={`/professional/clients/${client.id}`} className="text-xs text-primary-500 hover:underline font-medium">
+                          詳細
+                        </Link>
                       </td>
                     </tr>
                   ))}

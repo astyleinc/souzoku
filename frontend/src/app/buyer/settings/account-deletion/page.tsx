@@ -1,0 +1,27 @@
+'use client'
+
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { DashboardShell } from '@/components/layout/DashboardShell'
+import { AccountDeletionForm } from '@/components/shared/AccountDeletionForm'
+import { buyerNav } from '@/config/navigation'
+
+export default function BuyerAccountDeletionPage() {
+  return (
+    <DashboardShell
+      title="アカウント削除"
+      roleLabel="買い手"
+      userName="株式会社山本不動産"
+      navItems={buyerNav}
+    >
+      <Link href="/buyer/settings" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 mb-6">
+        <ArrowLeft className="w-4 h-4" />
+        設定に戻る
+      </Link>
+      <AccountDeletionForm
+        roleName="買い手"
+        userName="株式会社山本不動産"
+      />
+    </DashboardShell>
+  )
+}

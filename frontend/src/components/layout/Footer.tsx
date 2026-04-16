@@ -4,7 +4,7 @@ export const Footer = () => {
   return (
     <footer className="bg-neutral-900 text-neutral-400 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* ブランド（控えめ） */}
           <div className="col-span-2 md:col-span-1">
             <p className="text-sm leading-relaxed max-w-xs">
@@ -43,6 +43,17 @@ export const Footer = () => {
               <li className="text-neutral-500 text-xs pt-1">※ Phase 2で首都圏全域に拡大予定</li>
             </ul>
           </div>
+
+          {/* サポート */}
+          <div>
+            <h3 className="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-4">サポート</h3>
+            <ul className="space-y-2.5 text-sm">
+              <li><Link href="/about" className="hover:text-white transition-colors">会社概要</Link></li>
+              <li><Link href="/pricing" className="hover:text-white transition-colors">料金について</Link></li>
+              <li><Link href="/faq" className="hover:text-white transition-colors">よくある質問</Link></li>
+              <li><Link href="/contact" className="hover:text-white transition-colors">お問い合わせ</Link></li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-10 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
@@ -50,6 +61,10 @@ export const Footer = () => {
           <div className="flex gap-4">
             <Link href="/terms" className="hover:text-neutral-300 transition-colors">利用規約</Link>
             <Link href="/privacy" className="hover:text-neutral-300 transition-colors">プライバシーポリシー</Link>
+            <Link href="/tokusho" className="hover:text-neutral-300 transition-colors">特定商取引法</Link>
+            <Link href="/cookie-policy" className="hover:text-neutral-300 transition-colors">Cookieポリシー</Link>
+            <Link href="/accessibility" className="hover:text-neutral-300 transition-colors">アクセシビリティ</Link>
+            <Link href="/sitemap-page" className="hover:text-neutral-300 transition-colors">サイトマップ</Link>
           </div>
         </div>
       </div>

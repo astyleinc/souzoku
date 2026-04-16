@@ -14,6 +14,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { NotificationList } from '@/components/shared/NotificationList'
 import { SummaryCard } from '@/components/shared/SummaryCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { OnboardingChecklist } from '@/components/shared/OnboardingChecklist'
 import { sellerNav } from '@/config/navigation'
 import { mockProperties } from '@/data/mock'
 import { mockBids, mockNotifications } from '@/data/mock-dashboard'
@@ -30,6 +31,15 @@ export default function SellerDashboardPage() {
       userName="中村 一郎"
       navItems={sellerNav}
     >
+      <OnboardingChecklist
+        items={[
+          { label: 'プロフィールを完成させる', href: '/seller/settings', completed: true },
+          { label: '本人確認書類をアップロード', href: '/seller/documents', completed: true },
+          { label: '最初の物件を登録する', href: '/seller/properties/new', completed: false },
+          { label: '通知設定を確認する', href: '/seller/settings', completed: false },
+        ]}
+      />
+
       {/* サマリカード */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <SummaryCard icon={Building2} iconColor="text-primary-500" iconBg="bg-primary-50" label="出品物件" value="4" sub="公開中 2 / 審査中 1 / 入札中 1" />
