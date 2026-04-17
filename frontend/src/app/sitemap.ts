@@ -19,7 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 物件詳細ページを動的に追加
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787'}/api/properties?limit=1000`, {
+    const apiBase = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000')
+    const res = await fetch(`${apiBase}/api/properties?limit=1000`, {
       next: { revalidate: 3600 },
     })
     if (res.ok) {

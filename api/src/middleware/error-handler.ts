@@ -52,6 +52,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
   }
 
   // 予期しないエラー: スタックトレースはログのみ。クライアントには漏らさない
+  const cause = (err as Error & { cause?: unknown }).cause
   logger.error('予期しないエラー', {
     requestId,
     message: err.message,
@@ -59,6 +60,9 @@ export const errorHandler: ErrorHandler = (err, c) => {
     name: err.name,
     path: c.req.path,
     method: c.req.method,
+    cause: cause instanceof Error
+      ? { name: cause.name, message: cause.message, stack: cause.stack, ...cause }
+      : cause,
   })
 
   return c.json(

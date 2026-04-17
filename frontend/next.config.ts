@@ -1,16 +1,9 @@
 import type { NextConfig } from "next";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787'
-
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
-      },
-    ]
-  },
+  // APIは同一オリジンの /api/* にマウント済みのため rewrites は不要
+  transpilePackages: ['ouver-api'],
+  serverExternalPackages: ['postgres', 'better-auth'],
 };
 
 export default nextConfig;
