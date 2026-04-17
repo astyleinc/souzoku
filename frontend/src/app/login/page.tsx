@@ -166,7 +166,7 @@ function LoginForm() {
                 LINEでログイン
               </button>
             </div>
-            <p className="text-center text-[10px] text-neutral-300 mt-2">ソーシャルログインは本番環境で有効になります</p>
+            <p className="text-center text-[10px] text-neutral-300 mt-2">ソーシャルログインは今後追加予定です</p>
 
             <p className="mt-6 text-center text-[11px] text-neutral-400 leading-relaxed">
               ログインすることで、
