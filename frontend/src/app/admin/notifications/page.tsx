@@ -9,7 +9,9 @@ import {
   AlertTriangle,
   Check,
   Loader2,
+  Send,
 } from 'lucide-react'
+import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { adminNav } from '@/config/navigation'
@@ -85,15 +87,24 @@ export default function AdminNotificationsPage() {
         <p className="text-sm text-neutral-400">
           未読 <span className="font-medium text-foreground">{unreadCount}</span> 件
         </p>
-        {unreadCount > 0 && (
-          <button
-            onClick={handleReadAll}
-            className="inline-flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium transition-colors"
+        <div className="flex items-center gap-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={handleReadAll}
+              className="inline-flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 font-medium transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+              すべて既読にする
+            </button>
+          )}
+          <Link
+            href="/admin/notifications/broadcast"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
           >
-            <Check className="w-3.5 h-3.5" />
-            すべて既読にする
-          </button>
-        )}
+            <Send className="w-4 h-4" />
+            通知を送信
+          </Link>
+        </div>
       </div>
 
       {notifications.length === 0 ? (

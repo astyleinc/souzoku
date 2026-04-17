@@ -4,9 +4,9 @@ import type { AuthUser } from '../middleware/auth'
 import { validateBody, validateQuery } from '../middleware/validate'
 import { validateUuidParam } from '../middleware/param-validator'
 import { auditLogQuerySchema } from '../schemas/audit'
-import { userQuerySchema, userStatusSchema, analyticsQuerySchema } from '../schemas/admin-extended'
+import { userQuerySchema, userStatusSchema, userRoleSchema, analyticsQuerySchema } from '../schemas/admin-extended'
 import type { AuditLogQuery } from '../schemas/audit'
-import type { UserQuery, UserStatusInput, AnalyticsQuery } from '../schemas/admin-extended'
+import type { UserQuery, UserStatusInput, UserRoleInput, AnalyticsQuery } from '../schemas/admin-extended'
 import { services } from '../lib/services'
 import { ok, paginated } from '../lib/response'
 
@@ -58,6 +58,14 @@ adminExtendedRoutes.patch('/users/:id/status', validateUuidParam('id'), validate
   return ok(c, result)
 })
 
+// ユーザーロール変更
+adminExtendedRoutes.patch('/users/:id/role', validateUuidParam('id'), validateBody(userRoleSchema), async (c) => {
+  const input = c.get('validatedBody') as UserRoleInput
+  const actor = c.get('user')
+  const result = await services.admin.updateUserRole(c.req.param('id'), input.role, actor.id)
+  return ok(c, result)
+})
+
 // ダッシュボード集計
 adminExtendedRoutes.get('/dashboard', async (c) => {
   const result = await services.admin.getDashboard()
@@ -81,6 +89,32 @@ adminExtendedRoutes.get('/properties', validateQuery(userQuerySchema), async (c)
     keyword: query.keyword,
   })
   return paginated(c, result)
+})
+
+// NW会社一覧
+adminExtendedRoutes.get('/nw-companies', async (c) => {
+  const result = await services.admin.listNwCompanies()
+  return ok(c, result)
+})
+
+// NW会社作成
+adminExtendedRoutes.post('/nw-companies', async (c) => {
+  const body = await c.req.json()
+  const result = await services.admin.createNwCompany(body)
+  return ok(c, result)
+})
+
+// NW会社更新
+adminExtendedRoutes.patch('/nw-companies/:id', validateUuidParam('id'), async (c) => {
+  const body = await c.req.json()
+  const result = await services.admin.updateNwCompany(c.req.param('id'), body)
+  return ok(c, result)
+})
+
+// NW会社詳細
+adminExtendedRoutes.get('/nw-companies/:id', validateUuidParam('id'), async (c) => {
+  const result = await services.admin.getNwCompany(c.req.param('id'))
+  return ok(c, result)
 })
 
 // 収益サマリー

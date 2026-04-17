@@ -57,12 +57,14 @@ export default function AdminUserDetailPage() {
     load()
   }, [params.id])
 
+  const [suspended, setSuspended] = useState(false)
+
   const handleSuspend = async () => {
     if (!user) return
     setSuspending(true)
     const res = await api.patch(`/admin/users/${user.id}/status`, { status: 'suspended' })
     if (res.success) {
-      // 停止完了
+      setSuspended(true)
     }
     setSuspending(false)
   }
@@ -180,7 +182,7 @@ export default function AdminUserDetailPage() {
                 const newRole = selectedRole || user.role
                 if (newRole === user.role) return
                 setRoleUpdating(true)
-                const res = await api.patch(`/admin/users/${params.id}/status`, { status: newRole })
+                const res = await api.patch(`/admin/users/${params.id}/role`, { role: newRole })
                 if (res.success) {
                   setUser((prev) => prev ? { ...prev, role: newRole } : prev)
                 }
@@ -199,13 +201,20 @@ export default function AdminUserDetailPage() {
               アカウント操作
             </h3>
             <div className="space-y-3">
-              <button
-                onClick={handleSuspend}
-                disabled={suspending}
-                className="w-full px-4 py-2.5 text-sm font-medium text-warning-600 bg-warning-50 border border-warning-200 rounded-xl hover:bg-warning-100 transition-colors disabled:opacity-50"
-              >
-                {suspending ? '処理中...' : 'アカウントを停止する'}
-              </button>
+              {suspended ? (
+                <div className="flex items-center gap-2 p-3 bg-warning-50 rounded-xl">
+                  <AlertTriangle className="w-4 h-4 text-warning-500" />
+                  <span className="text-sm text-warning-700">アカウントを停止しました</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSuspend}
+                  disabled={suspending}
+                  className="w-full px-4 py-2.5 text-sm font-medium text-warning-600 bg-warning-50 border border-warning-200 rounded-xl hover:bg-warning-100 transition-colors disabled:opacity-50"
+                >
+                  {suspending ? '処理中...' : 'アカウントを停止する'}
+                </button>
+              )}
             </div>
           </div>
         </div>

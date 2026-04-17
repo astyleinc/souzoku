@@ -59,10 +59,8 @@ export const DevAuthSwitcher = () => {
     setError(null)
     setSwitching(devUser.id)
     try {
-      // 既にログイン中なら先にログアウト
-      if (user) {
-        await logout()
-      }
+      // ログアウトを挟まず直接ログイン（BetterAuthがセッションを置き換える）
+      // logoutを先に呼ぶとuser=nullの瞬間にRouteGuardがログイン画面へリダイレクトしてチラつく
       const result = await login(devUser.email, DEV_PASSWORD)
       if (result.success) {
         router.push(roleDashboard[devUser.role])

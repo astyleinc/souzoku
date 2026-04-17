@@ -11,6 +11,7 @@ import {
   Users,
   DollarSign,
   Briefcase,
+  FileText,
   Loader2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -215,6 +216,7 @@ export default function AdminDashboardPage() {
                     { href: '/admin/professionals', icon: Users, label: '士業管理' },
                     { href: '/admin/brokers', icon: Users, label: '業者管理' },
                     { href: '/admin/revenue', icon: DollarSign, label: '収益管理' },
+                    { href: '/admin/content', icon: FileText, label: 'コンテンツ管理' },
                     { href: '/admin/users', icon: Users, label: 'ユーザー管理' },
                   ].map((item) => (
                     <Link

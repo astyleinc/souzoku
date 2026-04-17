@@ -13,6 +13,8 @@ import {
   payments,
   auditLogs,
   authSession,
+  nwCompanies,
+  professionalNwAffiliations,
 } from '../db/schema'
 import { notFound } from '../lib/errors'
 import type { UserQuery, AnalyticsQuery } from '../schemas/admin-extended'
@@ -306,6 +308,31 @@ export const createAdminService = (db: Database) => ({
     }
   },
 
+  // ユーザーロール変更
+  async updateUserRole(userId: string, role: string, actorId: string) {
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+    if (userResult.length === 0) {
+      throw notFound('ユーザー')
+    }
+
+    const user = userResult[0]
+    const oldRole = user.role
+
+    await db.update(users)
+      .set({ role: role as typeof users.role.enumValues[number], updatedAt: new Date() })
+      .where(eq(users.id, userId))
+
+    await db.insert(auditLogs).values({
+      actorId,
+      action: 'user_updated',
+      targetType: 'user',
+      targetId: userId,
+      details: JSON.stringify({ oldRole, newRole: role }),
+    })
+
+    return { ...user, role }
+  },
+
   // 物件一覧（管理者用、全ステータス表示、売主名結合）
   async listProperties(query: PropertyListQuery): Promise<PaginatedResponse<Record<string, unknown>>> {
     const conditions = []
@@ -435,5 +462,81 @@ export const createAdminService = (db: Database) => ({
         activeSessions: Number(sessionCount[0].count),
       },
     }
+  },
+
+  // NW会社一覧
+  async listNwCompanies() {
+    const rows = await db
+      .select({
+        id: nwCompanies.id,
+        name: nwCompanies.name,
+        contactEmail: nwCompanies.contactEmail,
+        contactPhone: nwCompanies.contactPhone,
+        isActive: nwCompanies.isActive,
+        createdAt: nwCompanies.createdAt,
+      })
+      .from(nwCompanies)
+      .orderBy(desc(nwCompanies.createdAt))
+
+    // 所属士業数を集計
+    const affiliations = await db
+      .select({
+        nwCompanyId: professionalNwAffiliations.nwCompanyId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(professionalNwAffiliations)
+      .where(sql`${professionalNwAffiliations.leftAt} IS NULL`)
+      .groupBy(professionalNwAffiliations.nwCompanyId)
+
+    const countMap = new Map(affiliations.map((a) => [a.nwCompanyId, a.count]))
+
+    return {
+      items: rows.map((r) => ({
+        ...r,
+        affiliatedCount: countMap.get(r.id) ?? 0,
+      })),
+    }
+  },
+
+  // NW会社作成
+  async createNwCompany(input: Record<string, unknown>) {
+    const [created] = await db.insert(nwCompanies).values({
+      name: input.name as string,
+      contactEmail: (input.contactEmail as string) || null,
+      contactPhone: (input.contactPhone as string) || null,
+      bankName: (input.bankName as string) || null,
+      bankBranch: (input.bankBranch as string) || null,
+      bankAccountType: (input.bankAccountType as string) || null,
+      bankAccountNumber: (input.bankAccountNumber as string) || null,
+      invoiceNumber: (input.invoiceNumber as string) || null,
+    }).returning()
+    return created
+  },
+
+  // NW会社更新
+  async updateNwCompany(id: string, input: Record<string, unknown>) {
+    const existing = await db.select().from(nwCompanies).where(eq(nwCompanies.id, id)).limit(1)
+    if (existing.length === 0) throw notFound('NW会社')
+
+    const updates: Record<string, unknown> = {}
+    if (input.name !== undefined) updates.name = input.name
+    if (input.contactEmail !== undefined) updates.contactEmail = input.contactEmail || null
+    if (input.contactPhone !== undefined) updates.contactPhone = input.contactPhone || null
+    if (input.bankName !== undefined) updates.bankName = input.bankName || null
+    if (input.bankBranch !== undefined) updates.bankBranch = input.bankBranch || null
+    if (input.bankAccountType !== undefined) updates.bankAccountType = input.bankAccountType || null
+    if (input.bankAccountNumber !== undefined) updates.bankAccountNumber = input.bankAccountNumber || null
+    if (input.invoiceNumber !== undefined) updates.invoiceNumber = input.invoiceNumber || null
+    if (input.isActive !== undefined) updates.isActive = input.isActive
+
+    const [updated] = await db.update(nwCompanies).set(updates).where(eq(nwCompanies.id, id)).returning()
+    return updated
+  },
+
+  // NW会社詳細
+  async getNwCompany(id: string) {
+    const rows = await db.select().from(nwCompanies).where(eq(nwCompanies.id, id)).limit(1)
+    if (rows.length === 0) throw notFound('NW会社')
+    return rows[0]
   },
 })

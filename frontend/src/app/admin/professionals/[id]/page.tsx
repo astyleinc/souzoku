@@ -237,9 +237,12 @@ export default function AdminProfessionalDetailPage() {
                   認証を取り消す
                 </button>
               )}
-              <button className="w-full px-4 py-2.5 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
+              <Link
+                href={`/admin/professionals/${params.id}/edit`}
+                className="block w-full px-4 py-2.5 text-sm font-medium text-center text-neutral-600 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+              >
                 編集する
-              </button>
+              </Link>
             </div>
           </div>
 

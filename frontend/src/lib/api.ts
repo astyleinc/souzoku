@@ -36,8 +36,9 @@ const request = async <T>(
     })
 
     if (!res.ok) {
-      // 認証エラー時はログインへリダイレクト
-      if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+      // 未認証（401）のみログインへリダイレクト
+      // 403は「認証済みだが権限不足」なのでリダイレクトしない
+      if (res.status === 401 && typeof window !== 'undefined') {
         const current = window.location.pathname
         if (current !== '/login') {
           window.location.href = `/login?redirect=${encodeURIComponent(current)}`
@@ -82,7 +83,7 @@ export const api = {
         signal: AbortSignal.timeout(30000),
       })
       if (!res.ok) {
-        if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+        if (res.status === 401 && typeof window !== 'undefined') {
           const current = window.location.pathname
           if (current !== '/login') {
             window.location.href = `/login?redirect=${encodeURIComponent(current)}`

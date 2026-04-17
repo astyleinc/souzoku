@@ -56,10 +56,13 @@ export default function AdminBrokersPage() {
     >
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-neutral-400">{brokers.length}社</p>
-        <button className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors">
+        <Link
+          href="/admin/brokers/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           業者を追加
-        </button>
+        </Link>
       </div>
 
       {brokers.length === 0 ? (

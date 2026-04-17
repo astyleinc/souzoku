@@ -215,11 +215,11 @@ export default function AdminBidDetailPage() {
                 onClick={async () => {
                   setActionLoading(true)
                   setActionError(null)
-                  const res = await api.patch(`/admin/properties/${params.id}/approve`, { assignedBrokerId: null })
+                  const res = await api.patch(`/admin/properties/${params.id}/close`, {})
                   if (res.success) {
-                    setProperty((prev) => prev ? { ...prev, status: 'published' } : prev)
+                    setProperty((prev) => prev ? { ...prev, status: 'closed' } : prev)
                   } else {
-                    setActionError(res.error?.message ?? '承認に失敗しました')
+                    setActionError(res.error?.message ?? '成約承認に失敗しました')
                   }
                   setActionLoading(false)
                 }}
@@ -227,7 +227,7 @@ export default function AdminBidDetailPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-success-500 rounded-xl hover:bg-success-600 transition-colors disabled:opacity-50"
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                承認する
+                成約を承認する
               </button>
               <button
                 onClick={async () => {

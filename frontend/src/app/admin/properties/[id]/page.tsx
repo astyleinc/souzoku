@@ -43,6 +43,7 @@ type DocItem = {
   id: string
   fileName: string
   documentType: string
+  fileUrl: string | null
   createdAt: string
 }
 
@@ -68,6 +69,7 @@ export default function AdminPropertyDetailPage() {
   const [selectedBrokerId, setSelectedBrokerId] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [returnReason, setReturnReason] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -124,9 +126,13 @@ export default function AdminPropertyDetailPage() {
   }
 
   const handleReturn = async () => {
+    if (!returnReason.trim()) {
+      setActionError('差戻し理由を入力してください')
+      return
+    }
     setActionLoading(true)
     setActionError(null)
-    const res = await api.patch(`/admin/properties/${params.id}/return`, { returnReason: '管理者による差戻し' })
+    const res = await api.patch(`/admin/properties/${params.id}/return`, { returnReason: returnReason.trim() })
     if (res.success) {
       setProperty((prev) => prev ? { ...prev, status: 'returned' } : prev)
     } else {
@@ -234,7 +240,11 @@ export default function AdminPropertyDetailPage() {
                         <p className="text-xs text-neutral-400">{doc.documentType}</p>
                       </div>
                     </div>
-                    <button className="text-xs text-primary-500 hover:underline">確認</button>
+                    {doc.fileUrl ? (
+                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-500 hover:underline">確認</a>
+                    ) : (
+                      <span className="text-xs text-neutral-300">未アップロード</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -302,9 +312,19 @@ export default function AdminPropertyDetailPage() {
                 >
                   {actionLoading ? '処理中...' : '承認して公開する'}
                 </button>
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-1.5">差戻し理由</label>
+                  <textarea
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    rows={3}
+                    placeholder="差戻し理由を入力..."
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                  />
+                </div>
                 <button
                   onClick={handleReturn}
-                  disabled={actionLoading}
+                  disabled={actionLoading || !returnReason.trim()}
                   className="w-full py-2.5 text-sm font-medium text-error-700 bg-error-50 border border-error-500/30 rounded-xl hover:bg-error-100 transition-colors disabled:opacity-50"
                 >
                   差戻し
@@ -322,9 +342,19 @@ export default function AdminPropertyDetailPage() {
                 >
                   {actionLoading ? '処理中...' : '成約を承認'}
                 </button>
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-1.5">差戻し理由</label>
+                  <textarea
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    rows={3}
+                    placeholder="差戻し理由を入力..."
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                  />
+                </div>
                 <button
                   onClick={handleReturn}
-                  disabled={actionLoading}
+                  disabled={actionLoading || !returnReason.trim()}
                   className="w-full py-2.5 text-sm font-medium text-error-700 bg-error-50 border border-error-500/30 rounded-xl hover:bg-error-100 transition-colors disabled:opacity-50"
                 >
                   差戻し（再選択を依頼）

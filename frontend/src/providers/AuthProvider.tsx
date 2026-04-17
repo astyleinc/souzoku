@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await fetch('/api/auth/sign-out', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: '{}',
         credentials: 'include',
       })
     } catch {

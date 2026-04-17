@@ -121,7 +121,7 @@ export default function AdminBidsPage() {
                     </td>
                     <td className="py-3 px-5 text-neutral-400">{bid.createdAt?.slice(0, 10)}</td>
                     <td className="py-3 px-5">
-                      <Link href={`/admin/bids/${bid.id}`} className="text-xs text-primary-500 hover:underline font-medium">
+                      <Link href={`/admin/bids/${bid.propertyId}`} className="text-xs text-primary-500 hover:underline font-medium">
                         詳細
                       </Link>
                     </td>

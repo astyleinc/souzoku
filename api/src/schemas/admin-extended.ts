@@ -14,6 +14,13 @@ export const userStatusSchema = z.object({
   status: z.enum(['active', 'suspended']),
 })
 
+// ユーザーロール更新
+export const userRoleSchema = z.object({
+  role: z.enum(['seller', 'buyer', 'professional', 'broker', 'admin']),
+})
+
+export type UserRoleInput = z.infer<typeof userRoleSchema>
+
 // 分析クエリ
 export const analyticsQuerySchema = z.object({
   from: z.string().datetime().optional(),
