@@ -44,14 +44,15 @@ export const createApp = () => {
   // ボディサイズ制限（1MB）
   app.use('*', bodyLimit({ maxSize: 1024 * 1024 }))
 
-  // レート制限: API全体に15分あたり100リクエスト
-  app.use('/api/*', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }))
+  // レート制限: API全体に1分あたり300リクエスト
+  app.use('/api/*', rateLimit({ windowMs: 60 * 1000, max: 300 }))
 
-  // 入札・認証系はより厳格: 1分あたり10リクエスト
-  app.use('/api/bids', rateLimit({ windowMs: 60 * 1000, max: 10 }))
-  app.use('/api/auth/*', rateLimit({ windowMs: 60 * 1000, max: 20 }))
-  // お問い合わせ: 1分あたり5リクエスト（スパム防止）
-  app.use('/api/support/contact', rateLimit({ windowMs: 60 * 1000, max: 5 }))
+  // 入札系は厳格: 1分あたり30リクエスト
+  app.use('/api/bids', rateLimit({ windowMs: 60 * 1000, max: 30 }))
+  // 認証系はセッション確認が頻繁なため緩め: 1分あたり120リクエスト
+  app.use('/api/auth/*', rateLimit({ windowMs: 60 * 1000, max: 120 }))
+  // お問い合わせ: 1分あたり10リクエスト（スパム防止）
+  app.use('/api/support/contact', rateLimit({ windowMs: 60 * 1000, max: 10 }))
 
   // エラーハンドラ
   app.onError(errorHandler)
