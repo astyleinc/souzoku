@@ -61,7 +61,11 @@ export const errorHandler: ErrorHandler = (err, c) => {
     path: c.req.path,
     method: c.req.method,
     cause: cause instanceof Error
-      ? { name: cause.name, message: cause.message, stack: cause.stack, ...cause }
+      ? Object.assign({}, cause, {
+          name: cause.name,
+          message: cause.message,
+          stack: cause.stack,
+        })
       : cause,
   })
 
