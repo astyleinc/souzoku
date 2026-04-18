@@ -39,6 +39,11 @@ export const BROKERAGE_FEE = {
 // 最低出品価格（円）
 export const MIN_LISTING_PRICE = 10000000
 
+// 低廉な空家等の売買特例
+// 800万円以下の物件は、売主側の仲介手数料を 33万円（税別30万円）まで請求可能
+export const LOW_VALUE_THRESHOLD = 8_000_000
+export const LOW_VALUE_FEE_CAP = 300_000
+
 // 即決価格承認期限（時間）
 export const INSTANT_APPROVAL_DEADLINE_HOURS = 48
 

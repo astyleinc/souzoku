@@ -20,6 +20,7 @@ export const NOTIFICATION_EVENT = {
   PAYMENT_CONFIRMED: 'payment_confirmed',
   EVALUATION_REQUEST: 'evaluation_request',
   NEW_PROFESSIONAL_REGISTERED: 'new_professional_registered',
+  BROKER_LOW_RATING: 'broker_low_rating',
 } as const
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENT)[keyof typeof NOTIFICATION_EVENT]

@@ -10,6 +10,9 @@ import type {
   UpdateTicketStatusInput,
   AssignTicketInput,
 } from '../schemas/support'
+import { createNotificationService } from './notification.service'
+import { NOTIFICATION_EVENT } from '@shared/constants'
+import { logger } from '../lib/logger'
 
 export const createSupportService = (db: Database) => ({
   // ユーザー自身のチケット一覧取得
@@ -70,6 +73,22 @@ export const createSupportService = (db: Database) => ({
       body: input.body,
       isStaffReply: false,
     })
+
+    // 問い合わせ受領通知（起票者本人へ控えを送る）
+    try {
+      await createNotificationService(db).create({
+        userId,
+        event: NOTIFICATION_EVENT.INQUIRY_RECEIVED,
+        channel: 'email',
+        title: 'お問い合わせを受け付けました',
+        body: `「${input.subject}」のお問い合わせを受け付けました。担当者より折り返しご連絡いたします。`,
+        relatedEntityType: 'ticket',
+        relatedEntityId: ticket[0].id,
+        alsoEmail: true,
+      })
+    } catch (err) {
+      logger.error('問い合わせ受領通知の送信に失敗', { ticketId: ticket[0].id, error: err })
+    }
 
     return ticket[0]
   },
@@ -294,6 +313,24 @@ export const createSupportService = (db: Database) => ({
     await db.update(supportTickets)
       .set({ updatedAt: new Date() })
       .where(eq(supportTickets.id, ticketId))
+
+    // 起票ユーザーへ返信通知（未ログイン問い合わせ＝userId未設定は対象外）
+    if (ticket[0].userId) {
+      try {
+        await createNotificationService(db).create({
+          userId: ticket[0].userId,
+          event: NOTIFICATION_EVENT.INQUIRY_REPLIED,
+          channel: 'email',
+          title: 'お問い合わせに返信がありました',
+          body: `「${ticket[0].subject}」に運営から返信がありました。ご確認ください。`,
+          relatedEntityType: 'ticket',
+          relatedEntityId: ticketId,
+          alsoEmail: true,
+        })
+      } catch (err) {
+        logger.error('問い合わせ返信通知の送信に失敗', { ticketId, error: err })
+      }
+    }
 
     return message[0]
   },

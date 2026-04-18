@@ -5,10 +5,15 @@ import { properties } from '../db/schema/properties'
 import { users } from '../db/schema/users'
 import { revenueDistributions, payments } from '../db/schema/revenue'
 import { invoices } from '../db/schema/invoices'
-import { professionals } from '../db/schema/professionals'
+import { professionals, nwCompanies } from '../db/schema/professionals'
 import { brokers } from '../db/schema/brokers'
 import { notFound, forbidden } from '../lib/errors'
 import type { TransactionQuery, RevenueQuery, InvoiceQuery } from '../schemas/transaction'
+import { renderInvoicePdf, type InvoiceTarget } from '../lib/pdf/invoice'
+import { storage } from '../lib/storage'
+import { logger } from '../lib/logger'
+
+const INVOICE_BUCKET = 'invoices'
 
 // ページネーション結果の組み立て
 const buildPaginatedResult = <T>(
@@ -379,18 +384,150 @@ export const createTransactionService = (db: Database) => ({
     return result[0]
   },
 
-  // 請求書の仮生成（プレースホルダー）
+  // 請求書PDFを生成して Storage にアップロード
   async generateInvoicePdf(invoiceId: string, brokerId: string) {
-    // 請求書の存在とアクセス権を確認
     const invoice = await this.getInvoice(invoiceId, brokerId)
+    const pdfUrl = await this._renderAndUploadInvoice(invoiceId)
+    return { ...invoice, pdfUrl }
+  },
 
-    const pdfUrl = `/storage/invoices/${brokerId}/${invoiceId}.pdf`
+  // 管理者向け: 対象種別を問わず PDF を生成（士業・NW支払調書含む）
+  async generateInvoicePdfByAdmin(invoiceId: string) {
+    const row = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
+    if (row.length === 0) throw notFound('請求書')
+    const pdfUrl = await this._renderAndUploadInvoice(invoiceId)
+    return { ...row[0], pdfUrl }
+  },
+
+  // 管理者向け: 支払IDから請求書を自動作成してPDF生成
+  async ensureInvoicePdfForPayment(paymentId: string) {
+    // 支払・配分・請求書の結合
+    const rows = await db.select({
+      payment: payments,
+      distribution: revenueDistributions,
+    })
+      .from(payments)
+      .innerJoin(revenueDistributions, eq(payments.revenueDistributionId, revenueDistributions.id))
+      .where(eq(payments.id, paymentId))
+      .limit(1)
+    if (rows.length === 0) throw notFound('支払い')
+    const { payment, distribution } = rows[0]
+
+    const targetMap: Record<string, InvoiceTarget> = { broker: 'broker', professional: 'professional', nw: 'nw' }
+    const target = targetMap[payment.payeeType] ?? 'broker'
+
+    // 既存の請求書を確認（payment にひもづく最新の1件）
+    const existing = await db.select().from(invoices).where(eq(invoices.paymentId, paymentId)).limit(1)
+
+    let invoiceId: string
+    if (existing.length > 0) {
+      invoiceId = existing[0].id
+    } else {
+      const amount = Number(payment.amount)
+      const taxAmount = Math.round(amount * 0.1)
+      const totalAmount = amount + taxAmount
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${paymentId.slice(0, 8).toUpperCase()}`
+      const inserted = await db.insert(invoices).values({
+        paymentId,
+        brokerId: distribution.brokerId,
+        targetType: target,
+        invoiceNumber,
+        amount,
+        taxAmount,
+        totalAmount,
+        status: 'draft',
+      }).returning()
+      invoiceId = inserted[0].id
+    }
+
+    const pdfUrl = await this._renderAndUploadInvoice(invoiceId)
+    return { invoiceId, pdfUrl }
+  },
+
+  // 内部ヘルパー: invoiceId から関連情報を集めて PDF を生成・アップロード
+  async _renderAndUploadInvoice(invoiceId: string): Promise<string> {
+    const row = await db.select({
+      invoice: invoices,
+      payment: payments,
+      distribution: revenueDistributions,
+      property: properties,
+    })
+      .from(invoices)
+      .innerJoin(payments, eq(invoices.paymentId, payments.id))
+      .innerJoin(revenueDistributions, eq(payments.revenueDistributionId, revenueDistributions.id))
+      .innerJoin(properties, eq(revenueDistributions.propertyId, properties.id))
+      .where(eq(invoices.id, invoiceId))
+      .limit(1)
+
+    if (row.length === 0) throw notFound('請求書')
+
+    const { invoice, payment, distribution, property } = row[0]
+    const target = invoice.targetType as InvoiceTarget
+
+    // 宛先（請求書を受け取る側）名称の解決
+    let recipientName = ''
+    let recipientAddress: string | undefined
+    if (target === 'broker') {
+      const b = await db.select().from(brokers).where(eq(brokers.id, payment.payeeId)).limit(1)
+      recipientName = b[0]?.companyName ?? '業者'
+      recipientAddress = b[0]?.address ?? undefined
+    } else if (target === 'professional') {
+      const rows = await db.select({ name: users.name, officeName: professionals.officeName, officeAddress: professionals.officeAddress })
+        .from(professionals)
+        .innerJoin(users, eq(users.id, professionals.userId))
+        .where(eq(professionals.id, payment.payeeId))
+        .limit(1)
+      recipientName = rows[0]?.officeName || rows[0]?.name || '士業'
+      recipientAddress = rows[0]?.officeAddress ?? undefined
+    } else {
+      const rows = await db.select().from(nwCompanies).where(eq(nwCompanies.id, payment.payeeId)).limit(1)
+      recipientName = rows[0]?.name ?? 'NW会社'
+    }
+
+    const amount = Number(invoice.amount)
+    const taxAmount = Number(invoice.taxAmount)
+    const totalAmount = Number(invoice.totalAmount)
+
+    const descriptionByTarget: Record<InvoiceTarget, string> = {
+      broker: `仲介手数料（物件: ${property.title}）`,
+      professional: `紹介料（物件: ${property.title}）`,
+      nw: `紹介ロイヤリティ（物件: ${property.title}）`,
+    }
+
+    const pdfBytes = await renderInvoicePdf({
+      target,
+      invoiceNumber: invoice.invoiceNumber,
+      issuedAt: invoice.issuedAt ?? new Date(),
+      issuerName: '株式会社Ouver',
+      issuerAddress: process.env.INVOICE_ISSUER_ADDRESS,
+      issuerQualifiedNumber: process.env.INVOICE_ISSUER_QUALIFIED_NUMBER,
+      recipientName,
+      recipientAddress,
+      items: [{
+        description: descriptionByTarget[target],
+        quantity: 1,
+        unitPrice: amount,
+      }],
+      amount,
+      taxAmount,
+      totalAmount,
+      note: `配分対象: 売買価格 ${Number(distribution.salePrice).toLocaleString()} 円（片手: ${distribution.isOneSided ? 'あり' : 'なし'}）`,
+    })
+
+    const path = `${target}/${invoice.id}.pdf`
+    let pdfUrl: string
+    try {
+      pdfUrl = await storage.uploadBinary(INVOICE_BUCKET, path, pdfBytes, 'application/pdf')
+    } catch (err) {
+      logger.error('請求書PDFのアップロードに失敗', { invoiceId, error: err })
+      throw err
+    }
 
     await db.update(invoices)
-      .set({ pdfUrl, updatedAt: new Date() })
+      .set({ pdfUrl, status: 'issued', issuedAt: invoice.issuedAt ?? new Date(), updatedAt: new Date() })
       .where(eq(invoices.id, invoiceId))
 
-    return { ...invoice, pdfUrl }
+    return pdfUrl
   },
 
   // 管理者向け収益配分一覧（ページネーション付き）

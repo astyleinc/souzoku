@@ -4,6 +4,9 @@ import { bids } from '../db/schema/bids'
 import { properties } from '../db/schema/properties'
 import type { CreateBidInput, SelectBidInput } from '../schemas/bid'
 import { AppError, ERROR_CODE, notFound } from '../lib/errors'
+import { NOTIFICATION_EVENT } from '@shared/constants'
+import { createNotificationService } from './notification.service'
+import { logger } from '../lib/logger'
 
 export const createBidService = (db: Database) => ({
   // 物件の入札一覧取得
@@ -75,7 +78,62 @@ export const createBidService = (db: Database) => ({
       note: input.note,
     }).returning()
 
-    return result[0]
+    const newBid = result[0]
+
+    // 売主へ新規入札通知（即決到達時は後続の INSTANT_PRICE_REACHED で上書き通知する）
+    if (!(prop.instantPrice && input.amount >= prop.instantPrice)) {
+      try {
+        await createNotificationService(db).create({
+          userId: prop.sellerId,
+          event: NOTIFICATION_EVENT.NEW_BID,
+          channel: 'email',
+          title: '新しい入札が届きました',
+          body: `物件「${prop.title}」に ${input.amount.toLocaleString()}円 の入札がありました。`,
+          relatedEntityType: 'property',
+          relatedEntityId: prop.id,
+          alsoEmail: true,
+        })
+      } catch (err) {
+        logger.error('新規入札通知の送信に失敗', {
+          propertyId: prop.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+
+    // 即決価格到達判定
+    if (prop.instantPrice && input.amount >= prop.instantPrice) {
+      await db.update(properties)
+        .set({
+          status: 'pending_approval',
+          instantPriceReachedAt: new Date(),
+          instantPriceBidId: newBid.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(properties.id, input.propertyId))
+
+      // 売主に通知（48時間以内の承認を促す）
+      try {
+        const notificationService = createNotificationService(db)
+        await notificationService.create({
+          userId: prop.sellerId,
+          event: NOTIFICATION_EVENT.INSTANT_PRICE_REACHED,
+          channel: 'email',
+          title: '即決価格に到達しました',
+          body: `物件「${prop.title}」に即決価格（${prop.instantPrice.toLocaleString()}円）以上の入札がありました。\n48時間以内に承認または辞退してください。期限を過ぎると通常の入札に戻ります。`,
+          relatedEntityType: 'property',
+          relatedEntityId: prop.id,
+          alsoEmail: true,
+        })
+      } catch (err) {
+        logger.error('即決到達通知の送信に失敗', {
+          propertyId: prop.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+
+    return newBid
   },
 
   // 買い手が自分の入札をキャンセル

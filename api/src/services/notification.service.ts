@@ -1,21 +1,92 @@
 import { eq, desc, and } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { notifications, notificationSettings } from '../db/schema/notifications'
+import { users } from '../db/schema/users'
 import { notFound } from '../lib/errors'
+import { sendMail, renderSimpleTemplate } from '../lib/mail'
+import { sendSlack } from '../lib/slack'
+import { logger } from '../lib/logger'
+
+type CreateNotificationParams = {
+  userId: string
+  event: string
+  channel: 'email' | 'system' | 'slack'
+  title: string
+  body: string
+  relatedEntityType?: string
+  relatedEntityId?: string
+  // システム通知と同時にメール/Slackも送る場合に使用
+  alsoEmail?: boolean
+  // 末尾のCTAボタン用リンク（メール・Slack双方で使用）
+  linkUrl?: string
+  linkLabel?: string
+  // ロール宛の共通Slack通知（NW宛など、特定ユーザーに紐づかない場合）
+  slackWebhookUrl?: string
+}
 
 export const createNotificationService = (db: Database) => ({
-  // 通知を作成
-  async create(params: {
-    userId: string
-    event: string
-    channel: 'email' | 'system' | 'slack'
-    title: string
-    body: string
-    relatedEntityType?: string
-    relatedEntityId?: string
-  }) {
-    const result = await db.insert(notifications).values(params).returning()
-    return result[0]
+  // 通知を作成（DB保存 + 設定に応じてメール/Slackも送信）
+  async create(params: CreateNotificationParams) {
+    const {
+      alsoEmail,
+      linkUrl,
+      linkLabel,
+      slackWebhookUrl,
+      ...dbParams
+    } = params
+
+    const result = await db.insert(notifications).values(dbParams).returning()
+    const record = result[0]
+
+    // 送信処理は失敗しても DB 書き込みは守る（非同期）
+    this.deliver({ ...params }).catch((err) => {
+      logger.error('通知配送で例外', {
+        userId: params.userId,
+        event: params.event,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    })
+
+    return record
+  },
+
+  // 配送（メール + Slack）。チャネル指定に応じて該当先に配る
+  async deliver(params: CreateNotificationParams) {
+    const { channel, alsoEmail, linkUrl, linkLabel, slackWebhookUrl, title, body } = params
+
+    const needMail = channel === 'email' || alsoEmail === true
+    const needSlack = channel === 'slack' || Boolean(slackWebhookUrl)
+
+    if (needMail) {
+      const user = await db.select({ email: users.email, name: users.name })
+        .from(users)
+        .where(eq(users.id, params.userId))
+        .limit(1)
+
+      const settings = await this.getSettings(params.userId)
+      if (user.length > 0 && settings.emailEnabled) {
+        await sendMail({
+          to: user[0].email,
+          subject: title,
+          html: renderSimpleTemplate({ title, body, ctaLabel: linkLabel, ctaUrl: linkUrl }),
+          text: `${title}\n\n${body}${linkUrl ? `\n\n${linkUrl}` : ''}`,
+        })
+      }
+    }
+
+    if (needSlack) {
+      const settings = await this.getSettings(params.userId)
+      const webhookUrl = slackWebhookUrl ?? settings.slackWebhookUrl ?? ''
+      if (webhookUrl && settings.systemEnabled !== false) {
+        await sendSlack({
+          webhookUrl,
+          title,
+          body,
+          linkUrl,
+          linkLabel,
+        })
+      }
+    }
   },
 
   // ユーザーの通知一覧

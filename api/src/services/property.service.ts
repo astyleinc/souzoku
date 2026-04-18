@@ -1,10 +1,14 @@
 import { eq, desc, asc, and, gte, lte, like, sql } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { properties, propertyDocuments } from '../db/schema'
+import { sellerProfiles } from '../db/schema/users'
 import type { CreatePropertyInput, UpdatePropertyInput, PropertyQuery } from '../schemas/property'
-import { notFound } from '../lib/errors'
+import { AppError, ERROR_CODE, notFound } from '../lib/errors'
 import { validatePropertyTransition } from '../lib/status-machine'
+import { MAX_BID_PERIOD_CHANGES, NOTIFICATION_EVENT } from '@shared/constants'
 import type { PaginatedResponse } from '@shared/types'
+import { createNotificationService } from './notification.service'
+import { logger } from '../lib/logger'
 
 export const createPropertyService = (db: Database) => ({
   // 物件一覧取得
@@ -83,27 +87,74 @@ export const createPropertyService = (db: Database) => ({
   },
 
   // 物件登録
+  // referringProfessionalId が未指定なら、売主プロフィールの紹介士業を自動注入する
   async create(input: CreatePropertyInput, sellerId: string, referringProfessionalId?: string) {
+    let effectiveReferringProfessionalId = referringProfessionalId
+    if (!effectiveReferringProfessionalId) {
+      const profile = await db.select({ id: sellerProfiles.referredByProfessionalId })
+        .from(sellerProfiles)
+        .where(eq(sellerProfiles.userId, sellerId))
+        .limit(1)
+      effectiveReferringProfessionalId = profile[0]?.id ?? undefined
+    }
+
     const result = await db.insert(properties).values({
       ...input,
       sellerId,
-      referringProfessionalId,
+      referringProfessionalId: effectiveReferringProfessionalId,
       bidStartAt: input.bidStartAt ? new Date(input.bidStartAt) : null,
       bidEndAt: input.bidEndAt ? new Date(input.bidEndAt) : null,
+      inheritanceStartDate: input.inheritanceStartDate ? new Date(input.inheritanceStartDate) : null,
     }).returning()
+
+    // 売主へ登録受付通知
+    try {
+      await createNotificationService(db).create({
+        userId: sellerId,
+        event: NOTIFICATION_EVENT.PROPERTY_REGISTERED,
+        channel: 'email',
+        title: '物件登録を受け付けました',
+        body: `「${input.title}」の登録を受け付けました。運営による審査後、公開されます。`,
+        relatedEntityType: 'property',
+        relatedEntityId: result[0].id,
+        alsoEmail: true,
+      })
+    } catch (err) {
+      logger.error('物件登録通知の送信に失敗', { error: err, propertyId: result[0].id })
+    }
+
     return result[0]
   },
 
   // 物件更新
+  // 入札期間の変更は MAX_BID_PERIOD_CHANGES 回まで
   async update(id: string, input: UpdatePropertyInput) {
     const existing = await this.getById(id)
+
+    const newBidEndAt = input.bidEndAt ? new Date(input.bidEndAt) : existing.bidEndAt
+    const bidEndChanged = Boolean(input.bidEndAt) &&
+      existing.bidEndAt?.getTime() !== newBidEndAt?.getTime()
+
+    const updates: Record<string, unknown> = {
+      ...input,
+      bidStartAt: input.bidStartAt ? new Date(input.bidStartAt) : existing.bidStartAt,
+      bidEndAt: newBidEndAt,
+      updatedAt: new Date(),
+    }
+
+    if (bidEndChanged) {
+      if (existing.bidPeriodChangeCount >= MAX_BID_PERIOD_CHANGES) {
+        throw new AppError(
+          ERROR_CODE.MAX_PERIOD_CHANGES,
+          `入札期間の変更は${MAX_BID_PERIOD_CHANGES}回までです`,
+          400,
+        )
+      }
+      updates.bidPeriodChangeCount = existing.bidPeriodChangeCount + 1
+    }
+
     const result = await db.update(properties)
-      .set({
-        ...input,
-        bidStartAt: input.bidStartAt ? new Date(input.bidStartAt) : existing.bidStartAt,
-        bidEndAt: input.bidEndAt ? new Date(input.bidEndAt) : existing.bidEndAt,
-        updatedAt: new Date(),
-      })
+      .set(updates)
       .where(eq(properties.id, id))
       .returning()
     return result[0]
@@ -120,6 +171,11 @@ export const createPropertyService = (db: Database) => ({
     if (status === 'published' || status === 'published_registering') {
       updates.publishedAt = now
     }
+    // 登記中に入った時点を記録（cron の催促・自動差戻し判定に使用）
+    if (status === 'published_registering' && existing.status !== 'published_registering') {
+      updates.registeringStartedAt = now
+      updates.registeringReminderSentAt = null
+    }
     if (status === 'closed') {
       updates.closedAt = now
     }
@@ -135,6 +191,49 @@ export const createPropertyService = (db: Database) => ({
     if (result.length === 0) {
       throw notFound('物件')
     }
+
+    // 売主向け通知（失敗は吸収して状態変更は成功扱い）
+    try {
+      const notification = createNotificationService(db)
+      const eventMap: Partial<Record<typeof status, { event: string; title: string; body: string }>> = {
+        published: {
+          event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
+          title: '物件が公開されました',
+          body: `「${existing.title}」が公開されました。入札の受付を開始します。`,
+        },
+        published_registering: {
+          event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
+          title: '物件が公開されました（登記中）',
+          body: `「${existing.title}」が公開されました。登記完了後、正式に入札受付へ移行します。`,
+        },
+        returned: {
+          event: NOTIFICATION_EVENT.PROPERTY_RETURNED,
+          title: '物件が差し戻されました',
+          body: `「${existing.title}」が差し戻されました。${returnReason ? `理由: ${returnReason}` : ''}`,
+        },
+        bid_ended: {
+          event: NOTIFICATION_EVENT.BID_PERIOD_ENDED,
+          title: '入札期間が終了しました',
+          body: `「${existing.title}」の入札期間が終了しました。落札者を選択してください。`,
+        },
+      }
+      const notif = eventMap[status]
+      if (notif) {
+        await notification.create({
+          userId: existing.sellerId,
+          event: notif.event,
+          channel: 'email',
+          title: notif.title,
+          body: notif.body,
+          relatedEntityType: 'property',
+          relatedEntityId: id,
+          alsoEmail: true,
+        })
+      }
+    } catch (err) {
+      logger.error('物件ステータス通知の送信に失敗', { error: err, propertyId: id, status })
+    }
+
     return result[0]
   },
 

@@ -15,11 +15,13 @@ export const createRevenueService = (db: Database) => ({
     professionalId?: string
     nwCompanyId?: string
     isNwReferral: boolean
+    isOneSided?: boolean
   }) {
     const breakdown = calculateRevenueDistribution(
       params.salePrice,
       params.isNwReferral,
       params.brokerTotalDeals,
+      { isOneSided: params.isOneSided },
     )
 
     const result = await db.insert(revenueDistributions).values({
@@ -40,12 +42,14 @@ export const createRevenueService = (db: Database) => ({
       professionalId: params.professionalId,
       nwCompanyId: params.nwCompanyId,
       isNwReferral: params.isNwReferral ? 'true' : 'false',
+      isOneSided: params.isOneSided ?? false,
     }).returning()
 
     const distribution = result[0]
 
-    // 支払いレコードを作成（業者→Ouver以外の3者への支払い）
+    // 支払いレコードを作成（業者、士業、NW の3者、Ouverは自己口座のため不要）
     const paymentRecords = [
+      { payeeType: 'broker', payeeId: params.brokerId, amount: breakdown.brokerAmount },
       { payeeType: 'professional', payeeId: params.professionalId, amount: breakdown.professionalAmount },
       { payeeType: 'nw', payeeId: params.nwCompanyId, amount: breakdown.nwAmount },
     ].filter((p) => p.payeeId && p.amount > 0)
