@@ -6,6 +6,7 @@ import { revenueQuerySchema, invoiceQuerySchema } from '../schemas/transaction'
 import type { RevenueQuery, InvoiceQuery } from '../schemas/transaction'
 import { services } from '../lib/services'
 import { ok, paginated } from '../lib/response'
+import { getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const revenueExtendedRoutes = new Hono()
 
@@ -16,8 +17,8 @@ revenueExtendedRoutes.get(
   requireRole('professional'),
   validateQuery(revenueQuerySchema),
   async (c) => {
-    const user = c.get('user')
-    const query = c.get('validatedQuery') as RevenueQuery
+    const user = getCurrentUser(c)
+    const query = getValidatedQuery<RevenueQuery>(c)
     const professional = await services.transaction.getProfessionalByUserId(user.id)
     const result = await services.transaction.listProfessionalRevenue(professional.id, query)
     return paginated(c, result)
@@ -30,7 +31,7 @@ revenueExtendedRoutes.get(
   auth,
   requireRole('professional'),
   async (c) => {
-    const user = c.get('user')
+    const user = getCurrentUser(c)
     const professional = await services.transaction.getProfessionalByUserId(user.id)
     const result = await services.transaction.getProfessionalRevenueSummary(professional.id)
     return ok(c, result)
@@ -44,8 +45,8 @@ revenueExtendedRoutes.get(
   requireRole('broker'),
   validateQuery(revenueQuerySchema),
   async (c) => {
-    const user = c.get('user')
-    const query = c.get('validatedQuery') as RevenueQuery
+    const user = getCurrentUser(c)
+    const query = getValidatedQuery<RevenueQuery>(c)
     const broker = await services.transaction.getBrokerByUserId(user.id)
     const result = await services.transaction.listBrokerRevenue(broker.id, query)
     return paginated(c, result)
@@ -59,8 +60,8 @@ revenueExtendedRoutes.get(
   requireRole('broker'),
   validateQuery(invoiceQuerySchema),
   async (c) => {
-    const user = c.get('user')
-    const query = c.get('validatedQuery') as InvoiceQuery
+    const user = getCurrentUser(c)
+    const query = getValidatedQuery<InvoiceQuery>(c)
     const broker = await services.transaction.getBrokerByUserId(user.id)
     const result = await services.transaction.listBrokerInvoices(broker.id, query)
     return paginated(c, result)
@@ -74,7 +75,7 @@ revenueExtendedRoutes.get(
   requireRole('broker'),
   validateUuidParam('id'),
   async (c) => {
-    const user = c.get('user')
+    const user = getCurrentUser(c)
     const invoiceId = c.req.param('id')
     const broker = await services.transaction.getBrokerByUserId(user.id)
     const result = await services.transaction.getInvoice(invoiceId, broker.id)
@@ -89,7 +90,7 @@ revenueExtendedRoutes.post(
   requireRole('broker'),
   validateUuidParam('id'),
   async (c) => {
-    const user = c.get('user')
+    const user = getCurrentUser(c)
     const invoiceId = c.req.param('id')
     const broker = await services.transaction.getBrokerByUserId(user.id)
     const result = await services.transaction.generateInvoicePdf(invoiceId, broker.id)
@@ -104,7 +105,7 @@ revenueExtendedRoutes.get(
   requireRole('admin'),
   validateQuery(revenueQuerySchema),
   async (c) => {
-    const query = c.get('validatedQuery') as RevenueQuery
+    const query = getValidatedQuery<RevenueQuery>(c)
     const result = await services.transaction.getRevenueDistributions(query)
     return paginated(c, result)
   },

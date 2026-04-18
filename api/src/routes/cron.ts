@@ -5,6 +5,9 @@ import { runPropertyRegistryAutoRevertJob } from '../jobs/property-registry-auto
 import { runInstantPriceApprovalExpiryJob } from '../jobs/instant-price-approval-expiry'
 import { runBidPeriodAutoEndJob } from '../jobs/bid-period-auto-end'
 import { logger } from '../lib/logger'
+import { safeRunJob } from '../lib/cron-runner'
+import { unauthorized } from '../lib/errors'
+import { ok } from '../lib/response'
 
 export const cronRoutes = new Hono()
 
@@ -21,33 +24,22 @@ const verifyCronAuth = (authHeader: string | undefined) => {
 // 全ジョブを順次実行するエンドポイント（Vercel Cron から 1時間ごとに呼ぶ）
 cronRoutes.get('/run-all', async (c) => {
   if (!verifyCronAuth(c.req.header('authorization'))) {
-    return c.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid cron secret' } }, 401)
+    throw unauthorized('Invalid cron secret')
   }
 
   const db = getDb()
   const startedAt = Date.now()
 
+  // 各ジョブは他ジョブの失敗に巻き込まれないよう safeRunJob で独立実行する
   const results = {
-    registryReminder: await runPropertyRegistryReminderJob(db).catch((err) => {
-      logger.error('registryReminder失敗', { error: err instanceof Error ? err.message : String(err) })
-      return { error: err instanceof Error ? err.message : String(err) }
-    }),
-    registryAutoRevert: await runPropertyRegistryAutoRevertJob(db).catch((err) => {
-      logger.error('registryAutoRevert失敗', { error: err instanceof Error ? err.message : String(err) })
-      return { error: err instanceof Error ? err.message : String(err) }
-    }),
-    instantPriceExpiry: await runInstantPriceApprovalExpiryJob(db).catch((err) => {
-      logger.error('instantPriceExpiry失敗', { error: err instanceof Error ? err.message : String(err) })
-      return { error: err instanceof Error ? err.message : String(err) }
-    }),
-    bidPeriodEnd: await runBidPeriodAutoEndJob(db).catch((err) => {
-      logger.error('bidPeriodEnd失敗', { error: err instanceof Error ? err.message : String(err) })
-      return { error: err instanceof Error ? err.message : String(err) }
-    }),
+    registryReminder: await safeRunJob('registryReminder', () => runPropertyRegistryReminderJob(db)),
+    registryAutoRevert: await safeRunJob('registryAutoRevert', () => runPropertyRegistryAutoRevertJob(db)),
+    instantPriceExpiry: await safeRunJob('instantPriceExpiry', () => runInstantPriceApprovalExpiryJob(db)),
+    bidPeriodEnd: await safeRunJob('bidPeriodEnd', () => runBidPeriodAutoEndJob(db)),
   }
 
   const durationMs = Date.now() - startedAt
   logger.info('cron全ジョブ実行完了', { durationMs, results })
 
-  return c.json({ success: true, data: { durationMs, results } })
+  return ok(c, { durationMs, results })
 })

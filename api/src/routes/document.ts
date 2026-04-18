@@ -15,6 +15,7 @@ import type {
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
 import { forbidden } from '../lib/errors'
+import { getValidatedBody, getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const documentRoutes = new Hono()
 
@@ -25,8 +26,8 @@ documentRoutes.get(
   requireRole('seller'),
   validateQuery(documentQuerySchema),
   async (c) => {
-    const query = c.get('validatedQuery') as DocumentQuery
-    const user = c.get('user')
+    const query = getValidatedQuery<DocumentQuery>(c)
+    const user = getCurrentUser(c)
     const result = await services.document.listSellerProperties(user.id, query.page, query.limit)
     return paginated(c, result)
   },
@@ -39,8 +40,8 @@ documentRoutes.get(
   requireRole('buyer'),
   validateQuery(documentQuerySchema),
   async (c) => {
-    const query = c.get('validatedQuery') as DocumentQuery
-    const user = c.get('user')
+    const query = getValidatedQuery<DocumentQuery>(c)
+    const user = getCurrentUser(c)
     const result = await services.document.listBuyerBidProperties(user.id, query.page, query.limit)
     return paginated(c, result)
   },
@@ -56,7 +57,7 @@ documentRoutes.get(
   auth,
   validateQuery(documentQuerySchema),
   async (c) => {
-    const query = c.get('validatedQuery') as DocumentQuery
+    const query = getValidatedQuery<DocumentQuery>(c)
     const propertyId = c.req.param('propertyId')
     const result = await services.document.listByProperty(propertyId, query.page, query.limit)
     return paginated(c, result)
@@ -70,7 +71,7 @@ documentRoutes.get(
   requireRole('seller', 'admin'),
   async (c) => {
     const propertyId = c.req.param('propertyId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
 
     // 売主の場合は所有者チェック
     if (user.role !== 'admin') {
@@ -96,9 +97,9 @@ documentRoutes.post(
   requireRole('seller', 'broker', 'admin'),
   validateBody(uploadDocumentSchema),
   async (c) => {
-    const input = c.get('validatedBody') as UploadDocumentInput
+    const input = getValidatedBody<UploadDocumentInput>(c)
     const propertyId = c.req.param('propertyId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
 
     // 売主の場合は所有者チェック
     if (user.role === 'seller') {
@@ -119,7 +120,7 @@ documentRoutes.delete(
   auth,
   async (c) => {
     const docId = c.req.param('docId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
     const document = await services.document.delete(docId, user.id)
     return ok(c, document)
   },
@@ -131,7 +132,7 @@ documentRoutes.get(
   auth,
   async (c) => {
     const docId = c.req.param('docId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
 
     // 管理者は無条件でアクセス可能
     if (user.role === 'admin') {
@@ -151,10 +152,10 @@ documentRoutes.post(
   requireRole('seller'),
   validateBody(grantPermissionSchema),
   async (c) => {
-    const input = c.get('validatedBody') as GrantPermissionInput
+    const input = getValidatedBody<GrantPermissionInput>(c)
     const propertyId = c.req.param('propertyId')
     const docId = c.req.param('docId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
 
     // 所有者チェック
     const property = await services.property.getById(propertyId)
@@ -177,7 +178,7 @@ documentRoutes.delete(
     const propertyId = c.req.param('propertyId')
     const docId = c.req.param('docId')
     const professionalId = c.req.param('professionalId')
-    const user = c.get('user')
+    const user = getCurrentUser(c)
 
     // 所有者チェック
     const property = await services.property.getById(propertyId)

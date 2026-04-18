@@ -6,6 +6,7 @@ import { transactionQuerySchema } from '../schemas/transaction'
 import type { TransactionQuery } from '../schemas/transaction'
 import { services } from '../lib/services'
 import { ok, paginated } from '../lib/response'
+import { getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const transactionRoutes = new Hono()
 
@@ -18,8 +19,8 @@ transactionRoutes.get(
   requireRole('seller'),
   validateQuery(transactionQuerySchema),
   async (c) => {
-    const user = c.get('user')
-    const query = c.get('validatedQuery') as TransactionQuery
+    const user = getCurrentUser(c)
+    const query = getValidatedQuery<TransactionQuery>(c)
     const result = await services.transaction.listSellerTransactions(user.id, query)
     return paginated(c, result)
   },
@@ -32,8 +33,8 @@ transactionRoutes.get(
   requireRole('buyer'),
   validateQuery(transactionQuerySchema),
   async (c) => {
-    const user = c.get('user')
-    const query = c.get('validatedQuery') as TransactionQuery
+    const user = getCurrentUser(c)
+    const query = getValidatedQuery<TransactionQuery>(c)
     const result = await services.transaction.listBuyerTransactions(user.id, query)
     return paginated(c, result)
   },
@@ -44,7 +45,7 @@ transactionRoutes.get(
   '/:id',
   auth,
   async (c) => {
-    const user = c.get('user')
+    const user = getCurrentUser(c)
     const caseId = c.req.param('id')
     const result = await services.transaction.getTransaction(caseId, user.id, user.role)
     return ok(c, result)

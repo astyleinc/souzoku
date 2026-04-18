@@ -6,13 +6,14 @@ import { createReferralLinkSchema, referralQuerySchema, linkReferralSchema, prox
 import type { CreateReferralLinkInput, ReferralQuery, LinkReferralInput, ProxyClientCreateInput } from '../schemas/referral'
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
+import { getValidatedBody, getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const referralRoutes = new Hono()
 
 // 紹介リンク一覧
 referralRoutes.get('/me', auth, requireRole('professional'), validateQuery(referralQuerySchema), async (c) => {
-  const user = c.get('user')
-  const query = c.get('validatedQuery') as ReferralQuery
+  const user = getCurrentUser(c)
+  const query = getValidatedQuery<ReferralQuery>(c)
   const professional = await services.professional.getByUserId(user.id)
   const result = await services.referral.listLinks(professional.id, query)
   return paginated(c, result)
@@ -20,8 +21,8 @@ referralRoutes.get('/me', auth, requireRole('professional'), validateQuery(refer
 
 // 紹介リンク作成
 referralRoutes.post('/me', auth, requireRole('professional'), validateBody(createReferralLinkSchema), async (c) => {
-  const user = c.get('user')
-  const input = c.get('validatedBody') as CreateReferralLinkInput
+  const user = getCurrentUser(c)
+  const input = getValidatedBody<CreateReferralLinkInput>(c)
   const professional = await services.professional.getByUserId(user.id)
   const link = await services.referral.createLink(professional.id, input.label)
   return created(c, link)
@@ -29,7 +30,7 @@ referralRoutes.post('/me', auth, requireRole('professional'), validateBody(creat
 
 // 紹介リンク無効化
 referralRoutes.delete('/me/:id', auth, requireRole('professional'), validateUuidParam('id'), async (c) => {
-  const user = c.get('user')
+  const user = getCurrentUser(c)
   const professional = await services.professional.getByUserId(user.id)
   const link = await services.referral.deactivateLink(c.req.param('id'), professional.id)
   return ok(c, link)
@@ -37,8 +38,8 @@ referralRoutes.delete('/me/:id', auth, requireRole('professional'), validateUuid
 
 // 紹介クライアント一覧
 referralRoutes.get('/me/clients', auth, requireRole('professional'), validateQuery(referralQuerySchema), async (c) => {
-  const user = c.get('user')
-  const query = c.get('validatedQuery') as ReferralQuery
+  const user = getCurrentUser(c)
+  const query = getValidatedQuery<ReferralQuery>(c)
   const professional = await services.professional.getByUserId(user.id)
   const result = await services.referral.listClients(professional.id, query)
   return paginated(c, result)
@@ -46,8 +47,8 @@ referralRoutes.get('/me/clients', auth, requireRole('professional'), validateQue
 
 // 代理登録（売主ユーザーと物件を一括作成）
 referralRoutes.post('/me/clients', auth, requireRole('professional'), validateBody(proxyClientCreateSchema), async (c) => {
-  const user = c.get('user')
-  const input = c.get('validatedBody') as ProxyClientCreateInput
+  const user = getCurrentUser(c)
+  const input = getValidatedBody<ProxyClientCreateInput>(c)
   const professional = await services.professional.getByUserId(user.id)
   const result = await services.referral.createProxyClient(professional.id, input)
   return created(c, result)
@@ -55,7 +56,7 @@ referralRoutes.post('/me/clients', auth, requireRole('professional'), validateBo
 
 // 紹介クライアント詳細
 referralRoutes.get('/me/clients/:id', auth, requireRole('professional'), validateUuidParam('id'), async (c) => {
-  const user = c.get('user')
+  const user = getCurrentUser(c)
   const professional = await services.professional.getByUserId(user.id)
   const result = await services.referral.getClientDetail(professional.id, c.req.param('id'))
   return ok(c, result)
@@ -63,8 +64,8 @@ referralRoutes.get('/me/clients/:id', auth, requireRole('professional'), validat
 
 // 登録直後の紹介コード紐づけ（ログイン済みユーザーのみ）
 referralRoutes.post('/link', auth, validateBody(linkReferralSchema), async (c) => {
-  const user = c.get('user')
-  const input = c.get('validatedBody') as LinkReferralInput
+  const user = getCurrentUser(c)
+  const input = getValidatedBody<LinkReferralInput>(c)
   const result = await services.referral.linkToSeller(user.id, input)
   return ok(c, result)
 })

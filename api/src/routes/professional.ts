@@ -8,6 +8,7 @@ import type { RegisterProfessionalInput, UpdateProfessionalInput } from '../sche
 import type { UpdateVerificationInput } from '../schemas/admin'
 import { services } from '../lib/services'
 import { ok, created } from '../lib/response'
+import { getValidatedBody, getCurrentUser } from '../lib/context-helpers'
 
 export const professionalRoutes = new Hono()
 
@@ -15,21 +16,21 @@ professionalRoutes.use('/:id', validateUuidParam('id'))
 professionalRoutes.use('/:id/*', validateUuidParam('id'))
 
 professionalRoutes.post('/register', auth, validateBody(registerProfessionalSchema), async (c) => {
-  const input = c.get('validatedBody') as RegisterProfessionalInput
-  const user = c.get('user')
+  const input = getValidatedBody<RegisterProfessionalInput>(c)
+  const user = getCurrentUser(c)
   const professional = await services.professional.register(input, user.id)
   return created(c, professional)
 })
 
 professionalRoutes.get('/me', auth, requireRole('professional'), async (c) => {
-  const user = c.get('user')
+  const user = getCurrentUser(c)
   const professional = await services.professional.getByUserId(user.id)
   return ok(c, professional)
 })
 
 professionalRoutes.put('/:id', auth, requireRole('professional', 'admin'), validateBody(updateProfessionalSchema), async (c) => {
-  const input = c.get('validatedBody') as UpdateProfessionalInput
-  const user = c.get('user')
+  const input = getValidatedBody<UpdateProfessionalInput>(c)
+  const user = getCurrentUser(c)
   const professional = await services.professional.update(c.req.param('id'), input, user.id)
   return ok(c, professional)
 })
@@ -50,7 +51,7 @@ professionalRoutes.get('/:id/history', auth, requireRole('professional', 'admin'
 })
 
 professionalRoutes.patch('/:id/verification', auth, requireRole('admin'), validateBody(updateVerificationSchema), async (c) => {
-  const input = c.get('validatedBody') as UpdateVerificationInput
+  const input = getValidatedBody<UpdateVerificationInput>(c)
   const result = await services.professional.updateVerificationStatus(c.req.param('id'), input.status)
   return ok(c, result)
 })

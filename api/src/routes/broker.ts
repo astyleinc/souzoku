@@ -6,6 +6,7 @@ import { registerBrokerSchema, evaluateBrokerSchema } from '../schemas/broker'
 import type { RegisterBrokerInput, EvaluateBrokerInput } from '../schemas/broker'
 import { services } from '../lib/services'
 import { ok, created } from '../lib/response'
+import { getValidatedBody, getCurrentUser } from '../lib/context-helpers'
 
 export const brokerRoutes = new Hono()
 
@@ -23,14 +24,14 @@ brokerRoutes.get('/:id', auth, requireRole('admin', 'broker'), async (c) => {
 })
 
 brokerRoutes.post('/', auth, requireRole('admin'), validateBody(registerBrokerSchema), async (c) => {
-  const input = c.get('validatedBody') as RegisterBrokerInput
+  const input = getValidatedBody<RegisterBrokerInput>(c)
   const broker = await services.broker.register(input)
   return created(c, broker)
 })
 
 brokerRoutes.post('/:id/evaluate', auth, requireRole('seller'), validateBody(evaluateBrokerSchema), async (c) => {
-  const input = c.get('validatedBody') as EvaluateBrokerInput
-  const user = c.get('user')
+  const input = getValidatedBody<EvaluateBrokerInput>(c)
+  const user = getCurrentUser(c)
   const evaluation = await services.broker.evaluate(c.req.param('id'), user.id, input)
   return created(c, evaluation)
 })

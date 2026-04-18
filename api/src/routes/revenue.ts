@@ -6,6 +6,7 @@ import { updatePaymentStatusSchema } from '../schemas/admin'
 import type { UpdatePaymentStatusInput } from '../schemas/admin'
 import { services } from '../lib/services'
 import { ok } from '../lib/response'
+import { getValidatedBody, getCurrentUser } from '../lib/context-helpers'
 
 export const revenueRoutes = new Hono()
 
@@ -28,8 +29,8 @@ revenueRoutes.get('/:id/payments', auth, requireRole('admin'), async (c) => {
 })
 
 revenueRoutes.patch('/payments/:paymentId/status', auth, requireRole('admin'), validateUuidParam('paymentId'), validateBody(updatePaymentStatusSchema), async (c) => {
-  const input = c.get('validatedBody') as UpdatePaymentStatusInput
-  const user = c.get('user')
+  const input = getValidatedBody<UpdatePaymentStatusInput>(c)
+  const user = getCurrentUser(c)
   const payment = await services.revenue.updatePaymentStatus(c.req.param('paymentId'), input.status, user.id)
   return ok(c, payment)
 })

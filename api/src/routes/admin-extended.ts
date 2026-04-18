@@ -9,6 +9,7 @@ import type { AuditLogQuery } from '../schemas/audit'
 import type { UserQuery, UserStatusInput, UserRoleInput, AnalyticsQuery, BroadcastNotificationInput } from '../schemas/admin-extended'
 import { services } from '../lib/services'
 import { ok, paginated } from '../lib/response'
+import { getValidatedBody, getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const adminExtendedRoutes = new Hono<{ Variables: { user: AuthUser } }>()
 
@@ -17,14 +18,14 @@ adminExtendedRoutes.use('*', auth, requireRole('admin'))
 
 // 監査ログ一覧
 adminExtendedRoutes.get('/audit-log', validateQuery(auditLogQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as AuditLogQuery
+  const query = getValidatedQuery<AuditLogQuery>(c)
   const result = await services.audit.list(query)
   return paginated(c, result)
 })
 
 // 監査ログCSVエクスポート
 adminExtendedRoutes.get('/audit-log/export', validateQuery(auditLogQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as AuditLogQuery
+  const query = getValidatedQuery<AuditLogQuery>(c)
   const csvString = await services.audit.exportCsv(query)
   c.header('Content-Type', 'text/csv')
   c.header('Content-Disposition', 'attachment; filename=audit-log.csv')
@@ -39,7 +40,7 @@ adminExtendedRoutes.get('/system-health', async (c) => {
 
 // ユーザー一覧
 adminExtendedRoutes.get('/users', validateQuery(userQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as UserQuery
+  const query = getValidatedQuery<UserQuery>(c)
   const result = await services.admin.listUsers(query)
   return paginated(c, result)
 })
@@ -52,16 +53,16 @@ adminExtendedRoutes.get('/users/:id', validateUuidParam('id'), async (c) => {
 
 // ユーザーステータス更新
 adminExtendedRoutes.patch('/users/:id/status', validateUuidParam('id'), validateBody(userStatusSchema), async (c) => {
-  const input = c.get('validatedBody') as UserStatusInput
-  const user = c.get('user')
+  const input = getValidatedBody<UserStatusInput>(c)
+  const user = getCurrentUser(c)
   const result = await services.admin.updateUserStatus(c.req.param('id'), input.status, user.id)
   return ok(c, result)
 })
 
 // ユーザーロール変更
 adminExtendedRoutes.patch('/users/:id/role', validateUuidParam('id'), validateBody(userRoleSchema), async (c) => {
-  const input = c.get('validatedBody') as UserRoleInput
-  const actor = c.get('user')
+  const input = getValidatedBody<UserRoleInput>(c)
+  const actor = getCurrentUser(c)
   const result = await services.admin.updateUserRole(c.req.param('id'), input.role, actor.id)
   return ok(c, result)
 })
@@ -74,14 +75,14 @@ adminExtendedRoutes.get('/dashboard', async (c) => {
 
 // 分析データ
 adminExtendedRoutes.get('/analytics', validateQuery(analyticsQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as AnalyticsQuery
+  const query = getValidatedQuery<AnalyticsQuery>(c)
   const result = await services.admin.getAnalytics(query)
   return ok(c, result)
 })
 
 // 物件一覧（管理者用）
 adminExtendedRoutes.get('/properties', validateQuery(userQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as UserQuery
+  const query = getValidatedQuery<UserQuery>(c)
   const result = await services.admin.listProperties({
     page: query.page,
     limit: query.limit,
@@ -125,7 +126,7 @@ adminExtendedRoutes.get('/revenue/summary', async (c) => {
 
 // ブロードキャスト通知
 adminExtendedRoutes.post('/notifications/broadcast', validateBody(broadcastNotificationSchema), async (c) => {
-  const input = c.get('validatedBody') as BroadcastNotificationInput
+  const input = getValidatedBody<BroadcastNotificationInput>(c)
   const result = await services.admin.broadcastNotification(input)
   return ok(c, result)
 })

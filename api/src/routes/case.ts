@@ -8,6 +8,7 @@ import { services } from '../lib/services'
 import { ok, created } from '../lib/response'
 import { forbidden } from '../lib/errors'
 import type { AuthUser } from '../middleware/auth'
+import { getValidatedBody, getCurrentUser } from '../lib/context-helpers'
 
 export const caseRoutes = new Hono()
 
@@ -32,33 +33,33 @@ caseRoutes.get('/', auth, requireRole('admin', 'broker'), async (c) => {
 })
 
 caseRoutes.get('/:id', auth, async (c) => {
-  await checkCaseAccess(c.req.param('id'), c.get('user'))
+  await checkCaseAccess(c.req.param('id'), getCurrentUser(c))
   const caseItem = await services.case.getById(c.req.param('id'))
   return ok(c, caseItem)
 })
 
 caseRoutes.post('/', auth, requireRole('admin'), validateBody(createCaseSchema), async (c) => {
-  const input = c.get('validatedBody') as CreateCaseInput
+  const input = getValidatedBody<CreateCaseInput>(c)
   const caseItem = await services.case.create(input)
   return created(c, caseItem)
 })
 
 caseRoutes.patch('/:id/status', auth, requireRole('broker', 'admin'), validateBody(updateCaseStatusSchema), async (c) => {
-  const input = c.get('validatedBody') as UpdateCaseStatusInput
+  const input = getValidatedBody<UpdateCaseStatusInput>(c)
   const caseItem = await services.case.updateStatus(c.req.param('id'), input)
   return ok(c, caseItem)
 })
 
 caseRoutes.get('/:id/messages', auth, async (c) => {
-  await checkCaseAccess(c.req.param('id'), c.get('user'))
+  await checkCaseAccess(c.req.param('id'), getCurrentUser(c))
   const messages = await services.case.getMessages(c.req.param('id'))
   return ok(c, messages)
 })
 
 caseRoutes.post('/:id/messages', auth, validateBody(sendMessageSchema), async (c) => {
-  const user = c.get('user')
+  const user = getCurrentUser(c)
   await checkCaseAccess(c.req.param('id'), user)
-  const input = c.get('validatedBody') as SendMessageInput
+  const input = getValidatedBody<SendMessageInput>(c)
   const message = await services.case.sendMessage(c.req.param('id'), user.id, input)
   return created(c, message)
 })

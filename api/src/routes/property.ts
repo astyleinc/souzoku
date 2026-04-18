@@ -9,6 +9,7 @@ import type { UpdateStatusInput } from '../schemas/admin'
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
 import { forbidden, validationError } from '../lib/errors'
+import { getValidatedBody, getValidatedQuery, getCurrentUser } from '../lib/context-helpers'
 
 export const propertyRoutes = new Hono()
 
@@ -16,7 +17,7 @@ propertyRoutes.use('/:id', validateUuidParam('id'))
 propertyRoutes.use('/:id/*', validateUuidParam('id'))
 
 propertyRoutes.get('/', validateQuery(propertyQuerySchema), async (c) => {
-  const query = c.get('validatedQuery') as PropertyQuery
+  const query = getValidatedQuery<PropertyQuery>(c)
   const result = await services.property.list(query)
   return paginated(c, result)
 })
@@ -27,15 +28,15 @@ propertyRoutes.get('/:id', async (c) => {
 })
 
 propertyRoutes.post('/', auth, requireRole('seller', 'professional', 'admin'), validateBody(createPropertySchema), async (c) => {
-  const input = c.get('validatedBody') as CreatePropertyInput
-  const user = c.get('user')
+  const input = getValidatedBody<CreatePropertyInput>(c)
+  const user = getCurrentUser(c)
   const property = await services.property.create(input, user.id)
   return created(c, property)
 })
 
 propertyRoutes.put('/:id', auth, requireRole('seller', 'admin'), validateBody(updatePropertySchema), async (c) => {
-  const input = c.get('validatedBody') as UpdatePropertyInput
-  const user = c.get('user')
+  const input = getValidatedBody<UpdatePropertyInput>(c)
+  const user = getCurrentUser(c)
 
   if (user.role !== 'admin') {
     const existing = await services.property.getById(c.req.param('id'))
@@ -49,7 +50,7 @@ propertyRoutes.put('/:id', auth, requireRole('seller', 'admin'), validateBody(up
 })
 
 propertyRoutes.patch('/:id/status', auth, requireRole('admin'), validateBody(updateStatusSchema), async (c) => {
-  const input = c.get('validatedBody') as UpdateStatusInput
+  const input = getValidatedBody<UpdateStatusInput>(c)
   const property = await services.property.updateStatus(
     c.req.param('id'),
     input.status as typeof import('../db/schema/properties').propertyStatusEnum.enumValues[number],
@@ -67,7 +68,7 @@ propertyRoutes.patch('/:id/relist', auth, requireRole('seller'), async (c) => {
     throw validationError('modeはnormal_listingまたはbiddingを指定してください')
   }
 
-  const user = c.get('user')
+  const user = getCurrentUser(c)
   const existing = await services.property.getById(c.req.param('id'))
   if (existing.sellerId !== user.id) {
     throw forbidden('他のユーザーの物件は変更できません')
