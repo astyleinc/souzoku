@@ -1,6 +1,11 @@
 import type { Context, MiddlewareHandler } from 'hono'
 import { z } from 'zod'
 import { validationError } from '../lib/errors'
+import {
+  PAGINATION_DEFAULT_LIMIT,
+  PAGINATION_DEFAULT_PAGE,
+  PAGINATION_MAX_LIMIT,
+} from '@shared/constants'
 
 // バリデーション済みデータの型キー
 declare module 'hono' {
@@ -56,7 +61,8 @@ export const validateQuery = <T extends z.ZodType>(schema: T): MiddlewareHandler
 }
 
 // ページネーションクエリの共通スキーマ
+// page/limit の既定値と上限は packages/shared/constants/pagination.ts に集約
 export const paginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  page: z.coerce.number().int().min(1).default(PAGINATION_DEFAULT_PAGE),
+  limit: z.coerce.number().int().min(1).max(PAGINATION_MAX_LIMIT).default(PAGINATION_DEFAULT_LIMIT),
 })

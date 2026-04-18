@@ -1,15 +1,18 @@
 import { and, eq, lt } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { properties } from '../db/schema/properties'
-import { NOTIFICATION_EVENT } from '@shared/constants'
+import {
+  INSTANT_APPROVAL_DEADLINE_HOURS,
+  NOTIFICATION_EVENT,
+  ONE_HOUR_MS,
+  PROPERTY_STATUS,
+} from '@shared/constants'
 import { createNotificationService } from '../services/notification.service'
 import { logger } from '../lib/logger'
 
-// 即決価格到達後 48時間以内に売主承認されなかった物件を通常の入札状態に戻す
-const EXPIRY_HOURS = 48
-
+// 即決価格到達後、既定時間以内に売主承認されなかった物件を通常の入札状態に戻す
 export const runInstantPriceApprovalExpiryJob = async (db: Database) => {
-  const deadline = new Date(Date.now() - EXPIRY_HOURS * 60 * 60 * 1000)
+  const deadline = new Date(Date.now() - INSTANT_APPROVAL_DEADLINE_HOURS * ONE_HOUR_MS)
 
   const targets = await db.select({
     id: properties.id,
@@ -20,7 +23,7 @@ export const runInstantPriceApprovalExpiryJob = async (db: Database) => {
     .from(properties)
     .where(
       and(
-        eq(properties.status, 'pending_approval'),
+        eq(properties.status, PROPERTY_STATUS.PENDING_APPROVAL),
         lt(properties.instantPriceReachedAt, deadline),
       ),
     )
@@ -35,7 +38,9 @@ export const runInstantPriceApprovalExpiryJob = async (db: Database) => {
 
   for (const target of targets) {
     // 入札期間が既に終了している場合は bid_ended、継続中なら bidding に戻す
-    const newStatus = target.bidEndAt && target.bidEndAt < now ? 'bid_ended' : 'bidding'
+    const newStatus = target.bidEndAt && target.bidEndAt < now
+      ? PROPERTY_STATUS.BID_ENDED
+      : PROPERTY_STATUS.BIDDING
 
     await db.update(properties)
       .set({
@@ -51,7 +56,7 @@ export const runInstantPriceApprovalExpiryJob = async (db: Database) => {
       event: NOTIFICATION_EVENT.INSTANT_APPROVAL_EXPIRED,
       channel: 'email',
       title: '即決価格の承認期限が切れました',
-      body: `物件「${target.title}」の即決価格承認が48時間以内に行われませんでした。\n通常の入札に戻ります。`,
+      body: `物件「${target.title}」の即決価格承認が${INSTANT_APPROVAL_DEADLINE_HOURS}時間以内に行われませんでした。\n通常の入札に戻ります。`,
       relatedEntityType: 'property',
       relatedEntityId: target.id,
       alsoEmail: true,

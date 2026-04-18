@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono'
+import { ONE_SECOND_MS, RATE_LIMIT_CLEANUP_INTERVAL_MS } from '@shared/constants'
 
 // インメモリレート制限（本番ではRedis等に差し替え）
 const store = new Map<string, { count: number; resetAt: number }>()
@@ -11,7 +12,7 @@ setInterval(() => {
       store.delete(key)
     }
   }
-}, 60_000)
+}, RATE_LIMIT_CLEANUP_INTERVAL_MS)
 
 export const rateLimit = (opts: {
   windowMs: number
@@ -47,7 +48,7 @@ export const rateLimit = (opts: {
     if (record.count > max) {
       c.header('X-RateLimit-Limit', String(max))
       c.header('X-RateLimit-Remaining', '0')
-      c.header('Retry-After', String(Math.ceil((record.resetAt - now) / 1000)))
+      c.header('Retry-After', String(Math.ceil((record.resetAt - now) / ONE_SECOND_MS)))
       return c.json(
         { success: false, error: { code: 'RATE_LIMITED', message: 'リクエスト回数の上限に達しました' } },
         429,

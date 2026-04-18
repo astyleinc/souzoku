@@ -24,6 +24,18 @@ import { referralRoutes } from './routes/referral'
 import { contentRoutes } from './routes/content'
 import { cronRoutes } from './routes/cron'
 import { getAuth } from './lib/auth'
+import {
+  CORS_MAX_AGE_SECONDS,
+  ONE_MINUTE_MS,
+  RATE_LIMIT_API_PER_MINUTE,
+  RATE_LIMIT_AUTH_PER_MINUTE,
+  RATE_LIMIT_BID_PER_MINUTE,
+  RATE_LIMIT_SUPPORT_PER_MINUTE,
+} from '@shared/constants'
+
+// リクエストボディの上限（バイト）
+// フォーム/JSONリクエストのみを想定。ファイルアップロードは別経路（Supabase Storage 署名URL）
+const REQUEST_BODY_LIMIT_BYTES = 1 * 1024 * 1024
 
 export const createApp = () => {
   const app = new Hono()
@@ -37,23 +49,19 @@ export const createApp = () => {
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    maxAge: 86400,
+    maxAge: CORS_MAX_AGE_SECONDS,
   }))
   app.use('*', secureHeaders())
   app.use('*', requestLogger)
 
-  // ボディサイズ制限（1MB）
-  app.use('*', bodyLimit({ maxSize: 1024 * 1024 }))
+  // ボディサイズ制限
+  app.use('*', bodyLimit({ maxSize: REQUEST_BODY_LIMIT_BYTES }))
 
-  // レート制限: API全体に1分あたり300リクエスト
-  app.use('/api/*', rateLimit({ windowMs: 60 * 1000, max: 300 }))
-
-  // 入札系は厳格: 1分あたり30リクエスト
-  app.use('/api/bids', rateLimit({ windowMs: 60 * 1000, max: 30 }))
-  // 認証系はセッション確認が頻繁なため緩め: 1分あたり120リクエスト
-  app.use('/api/auth/*', rateLimit({ windowMs: 60 * 1000, max: 120 }))
-  // お問い合わせ: 1分あたり10リクエスト（スパム防止）
-  app.use('/api/support/contact', rateLimit({ windowMs: 60 * 1000, max: 10 }))
+  // レート制限: エンドポイントの性質ごとに上限値を切り替え
+  app.use('/api/*', rateLimit({ windowMs: ONE_MINUTE_MS, max: RATE_LIMIT_API_PER_MINUTE }))
+  app.use('/api/bids', rateLimit({ windowMs: ONE_MINUTE_MS, max: RATE_LIMIT_BID_PER_MINUTE }))
+  app.use('/api/auth/*', rateLimit({ windowMs: ONE_MINUTE_MS, max: RATE_LIMIT_AUTH_PER_MINUTE }))
+  app.use('/api/support/contact', rateLimit({ windowMs: ONE_MINUTE_MS, max: RATE_LIMIT_SUPPORT_PER_MINUTE }))
 
   // エラーハンドラ
   app.onError(errorHandler)

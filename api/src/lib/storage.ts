@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
+import { SIGNED_URL_DEFAULT_SECONDS, SIGNED_URL_LONG_SECONDS } from '@shared/constants'
 
+// 書類アップロード先の既定バケット
 const BUCKET = 'documents'
-const SIGNED_URL_EXPIRY = 3600 // 1時間
 
 let client: ReturnType<typeof createClient> | null = null
 
@@ -34,7 +35,7 @@ export const storage = {
     const supabase = getStorageClient()
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(path, SIGNED_URL_EXPIRY)
+      .createSignedUrl(path, SIGNED_URL_DEFAULT_SECONDS)
 
     if (error || !data) {
       throw new Error(`ダウンロードURL生成に失敗: ${error?.message}`)
@@ -66,7 +67,7 @@ export const storage = {
 
     const signed = await supabase.storage
       .from(bucket)
-      .createSignedUrl(path, SIGNED_URL_EXPIRY * 24 * 30) // 30日
+      .createSignedUrl(path, SIGNED_URL_LONG_SECONDS)
     if (signed.error || !signed.data) {
       throw new Error(`署名付きURL生成に失敗: ${signed.error?.message}`)
     }

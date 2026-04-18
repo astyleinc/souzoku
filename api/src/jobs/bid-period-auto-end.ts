@@ -1,7 +1,7 @@
 import { and, eq, lt } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { properties } from '../db/schema/properties'
-import { NOTIFICATION_EVENT } from '@shared/constants'
+import { NOTIFICATION_EVENT, PROPERTY_STATUS } from '@shared/constants'
 import { createNotificationService } from '../services/notification.service'
 import { logger } from '../lib/logger'
 
@@ -17,7 +17,7 @@ export const runBidPeriodAutoEndJob = async (db: Database) => {
     .from(properties)
     .where(
       and(
-        eq(properties.status, 'bidding'),
+        eq(properties.status, PROPERTY_STATUS.BIDDING),
         lt(properties.bidEndAt, now),
       ),
     )
@@ -31,7 +31,7 @@ export const runBidPeriodAutoEndJob = async (db: Database) => {
 
   for (const target of targets) {
     await db.update(properties)
-      .set({ status: 'bid_ended', updatedAt: now })
+      .set({ status: PROPERTY_STATUS.BID_ENDED, updatedAt: now })
       .where(eq(properties.id, target.id))
 
     await notificationService.create({

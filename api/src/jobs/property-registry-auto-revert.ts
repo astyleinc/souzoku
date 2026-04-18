@@ -1,13 +1,18 @@
 import { and, eq, lt } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import { properties } from '../db/schema/properties'
-import { NOTIFICATION_EVENT } from '@shared/constants'
+import {
+  NOTIFICATION_EVENT,
+  ONE_DAY_MS,
+  PROPERTY_STATUS,
+  REGISTRATION_AUTO_RETURN_DAYS,
+} from '@shared/constants'
 import { createNotificationService } from '../services/notification.service'
 import { logger } from '../lib/logger'
 
-// 登記中に入って60日経過した物件を自動で差戻し（returned）に遷移
+// 登記中に入って既定日数を超過した物件を自動で差戻し（returned）に遷移
 export const runPropertyRegistryAutoRevertJob = async (db: Database) => {
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+  const revertThreshold = new Date(Date.now() - REGISTRATION_AUTO_RETURN_DAYS * ONE_DAY_MS)
 
   const targets = await db.select({
     id: properties.id,
@@ -17,8 +22,8 @@ export const runPropertyRegistryAutoRevertJob = async (db: Database) => {
     .from(properties)
     .where(
       and(
-        eq(properties.status, 'published_registering'),
-        lt(properties.registeringStartedAt, sixtyDaysAgo),
+        eq(properties.status, PROPERTY_STATUS.PUBLISHED_REGISTERING),
+        lt(properties.registeringStartedAt, revertThreshold),
       ),
     )
 
@@ -32,8 +37,8 @@ export const runPropertyRegistryAutoRevertJob = async (db: Database) => {
   for (const target of targets) {
     await db.update(properties)
       .set({
-        status: 'returned',
-        returnReason: '登記が2ヶ月以内に完了しなかったため自動差戻し',
+        status: PROPERTY_STATUS.RETURNED,
+        returnReason: `登記が${REGISTRATION_AUTO_RETURN_DAYS}日以内に完了しなかったため自動差戻し`,
         updatedAt: new Date(),
       })
       .where(eq(properties.id, target.id))
@@ -43,7 +48,7 @@ export const runPropertyRegistryAutoRevertJob = async (db: Database) => {
       event: NOTIFICATION_EVENT.REGISTRATION_AUTO_RETURN,
       channel: 'email',
       title: '物件が自動差戻しされました',
-      body: `物件「${target.title}」は登記が2ヶ月以内に完了しなかったため、自動的に差戻し状態となりました。\n登記完了後、再度お申し込みください。`,
+      body: `物件「${target.title}」は登記が${REGISTRATION_AUTO_RETURN_DAYS}日以内に完了しなかったため、自動的に差戻し状態となりました。\n登記完了後、再度お申し込みください。`,
       relatedEntityType: 'property',
       relatedEntityId: target.id,
       alsoEmail: true,

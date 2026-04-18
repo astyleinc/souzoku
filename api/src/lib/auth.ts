@@ -6,6 +6,18 @@ import { getDb } from '../db/client'
 import { authUser, authSession, authAccount, authVerification } from '../db/schema/auth'
 import { users } from '../db/schema/users'
 import { logger } from './logger'
+import {
+  ONE_DAY_MS,
+  ONE_SECOND_MS,
+  SESSION_EXPIRY_DAYS,
+  SESSION_UPDATE_AGE_DAYS,
+} from '@shared/constants'
+
+// パスワードの最小文字数（BetterAuth設定と揃える）
+const MIN_PASSWORD_LENGTH = 8
+
+// BetterAuthの session.expiresIn は秒指定のため、ミリ秒定数を秒に換算
+const toSeconds = (ms: number) => Math.floor(ms / ONE_SECOND_MS)
 
 // Apple Sign-Inのクライアントシークレット生成
 const generateAppleClientSecret = async (): Promise<string> => {
@@ -56,7 +68,7 @@ const getAuthOptions = (): BetterAuthOptions => {
         : ['http://localhost:3000'],
     emailAndPassword: {
       enabled: true,
-      minPasswordLength: 8,
+      minPasswordLength: MIN_PASSWORD_LENGTH,
     },
     socialProviders: {
       google: {
@@ -82,8 +94,8 @@ const getAuthOptions = (): BetterAuthOptions => {
       }),
     ],
     session: {
-      expiresIn: 60 * 60 * 24 * 7,
-      updateAge: 60 * 60 * 24,
+      expiresIn: toSeconds(SESSION_EXPIRY_DAYS * ONE_DAY_MS),
+      updateAge: toSeconds(SESSION_UPDATE_AGE_DAYS * ONE_DAY_MS),
     },
     databaseHooks: {
       user: {
