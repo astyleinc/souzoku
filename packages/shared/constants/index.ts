@@ -25,6 +25,8 @@ export {
   ONE_SIDED_BROKER_RATE,
   BROKERAGE_FEE,
   MIN_LISTING_PRICE,
+  LOW_VALUE_THRESHOLD,
+  LOW_VALUE_FEE_CAP,
   INSTANT_APPROVAL_DEADLINE_HOURS,
   REGISTRATION_REMINDER_INTERVAL_DAYS,
   REGISTRATION_AUTO_RETURN_DAYS,
@@ -39,3 +41,6 @@ export type {
   NotificationEvent,
   NotificationChannel,
 } from './notification'
+
+export { ALLOWED_PREFECTURES, isAllowedPrefecture } from './area'
+export type { AllowedPrefecture } from './area'

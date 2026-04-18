@@ -1,11 +1,13 @@
 import { z } from 'zod'
-import { MIN_LISTING_PRICE } from '@shared/constants'
+import { MIN_LISTING_PRICE, ALLOWED_PREFECTURES } from '@shared/constants'
 
 const propertyBaseSchema = z.object({
   propertyType: z.enum(['house', 'land', 'apartment', 'other']),
   title: z.string().min(1).max(200),
   description: z.string().optional(),
-  prefecture: z.string().min(1).max(10),
+  prefecture: z.enum(ALLOWED_PREFECTURES, {
+    errorMap: () => ({ message: `対応エリアは${ALLOWED_PREFECTURES.join('・')}のみです` }),
+  }),
   city: z.string().min(1).max(50),
   address: z.string().min(1),
   nearestStation: z.string().max(100).optional(),
@@ -18,6 +20,7 @@ const propertyBaseSchema = z.object({
     message: `最低出品価格は${(MIN_LISTING_PRICE / 10000).toLocaleString()}万円です`,
   }),
   instantPrice: z.number().int().optional(),
+  inheritanceStartDate: z.string().date().optional(),
   urgency: z.enum(['urgent', 'three_months', 'one_year', 'undecided']),
   isRegistrationComplete: z.boolean().default(false),
   bidStartAt: z.string().datetime().optional(),

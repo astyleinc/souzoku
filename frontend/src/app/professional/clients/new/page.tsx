@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   ArrowLeft,
   Upload,
@@ -12,14 +12,20 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
-import { api } from '@/lib/api'
+import { api, toItems } from '@/lib/api'
 
 const inputClass = 'w-full px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors'
 const selectClass = inputClass
 const labelClass = 'block text-sm font-medium mb-1.5'
 
+type NwCompany = {
+  id: string
+  name: string
+}
+
 type FormData = {
   nwRoute: string
+  nwCompanyId: string
   sellerName: string
   sellerEmail: string
   sellerPhone: string
@@ -36,6 +42,7 @@ type FormData = {
 
 const initialForm: FormData = {
   nwRoute: 'direct',
+  nwCompanyId: '',
   sellerName: '',
   sellerEmail: '',
   sellerPhone: '',
@@ -58,6 +65,15 @@ type DocUpload = {
 export default function ProfessionalClientNewPage() {
   const router = useRouter()
   const [form, setForm] = useState<FormData>(initialForm)
+  const [nwCompanies, setNwCompanies] = useState<NwCompany[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await api.get<unknown>('/referrals/nw-companies')
+      if (res.success) setNwCompanies(toItems<NwCompany>(res.data))
+    }
+    load()
+  }, [])
   const [docs, setDocs] = useState<DocUpload[]>([
     { label: '登記事項証明書', file: null },
     { label: '遺産分割協議書', file: null },
@@ -104,7 +120,8 @@ export default function ProfessionalClientNewPage() {
 
     setSubmitting(true)
     const res = await api.post('/referrals/me/clients', {
-      nwRoute: form.nwRoute,
+      nwRoute: form.nwCompanyId ? 'nw' : 'direct',
+      nwCompanyId: form.nwCompanyId || undefined,
       seller: {
         name: form.sellerName,
         email: form.sellerEmail,
@@ -156,11 +173,11 @@ export default function ProfessionalClientNewPage() {
             <h2 className="text-base font-semibold mb-4">紹介経路</h2>
             <div>
               <label className={labelClass}>NW経路を選択</label>
-              <select className={selectClass} value={form.nwRoute} onChange={set('nwRoute')}>
-                <option value="direct">直接紹介</option>
-                <option value="awaka">awaka cross</option>
-                <option value="ui">UIコンサルティング</option>
-                <option value="mitsukaru">ミツカル</option>
+              <select className={selectClass} value={form.nwCompanyId} onChange={set('nwCompanyId')}>
+                <option value="">直接紹介（NW経由なし）</option>
+                {nwCompanies.map((nw) => (
+                  <option key={nw.id} value={nw.id}>{nw.name}</option>
+                ))}
               </select>
               <p className="text-xs text-neutral-400 mt-1.5">
                 NW経由の場合、報酬配分にNW手数料（3%）が適用されます

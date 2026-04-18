@@ -22,6 +22,7 @@ import { transactionRoutes } from './routes/transaction'
 import { revenueExtendedRoutes } from './routes/revenue-extended'
 import { referralRoutes } from './routes/referral'
 import { contentRoutes } from './routes/content'
+import { cronRoutes } from './routes/cron'
 import { getAuth } from './lib/auth'
 
 export const createApp = () => {
@@ -85,6 +86,7 @@ export const createApp = () => {
   app.route('/api/revenue', revenueExtendedRoutes)
   app.route('/api/referrals', referralRoutes)
   app.route('/api', contentRoutes)
+  app.route('/api/cron', cronRoutes)
 
   // 404
   app.notFound((c) =>

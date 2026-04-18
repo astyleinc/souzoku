@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Building2, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/providers/AuthProvider'
+import { api } from '@/lib/api'
 
 type RoleOption = 'seller' | 'buyer'
 
@@ -13,11 +14,56 @@ const roleDashboard: Record<string, string> = {
   buyer: '/buyer',
 }
 
+const REFERRAL_STORAGE_KEY = 'ouver:referral'
+
+type ReferralContext = {
+  code?: string
+  nwId?: string
+}
+
+// URLクエリの ref / nw を localStorage に保存しつつ、現在の値を返す
+const readAndPersistReferral = (searchParams: URLSearchParams): ReferralContext => {
+  if (typeof window === 'undefined') return {}
+
+  const refFromQuery = searchParams.get('ref') ?? undefined
+  const nwFromQuery = searchParams.get('nw') ?? undefined
+
+  if (refFromQuery || nwFromQuery) {
+    try {
+      window.localStorage.setItem(
+        REFERRAL_STORAGE_KEY,
+        JSON.stringify({ code: refFromQuery, nwId: nwFromQuery }),
+      )
+    } catch {
+      // localStorage 書き込み失敗は無視
+    }
+    return { code: refFromQuery, nwId: nwFromQuery }
+  }
+
+  try {
+    const stored = window.localStorage.getItem(REFERRAL_STORAGE_KEY)
+    if (stored) return JSON.parse(stored) as ReferralContext
+  } catch {
+    // JSON解析失敗は無視
+  }
+  return {}
+}
+
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-50" />}>
+      <RegisterForm />
+    </Suspense>
+  )
+}
+
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, login } = useAuth()
   const [step, setStep] = useState<'role' | 'form'>('role')
   const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null)
+  const [referral, setReferral] = useState<ReferralContext>({})
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,6 +76,11 @@ export default function RegisterPage() {
       router.replace(roleDashboard[user.role] ?? '/')
     }
   }, [user, router])
+
+  // URLの紹介コード・NWを読み取り、localStorageに保存する（OAuthリダイレクトでも失われないよう）
+  useEffect(() => {
+    setReferral(readAndPersistReferral(searchParams))
+  }, [searchParams])
 
   if (user) return null
 
@@ -83,6 +134,27 @@ export default function RegisterPage() {
 
       // 登録成功 → ログイン
       const loginResult = await login(email, password)
+
+      // 売主の場合のみ紹介コードを紐づけ（nwCompanyId は物件登録時に再利用するため残す）
+      if (loginResult.success && selectedRole === 'seller' && (referral.code || referral.nwId)) {
+        await api.post('/referrals/link', {
+          code: referral.code,
+          nwCompanyId: referral.nwId,
+        })
+        try {
+          if (referral.nwId) {
+            window.localStorage.setItem(
+              REFERRAL_STORAGE_KEY,
+              JSON.stringify({ nwId: referral.nwId }),
+            )
+          } else {
+            window.localStorage.removeItem(REFERRAL_STORAGE_KEY)
+          }
+        } catch {
+          // localStorage書き込み失敗は無視
+        }
+      }
+
       setLoading(false)
 
       if (loginResult.success) {
