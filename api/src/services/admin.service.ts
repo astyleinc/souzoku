@@ -20,7 +20,6 @@ import { AppError, ERROR_CODE, notFound } from '../lib/errors'
 import type { UserQuery, AnalyticsQuery, BroadcastNotificationInput } from '../schemas/admin-extended'
 import type { PaginatedResponse } from '@shared/types'
 import { createNotificationService } from './notification.service'
-import { logger } from '../lib/logger'
 
 // 物件一覧クエリの型
 type PropertyListQuery = {
@@ -556,21 +555,20 @@ export const createAdminService = (db: Database) => ({
     let delivered = 0
 
     for (const target of targets) {
-      try {
-        await notification.create({
+      const record = await notification.createSilently(
+        {
           userId: target.id,
           event: 'broadcast',
           channel: input.channel,
           title: input.title,
           body: input.body,
-          alsoEmail: input.channel === 'system' ? false : true,
+          alsoEmail: input.channel !== 'system',
           linkUrl: input.linkUrl,
           linkLabel: input.linkLabel,
-        })
-        delivered += 1
-      } catch (err) {
-        logger.error('ブロードキャスト通知の個別配送に失敗', { userId: target.id, error: err })
-      }
+        },
+        { userId: target.id, target: input.target },
+      )
+      if (record) delivered += 1
     }
 
     return { target: input.target, total: targets.length, delivered }
@@ -765,9 +763,8 @@ export const createAdminService = (db: Database) => ({
       status: 'broker_assigned',
     }).returning()
 
-    try {
-      const notificationService = createNotificationService(db)
-      await notificationService.create({
+    await createNotificationService(db).createSilently(
+      {
         userId: prop.sellerId,
         event: 'case_started',
         channel: 'email',
@@ -776,13 +773,9 @@ export const createAdminService = (db: Database) => ({
         relatedEntityType: 'case',
         relatedEntityId: created[0].id,
         alsoEmail: true,
-      })
-    } catch (err) {
-      logger.error('成約確定通知の送信に失敗', {
-        propertyId,
-        error: err instanceof Error ? err.message : String(err),
-      })
-    }
+      },
+      { propertyId, caseId: created[0].id },
+    )
 
     return { case: created[0] }
   },

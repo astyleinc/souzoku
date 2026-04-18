@@ -4,23 +4,13 @@ import { cases, caseMessages } from '../db/schema/cases'
 import { properties } from '../db/schema/properties'
 import { brokers } from '../db/schema/brokers'
 import type { CreateCaseInput, UpdateCaseStatusInput, SendMessageInput } from '../schemas/case'
-import { AppError, ERROR_CODE, notFound } from '../lib/errors'
 import { createRevenueService } from './revenue.service'
 import { createBrokerService } from './broker.service'
 import { createNotificationService } from './notification.service'
 import { logger } from '../lib/logger'
+import { validateCaseTransition } from '../lib/status-machine'
+import { findOneOrThrow, findOneOrNull } from '../lib/db-helpers'
 import { NOTIFICATION_EVENT } from '@shared/constants'
-
-// 有効なステータス遷移の定義
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  broker_assigned: ['seller_contacted', 'cancelled'],
-  seller_contacted: ['buyer_contacted', 'cancelled'],
-  buyer_contacted: ['explanation_done', 'cancelled'],
-  explanation_done: ['contract_signed', 'cancelled'],
-  contract_signed: ['settlement_done', 'cancelled'],
-  settlement_done: [],
-  cancelled: [],
-}
 
 export const createCaseService = (db: Database) => ({
   // 案件一覧
@@ -30,11 +20,10 @@ export const createCaseService = (db: Database) => ({
 
   // 案件詳細
   async getById(id: string) {
-    const result = await db.select().from(cases).where(eq(cases.id, id)).limit(1)
-    if (result.length === 0) {
-      throw notFound('案件')
-    }
-    return result[0]
+    return findOneOrThrow(
+      db.select().from(cases).where(eq(cases.id, id)).limit(1),
+      '案件',
+    )
   },
 
   // 案件作成
@@ -47,14 +36,9 @@ export const createCaseService = (db: Database) => ({
   // settlement_done への遷移時に収益配分を自動生成する
   async updateStatus(id: string, input: UpdateCaseStatusInput) {
     const existing = await this.getById(id)
-    const allowed = VALID_TRANSITIONS[existing.status]
 
-    if (!allowed || !allowed.includes(input.status)) {
-      throw new AppError(
-        ERROR_CODE.INVALID_STATUS_TRANSITION,
-        `「${existing.status}」から「${input.status}」への遷移は許可されていません`,
-      )
-    }
+    // 遷移チェックは lib/status-machine.ts に集約（物件・案件で同一ルール）
+    validateCaseTransition(existing.status, input.status)
 
     const updates: Record<string, unknown> = {
       status: input.status,
@@ -70,11 +54,11 @@ export const createCaseService = (db: Database) => ({
       .returning()
 
     // 決済完了時に収益配分を自動生成
+    // 配分生成失敗はステータス遷移を巻き戻さない（管理画面から手動リカバリ可）
     if (input.status === 'settlement_done' && existing.status !== 'settlement_done') {
       try {
         await this.generateDistributionForCase(result[0])
       } catch (err) {
-        // 配分生成失敗はステータス遷移を巻き戻さない（管理画面から手動リカバリ可）
         logger.error('決済後の収益配分生成に失敗', {
           caseId: id,
           error: err instanceof Error ? err.message : String(err),
@@ -83,32 +67,30 @@ export const createCaseService = (db: Database) => ({
     }
 
     // 案件関係者（売主）へステータス変更通知
-    try {
-      const property = await db.select({ sellerId: properties.sellerId, title: properties.title })
+    const property = await findOneOrNull(
+      db.select({ sellerId: properties.sellerId, title: properties.title })
         .from(properties)
         .where(eq(properties.id, existing.propertyId))
-        .limit(1)
+        .limit(1),
+    )
 
-      if (property.length > 0) {
-        const isSettlement = input.status === 'settlement_done'
-        await createNotificationService(db).create({
-          userId: property[0].sellerId,
+    if (property) {
+      const isSettlement = input.status === 'settlement_done'
+      await createNotificationService(db).createSilently(
+        {
+          userId: property.sellerId,
           event: isSettlement ? NOTIFICATION_EVENT.SETTLEMENT_DONE : NOTIFICATION_EVENT.CASE_STATUS_CHANGED,
           channel: 'email',
           title: isSettlement ? '決済が完了しました' : '案件ステータスが更新されました',
           body: isSettlement
-            ? `「${property[0].title}」の決済が完了しました。ご取引ありがとうございました。`
-            : `「${property[0].title}」の案件ステータスが「${input.status}」に更新されました。`,
+            ? `「${property.title}」の決済が完了しました。ご取引ありがとうございました。`
+            : `「${property.title}」の案件ステータスが「${input.status}」に更新されました。`,
           relatedEntityType: 'case',
           relatedEntityId: id,
           alsoEmail: true,
-        })
-      }
-    } catch (err) {
-      logger.error('案件ステータス通知の送信に失敗', {
-        caseId: id,
-        error: err instanceof Error ? err.message : String(err),
-      })
+        },
+        { caseId: id },
+      )
     }
 
     return result[0]
@@ -118,25 +100,14 @@ export const createCaseService = (db: Database) => ({
   async generateDistributionForCase(caseRecord: typeof cases.$inferSelect) {
     // 成約価格を決定する: 即決承認された最高入札、または売主が選択した入札
     // ここでは物件の askingPrice をフォールバックとして使用（最高入札額は別途取得）
-    const propertyResult = await db.select()
-      .from(properties)
-      .where(eq(properties.id, caseRecord.propertyId))
-      .limit(1)
-
-    if (propertyResult.length === 0) {
-      throw new Error(`物件が見つかりません: ${caseRecord.propertyId}`)
-    }
-    const property = propertyResult[0]
-
-    const brokerResult = await db.select()
-      .from(brokers)
-      .where(eq(brokers.id, caseRecord.brokerId))
-      .limit(1)
-
-    if (brokerResult.length === 0) {
-      throw new Error(`業者が見つかりません: ${caseRecord.brokerId}`)
-    }
-    const broker = brokerResult[0]
+    const property = await findOneOrThrow(
+      db.select().from(properties).where(eq(properties.id, caseRecord.propertyId)).limit(1),
+      '物件',
+    )
+    const broker = await findOneOrThrow(
+      db.select().from(brokers).where(eq(brokers.id, caseRecord.brokerId)).limit(1),
+      '業者',
+    )
 
     // NW経由判定: 紹介NW会社の有無で判断
     const isNwReferral = Boolean(property.referralNwCompanyId)

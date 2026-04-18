@@ -105,8 +105,8 @@ export const createBrokerService = (db: Database) => ({
     const body = `${companyName} の直近${count}件の平均評価が ${average.toFixed(2)} となり、閾値(${LOW_RATING_THRESHOLD})を下回りました。対応をご検討ください。`
 
     for (const admin of admins) {
-      try {
-        await notifier.create({
+      await notifier.createSilently(
+        {
           userId: admin.id,
           event: NOTIFICATION_EVENT.BROKER_LOW_RATING,
           channel: 'system',
@@ -115,10 +115,9 @@ export const createBrokerService = (db: Database) => ({
           relatedEntityType: 'broker',
           relatedEntityId: brokerId,
           alsoEmail: true,
-        })
-      } catch (err) {
-        logger.error('低評価アラート通知送信に失敗', { brokerId, adminId: admin.id, error: err })
-      }
+        },
+        { brokerId, adminId: admin.id },
+      )
     }
   },
 

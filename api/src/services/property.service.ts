@@ -8,7 +8,6 @@ import { validatePropertyTransition } from '../lib/status-machine'
 import { MAX_BID_PERIOD_CHANGES, NOTIFICATION_EVENT } from '@shared/constants'
 import type { PaginatedResponse } from '@shared/types'
 import { createNotificationService } from './notification.service'
-import { logger } from '../lib/logger'
 
 export const createPropertyService = (db: Database) => ({
   // 物件一覧取得
@@ -108,8 +107,8 @@ export const createPropertyService = (db: Database) => ({
     }).returning()
 
     // 売主へ登録受付通知
-    try {
-      await createNotificationService(db).create({
+    await createNotificationService(db).createSilently(
+      {
         userId: sellerId,
         event: NOTIFICATION_EVENT.PROPERTY_REGISTERED,
         channel: 'email',
@@ -118,10 +117,9 @@ export const createPropertyService = (db: Database) => ({
         relatedEntityType: 'property',
         relatedEntityId: result[0].id,
         alsoEmail: true,
-      })
-    } catch (err) {
-      logger.error('物件登録通知の送信に失敗', { error: err, propertyId: result[0].id })
-    }
+      },
+      { propertyId: result[0].id },
+    )
 
     return result[0]
   },
@@ -193,33 +191,33 @@ export const createPropertyService = (db: Database) => ({
     }
 
     // 売主向け通知（失敗は吸収して状態変更は成功扱い）
-    try {
-      const notification = createNotificationService(db)
-      const eventMap: Partial<Record<typeof status, { event: string; title: string; body: string }>> = {
-        published: {
-          event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
-          title: '物件が公開されました',
-          body: `「${existing.title}」が公開されました。入札の受付を開始します。`,
-        },
-        published_registering: {
-          event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
-          title: '物件が公開されました（登記中）',
-          body: `「${existing.title}」が公開されました。登記完了後、正式に入札受付へ移行します。`,
-        },
-        returned: {
-          event: NOTIFICATION_EVENT.PROPERTY_RETURNED,
-          title: '物件が差し戻されました',
-          body: `「${existing.title}」が差し戻されました。${returnReason ? `理由: ${returnReason}` : ''}`,
-        },
-        bid_ended: {
-          event: NOTIFICATION_EVENT.BID_PERIOD_ENDED,
-          title: '入札期間が終了しました',
-          body: `「${existing.title}」の入札期間が終了しました。落札者を選択してください。`,
-        },
-      }
-      const notif = eventMap[status]
-      if (notif) {
-        await notification.create({
+    // ステータスごとのテンプレートをテーブル化（未定義ステータスは通知スキップ）
+    const statusNotifications: Partial<Record<typeof status, { event: string; title: string; body: string }>> = {
+      published: {
+        event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
+        title: '物件が公開されました',
+        body: `「${existing.title}」が公開されました。入札の受付を開始します。`,
+      },
+      published_registering: {
+        event: NOTIFICATION_EVENT.PROPERTY_PUBLISHED,
+        title: '物件が公開されました（登記中）',
+        body: `「${existing.title}」が公開されました。登記完了後、正式に入札受付へ移行します。`,
+      },
+      returned: {
+        event: NOTIFICATION_EVENT.PROPERTY_RETURNED,
+        title: '物件が差し戻されました',
+        body: `「${existing.title}」が差し戻されました。${returnReason ? `理由: ${returnReason}` : ''}`,
+      },
+      bid_ended: {
+        event: NOTIFICATION_EVENT.BID_PERIOD_ENDED,
+        title: '入札期間が終了しました',
+        body: `「${existing.title}」の入札期間が終了しました。落札者を選択してください。`,
+      },
+    }
+    const notif = statusNotifications[status]
+    if (notif) {
+      await createNotificationService(db).createSilently(
+        {
           userId: existing.sellerId,
           event: notif.event,
           channel: 'email',
@@ -228,10 +226,9 @@ export const createPropertyService = (db: Database) => ({
           relatedEntityType: 'property',
           relatedEntityId: id,
           alsoEmail: true,
-        })
-      }
-    } catch (err) {
-      logger.error('物件ステータス通知の送信に失敗', { error: err, propertyId: id, status })
+        },
+        { propertyId: id, status },
+      )
     }
 
     return result[0]

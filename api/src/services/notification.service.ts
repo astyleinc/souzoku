@@ -50,6 +50,27 @@ export const createNotificationService = (db: Database) => ({
     return record
   },
 
+  // 通知送信の失敗を本処理に影響させない用のラッパー。
+  // 業務フロー（入札・案件更新・決済など）から「通知は副作用で、失敗してもトランザクションを巻き戻さない」
+  // という意図で呼び出される箇所が多いため、try/catch + logger.error の重複を集約する。
+  // context はログに残すメタデータ（例: { propertyId, caseId } など）。
+  async createSilently(
+    params: CreateNotificationParams,
+    context: Record<string, unknown> = {},
+  ) {
+    try {
+      return await this.create(params)
+    } catch (err) {
+      logger.error('通知の作成に失敗（処理継続）', {
+        event: params.event,
+        userId: params.userId,
+        ...context,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      return null
+    }
+  },
+
   // 配送（メール + Slack）。チャネル指定に応じて該当先に配る
   async deliver(params: CreateNotificationParams) {
     const { channel, alsoEmail, linkUrl, linkLabel, slackWebhookUrl, title, body } = params

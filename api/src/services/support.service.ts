@@ -12,7 +12,6 @@ import type {
 } from '../schemas/support'
 import { createNotificationService } from './notification.service'
 import { NOTIFICATION_EVENT } from '@shared/constants'
-import { logger } from '../lib/logger'
 
 export const createSupportService = (db: Database) => ({
   // ユーザー自身のチケット一覧取得
@@ -75,8 +74,8 @@ export const createSupportService = (db: Database) => ({
     })
 
     // 問い合わせ受領通知（起票者本人へ控えを送る）
-    try {
-      await createNotificationService(db).create({
+    await createNotificationService(db).createSilently(
+      {
         userId,
         event: NOTIFICATION_EVENT.INQUIRY_RECEIVED,
         channel: 'email',
@@ -85,10 +84,9 @@ export const createSupportService = (db: Database) => ({
         relatedEntityType: 'ticket',
         relatedEntityId: ticket[0].id,
         alsoEmail: true,
-      })
-    } catch (err) {
-      logger.error('問い合わせ受領通知の送信に失敗', { ticketId: ticket[0].id, error: err })
-    }
+      },
+      { ticketId: ticket[0].id },
+    )
 
     return ticket[0]
   },
@@ -316,8 +314,8 @@ export const createSupportService = (db: Database) => ({
 
     // 起票ユーザーへ返信通知（未ログイン問い合わせ＝userId未設定は対象外）
     if (ticket[0].userId) {
-      try {
-        await createNotificationService(db).create({
+      await createNotificationService(db).createSilently(
+        {
           userId: ticket[0].userId,
           event: NOTIFICATION_EVENT.INQUIRY_REPLIED,
           channel: 'email',
@@ -326,10 +324,9 @@ export const createSupportService = (db: Database) => ({
           relatedEntityType: 'ticket',
           relatedEntityId: ticketId,
           alsoEmail: true,
-        })
-      } catch (err) {
-        logger.error('問い合わせ返信通知の送信に失敗', { ticketId, error: err })
-      }
+        },
+        { ticketId },
+      )
     }
 
     return message[0]

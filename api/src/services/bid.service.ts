@@ -4,9 +4,9 @@ import { bids } from '../db/schema/bids'
 import { properties } from '../db/schema/properties'
 import type { CreateBidInput, SelectBidInput } from '../schemas/bid'
 import { AppError, ERROR_CODE, notFound } from '../lib/errors'
+import { findOneOrThrow } from '../lib/db-helpers'
 import { NOTIFICATION_EVENT } from '@shared/constants'
 import { createNotificationService } from './notification.service'
-import { logger } from '../lib/logger'
 
 export const createBidService = (db: Database) => ({
   // 物件の入札一覧取得
@@ -39,16 +39,10 @@ export const createBidService = (db: Database) => ({
   // 入札する
   async placeBid(input: CreateBidInput, buyerId: string) {
     // 物件の存在確認と入札可能チェック
-    const property = await db.select()
-      .from(properties)
-      .where(eq(properties.id, input.propertyId))
-      .limit(1)
-
-    if (property.length === 0) {
-      throw notFound('物件')
-    }
-
-    const prop = property[0]
+    const prop = await findOneOrThrow(
+      db.select().from(properties).where(eq(properties.id, input.propertyId)).limit(1),
+      '物件',
+    )
 
     if (prop.status !== 'bidding') {
       throw new AppError(ERROR_CODE.BID_PERIOD_CLOSED, 'この物件は入札受付期間外です')
@@ -80,10 +74,13 @@ export const createBidService = (db: Database) => ({
 
     const newBid = result[0]
 
+    const notificationService = createNotificationService(db)
+
     // 売主へ新規入札通知（即決到達時は後続の INSTANT_PRICE_REACHED で上書き通知する）
-    if (!(prop.instantPrice && input.amount >= prop.instantPrice)) {
-      try {
-        await createNotificationService(db).create({
+    const hitsInstantPrice = Boolean(prop.instantPrice && input.amount >= prop.instantPrice)
+    if (!hitsInstantPrice) {
+      await notificationService.createSilently(
+        {
           userId: prop.sellerId,
           event: NOTIFICATION_EVENT.NEW_BID,
           channel: 'email',
@@ -92,17 +89,13 @@ export const createBidService = (db: Database) => ({
           relatedEntityType: 'property',
           relatedEntityId: prop.id,
           alsoEmail: true,
-        })
-      } catch (err) {
-        logger.error('新規入札通知の送信に失敗', {
-          propertyId: prop.id,
-          error: err instanceof Error ? err.message : String(err),
-        })
-      }
+        },
+        { propertyId: prop.id },
+      )
     }
 
     // 即決価格到達判定
-    if (prop.instantPrice && input.amount >= prop.instantPrice) {
+    if (hitsInstantPrice) {
       await db.update(properties)
         .set({
           status: 'pending_approval',
@@ -113,24 +106,19 @@ export const createBidService = (db: Database) => ({
         .where(eq(properties.id, input.propertyId))
 
       // 売主に通知（48時間以内の承認を促す）
-      try {
-        const notificationService = createNotificationService(db)
-        await notificationService.create({
+      await notificationService.createSilently(
+        {
           userId: prop.sellerId,
           event: NOTIFICATION_EVENT.INSTANT_PRICE_REACHED,
           channel: 'email',
           title: '即決価格に到達しました',
-          body: `物件「${prop.title}」に即決価格（${prop.instantPrice.toLocaleString()}円）以上の入札がありました。\n48時間以内に承認または辞退してください。期限を過ぎると通常の入札に戻ります。`,
+          body: `物件「${prop.title}」に即決価格（${prop.instantPrice!.toLocaleString()}円）以上の入札がありました。\n48時間以内に承認または辞退してください。期限を過ぎると通常の入札に戻ります。`,
           relatedEntityType: 'property',
           relatedEntityId: prop.id,
           alsoEmail: true,
-        })
-      } catch (err) {
-        logger.error('即決到達通知の送信に失敗', {
-          propertyId: prop.id,
-          error: err instanceof Error ? err.message : String(err),
-        })
-      }
+        },
+        { propertyId: prop.id },
+      )
     }
 
     return newBid
@@ -138,16 +126,12 @@ export const createBidService = (db: Database) => ({
 
   // 買い手が自分の入札をキャンセル
   async cancelBid(bidId: string, buyerId: string) {
-    const bid = await db.select()
-      .from(bids)
-      .where(and(eq(bids.id, bidId), eq(bids.buyerId, buyerId)))
-      .limit(1)
+    const bid = await findOneOrThrow(
+      db.select().from(bids).where(and(eq(bids.id, bidId), eq(bids.buyerId, buyerId))).limit(1),
+      '入札',
+    )
 
-    if (bid.length === 0) {
-      throw notFound('入札')
-    }
-
-    if (bid[0].status !== 'active') {
+    if (bid.status !== 'active') {
       throw new AppError(ERROR_CODE.VALIDATION_ERROR, 'アクティブな入札のみキャンセルできます')
     }
 
@@ -162,14 +146,10 @@ export const createBidService = (db: Database) => ({
   // 売主が入札者を選択
   async selectBid(input: SelectBidInput, propertyId: string) {
     // 対象入札の取得
-    const bid = await db.select()
-      .from(bids)
-      .where(and(eq(bids.id, input.bidId), eq(bids.propertyId, propertyId)))
-      .limit(1)
-
-    if (bid.length === 0) {
-      throw notFound('入札')
-    }
+    const bid = await findOneOrThrow(
+      db.select().from(bids).where(and(eq(bids.id, input.bidId), eq(bids.propertyId, propertyId))).limit(1),
+      '入札',
+    )
 
     // 最高額チェック（最高額以外を選んだ場合は理由必須）
     const allBids = await this.listByProperty(propertyId)
@@ -205,6 +185,6 @@ export const createBidService = (db: Database) => ({
       .set({ status: 'pending_approval', updatedAt: new Date() })
       .where(eq(properties.id, propertyId))
 
-    return bid[0]
+    return bid
   },
 })
