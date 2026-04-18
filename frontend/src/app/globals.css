@@ -129,6 +129,38 @@
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-dropdown: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
   --shadow-modal: 0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04);
+
+  /* ===============================================
+     Phase 1 — ouver-property-search.html 準拠トークン
+     （新しい top ページ等で使用）
+     =============================================== */
+
+  /* Brand: Sage（落ち着いた翠緑） */
+  --color-sage: #6b8f71;
+  --color-sage-deep: #4a6a50;
+  --color-sage-light: #e8f0ea;
+  --color-sage-xlight: #f2f6f3;
+
+  /* Neutral: Bark（暖かいグレー） */
+  --color-bark: #2a2a2a;
+  --color-bark-2: #444444;
+  --color-bark-3: #777777;
+  --color-bark-4: #aaaaaa;
+
+  /* Surface: Warm（アイボリー系） */
+  --color-warm: #f7f5ef;
+  --color-warm-2: #eae5d8;
+  --color-warm-3: #ddd6c6;
+
+  /* Badge 系（セマンティック） */
+  --color-badge-pop: #c27040;
+  --color-badge-deal: #5a8fa0;
+
+  /* Phase 1 Shadow */
+  --shadow-s: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-m: 0 4px 20px -6px rgba(0, 0, 0, 0.08);
+  --shadow-l: 0 12px 40px -12px rgba(0, 0, 0, 0.10);
+  --shadow-h: 0 20px 50px -12px rgba(0, 0, 0, 0.14);
 }
 
 @theme inline {
@@ -198,6 +230,21 @@
   --color-neutral-800: var(--color-neutral-800);
   --color-neutral-900: var(--color-neutral-900);
 
+  /* --- Phase 1: sage / warm / bark をTailwindに公開 --- */
+  --color-sage: var(--color-sage);
+  --color-sage-deep: var(--color-sage-deep);
+  --color-sage-light: var(--color-sage-light);
+  --color-sage-xlight: var(--color-sage-xlight);
+  --color-bark: var(--color-bark);
+  --color-bark-2: var(--color-bark-2);
+  --color-bark-3: var(--color-bark-3);
+  --color-bark-4: var(--color-bark-4);
+  --color-warm: var(--color-warm);
+  --color-warm-2: var(--color-warm-2);
+  --color-warm-3: var(--color-warm-3);
+  --color-badge-pop: var(--color-badge-pop);
+  --color-badge-deal: var(--color-badge-deal);
+
   /* --- shadcn/ui セマンティック変数 --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -234,7 +281,8 @@
   /* --- Font families --- */
   --font-sans: var(--font-sans);
   --font-heading: var(--font-sans);
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
 
   /* --- Font sizes --- */
   --text-display: 2rem;
@@ -286,4 +334,168 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+/* ============================================
+   Phase 1 — Decoration utilities
+   （Halftone / Grain など質感表現）
+   ============================================ */
+
+/* Fade-up アニメーション */
+@keyframes ouverFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ouverFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.anim-fade-up { animation: ouverFadeUp 0.7s ease both; }
+.anim-fade-in { animation: ouverFadeIn 0.5s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-fade-in {
+    animation: none !important;
+  }
+}
+
+/* ヒーロー右下に一点だけ置く、モダンなアクセント用ハーフトーン（極控えめ） */
+.hero-halftone {
+  background-image: radial-gradient(circle, rgba(74,106,80,.30) 1.2px, transparent 1.6px);
+  background-size: 14px 14px;
+  -webkit-mask-image: radial-gradient(ellipse 26% 28% at 96% 92%, rgba(0,0,0,.85) 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 26% 28% at 96% 92%, rgba(0,0,0,.85) 0%, transparent 70%);
+}
+
+/* Grain ノイズは使用停止（モダンフラット方針） */
+.hero-grain { display: none; }
+
+/* ページ全体の紙テクスチャ（warm地に薄くノイズを散らす） */
+.paper-grain {
+  position: relative;
+}
+.paper-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: .55;
+}
+
+/* セクション用グレイン（セクション単位で重ねる軽いノイズ） */
+.section-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.05' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* コーナー・ハーフトーン（必要な場所に一点だけ、極控えめに） */
+.halftone-tl,
+.halftone-br {
+  background-image: radial-gradient(circle, rgba(74,106,80,.22) 1.2px, transparent 1.6px);
+  background-size: 14px 14px;
+}
+.halftone-tl {
+  -webkit-mask-image: radial-gradient(ellipse 26% 26% at 5% 6%, rgba(0,0,0,.85) 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 26% 26% at 5% 6%, rgba(0,0,0,.85) 0%, transparent 70%);
+}
+.halftone-br {
+  -webkit-mask-image: radial-gradient(ellipse 26% 26% at 95% 94%, rgba(0,0,0,.85) 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 26% 26% at 95% 94%, rgba(0,0,0,.85) 0%, transparent 70%);
+}
+
+/* 縦ストライプ風の紙目（非常に薄い平行線） */
+.paper-lines {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(74,106,80,.03) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+/* Footer: シンプルな一点ハーフトーン */
+.footer-halftone {
+  background-image: radial-gradient(circle, rgba(247,245,239,.14) 1.1px, transparent 1.6px);
+  background-size: 13px 13px;
+  -webkit-mask-image: radial-gradient(ellipse 30% 45% at 6% 22%, rgba(0,0,0,.9) 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 30% 45% at 6% 22%, rgba(0,0,0,.9) 0%, transparent 70%);
+}
+
+/* ヒーロー写真の上に重ねるグラデ（左は warm で塗り、右は写真を見せる） */
+.hero-gradient {
+  background: linear-gradient(100deg,
+    rgba(247,245,239,.97) 0%,
+    rgba(247,245,239,.92) 32%,
+    rgba(247,245,239,.55) 58%,
+    rgba(247,245,239,.05) 82%,
+    rgba(247,245,239,0) 100%);
+}
+
+/* ヒーロー下端のフェード（次セクションへの繋ぎ） */
+.hero-edge {
+  background: linear-gradient(180deg,
+    rgba(247,245,239,0) 0%,
+    rgba(247,245,239,.85) 65%,
+    rgba(247,245,239,1) 100%);
+}
+
+/* CTA 背景写真の上に重ねるダークグラデ（シンプル） */
+.cta-gradient {
+  background: linear-gradient(95deg,
+    rgba(22,28,25,.88) 0%,
+    rgba(22,28,25,.72) 45%,
+    rgba(22,28,25,.42) 80%,
+    rgba(22,28,25,.28) 100%);
+}
+
+/* 物件カード画像下のダークフェード */
+.pcard-img-shade {
+  background: linear-gradient(0deg, rgba(0,0,0,.18) 0%, transparent 42%);
+}
+
+/* ============================================
+   Surface ユーティリティ（シンプル・一層）
+   ============================================ */
+
+/* カード: 細ボーダー + ごく軽い影 */
+.surface-card {
+  background: #fff;
+  border: 1px solid rgba(42, 42, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(20, 28, 24, 0.04);
+}
+.surface-card-hover {
+  border-color: rgba(42, 42, 42, 0.08);
+  box-shadow: 0 10px 28px -12px rgba(20, 28, 24, 0.12);
+}
+
+/* ヒーロー検索パネル: シンプルなフラットカード */
+.surface-panel {
+  background: #ffffff;
+  border: 1px solid rgba(42, 42, 42, 0.06);
+  box-shadow: 0 12px 36px -18px rgba(20, 28, 24, 0.14);
+}
+
+/* 主役カード: 外見上は surface-card と同列、装飾は不要 */
+.surface-card-feature {
+  background: #ffffff;
+  border: 1px solid rgba(42, 42, 42, 0.06);
+}
+
+/* サブカード: フラット */
+.surface-card-soft {
+  background: #ffffff;
+  border: 1px solid rgba(42, 42, 42, 0.06);
+}
+
+/* 主役カード左のイラスト面: シンプルな sage-xlight ベタ */
+.feature-illust-well {
+  background: var(--color-sage-xlight);
+}
+
+/* NO IMAGE プレースホルダ: 単純な warm グラデ（装飾なし） */
+.noimage-tex {
+  background: linear-gradient(160deg, #f1ece0 0%, #e5ddcb 100%);
 }

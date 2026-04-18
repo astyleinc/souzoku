@@ -1,13 +1,28 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_JP, Inter } from 'next/font/google'
+import { Zen_Kaku_Gothic_New, Cormorant_Garamond, JetBrains_Mono, Inter } from 'next/font/google'
 import './globals.css'
 import { DevAuthSwitcher } from '@/components/dev/DevAuthSwitcher'
 import { AuthProvider } from '@/providers/AuthProvider'
 
-const notoSansJP = Noto_Sans_JP({
+const zenKaku = Zen_Kaku_Gothic_New({
   variable: '--font-sans',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+})
+
+const cormorant = Cormorant_Garamond({
+  variable: '--font-serif',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+})
+
+const jetBrains = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
 })
 
@@ -32,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${notoSansJP.variable} ${inter.variable} h-full antialiased`}
+      className={`${zenKaku.variable} ${cormorant.variable} ${jetBrains.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
