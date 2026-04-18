@@ -5,6 +5,7 @@ import {
   Plus,
   Star,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -20,6 +21,9 @@ type Broker = {
   phone: string
   totalDeals: number
   averageRating: number
+  recentAverage: number | null
+  recentCount: number
+  lowRatingAlert: boolean
   createdAt: string
 }
 
@@ -72,10 +76,21 @@ export default function AdminBrokersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {brokers.map((broker) => (
-            <div key={broker.id} className="bg-white rounded-2xl shadow-card p-5">
+            <div key={broker.id} className={`bg-white rounded-2xl shadow-card p-5 ${broker.lowRatingAlert ? 'ring-1 ring-error-200' : ''}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-semibold">{broker.companyName}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold">{broker.companyName}</h3>
+                    {broker.lowRatingAlert && (
+                      <span
+                        title={`直近${broker.recentCount}件の平均評価 ${broker.recentAverage?.toFixed(2) ?? '-'} が閾値3.0を下回っています`}
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-error-50 text-error-700 text-[10px] font-medium"
+                      >
+                        <AlertTriangle className="w-3 h-3" />
+                        低評価
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-neutral-400 mt-0.5">{broker.representativeName}</p>
                 </div>
                 {broker.averageRating > 0 && (
@@ -95,6 +110,14 @@ export default function AdminBrokersPage() {
                   <span className="text-neutral-500">累計成約</span>
                   <span className="price">{broker.totalDeals}件</span>
                 </div>
+                {broker.recentAverage !== null && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">直近{broker.recentCount}件の評価</span>
+                    <span className={`price ${broker.lowRatingAlert ? 'text-error-600' : ''}`}>
+                      {broker.recentAverage.toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-neutral-500">メール</span>
                   <span className="text-xs truncate max-w-[160px]">{broker.email}</span>

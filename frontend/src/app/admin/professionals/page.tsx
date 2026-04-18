@@ -19,7 +19,8 @@ type Professional = {
   id: string
   name: string
   email: string
-  qualification: string
+  qualification?: string
+  qualificationType?: string
   officeName: string
   nwAffiliations: string[]
   referralCount: number
@@ -34,6 +35,33 @@ const verificationStatusStyle: Record<string, string> = {
   rejected: 'bg-error-50 text-error-700',
 }
 
+const QUALIFICATION_LABEL: Record<string, string> = {
+  tax_accountant: '税理士',
+  judicial_scrivener: '司法書士',
+  lawyer: '弁護士',
+  administrative_scrivener: '行政書士',
+  other: 'その他',
+}
+
+type Tier = 1 | 2 | 3
+
+const QUALIFICATION_TIER: Record<string, Tier> = {
+  tax_accountant: 1,
+  judicial_scrivener: 1,
+  lawyer: 2,
+  administrative_scrivener: 3,
+  other: 3,
+}
+
+const TIER_STYLE: Record<Tier, { label: string; className: string }> = {
+  1: { label: 'Tier 1', className: 'bg-cta-50 text-cta-700 border-cta-200' },
+  2: { label: 'Tier 2', className: 'bg-primary-50 text-primary-700 border-primary-200' },
+  3: { label: 'Tier 3', className: 'bg-secondary-50 text-secondary-700 border-secondary-200' },
+}
+
+const resolveQualification = (p: Professional) => p.qualificationType ?? p.qualification ?? 'other'
+const resolveTier = (p: Professional): Tier => QUALIFICATION_TIER[resolveQualification(p)] ?? 3
+
 export default function AdminProfessionalsPage() {
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,7 +75,13 @@ export default function AdminProfessionalsPage() {
     if (statusFilter) params.set('verificationStatus', statusFilter)
     const res = await api.get<unknown>(`/admin/professionals?${params.toString()}`)
     if (res.success) {
-      setProfessionals(toItems<Professional>(res.data))
+      const items = toItems<Professional>(res.data)
+      items.sort((a, b) => {
+        const tierDiff = resolveTier(a) - resolveTier(b)
+        if (tierDiff !== 0) return tierDiff
+        return (b.closedCount ?? 0) - (a.closedCount ?? 0)
+      })
+      setProfessionals(items)
     }
     setLoading(false)
   }
@@ -111,6 +145,7 @@ export default function AdminProfessionalsPage() {
               <thead>
                 <tr className="border-b border-neutral-100">
                   <th className="text-left py-3.5 px-5 text-xs text-neutral-400 font-medium">氏名</th>
+                  <th className="text-left py-3.5 px-5 text-xs text-neutral-400 font-medium">Tier</th>
                   <th className="text-left py-3.5 px-5 text-xs text-neutral-400 font-medium">資格</th>
                   <th className="text-left py-3.5 px-5 text-xs text-neutral-400 font-medium">事務所名</th>
                   <th className="text-center py-3.5 px-5 text-xs text-neutral-400 font-medium">紹介</th>
@@ -120,13 +155,22 @@ export default function AdminProfessionalsPage() {
                 </tr>
               </thead>
               <tbody>
-                {professionals.map((p) => (
+                {professionals.map((p) => {
+                  const tier = resolveTier(p)
+                  const tierStyle = TIER_STYLE[tier]
+                  const qualification = resolveQualification(p)
+                  return (
                   <tr key={p.id} className="border-t border-neutral-100 hover:bg-neutral-50/50">
                     <td className="py-3.5 px-5">
                       <p className="font-medium">{p.name}</p>
                       <p className="text-xs text-neutral-400">{p.email}</p>
                     </td>
-                    <td className="py-3.5 px-5 text-neutral-500">{p.qualification}</td>
+                    <td className="py-3.5 px-5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${tierStyle.className}`}>
+                        {tierStyle.label}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-neutral-500">{QUALIFICATION_LABEL[qualification] ?? qualification}</td>
                     <td className="py-3.5 px-5 text-neutral-500">{p.officeName}</td>
                     <td className="py-3.5 px-5 text-center price">{p.referralCount}</td>
                     <td className="py-3.5 px-5 text-center price">{p.closedCount}</td>
@@ -141,7 +185,8 @@ export default function AdminProfessionalsPage() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

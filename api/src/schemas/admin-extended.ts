@@ -28,6 +28,21 @@ export const analyticsQuerySchema = z.object({
   groupBy: z.enum(['day', 'week', 'month']).default('month'),
 })
 
+// ブロードキャスト通知入力
+// target: 'all' | role | ユーザーID配列
+export const broadcastNotificationSchema = z.object({
+  target: z.union([
+    z.literal('all'),
+    z.enum(['seller', 'buyer', 'professional', 'broker', 'admin']),
+  ]),
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(2000),
+  channel: z.enum(['email', 'system']).default('system'),
+  linkUrl: z.string().url().optional(),
+  linkLabel: z.string().max(50).optional(),
+})
+
 export type UserQuery = z.infer<typeof userQuerySchema>
 export type UserStatusInput = z.infer<typeof userStatusSchema>
 export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>
+export type BroadcastNotificationInput = z.infer<typeof broadcastNotificationSchema>

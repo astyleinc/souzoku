@@ -13,7 +13,7 @@ brokerRoutes.use('/:id', validateUuidParam('id'))
 brokerRoutes.use('/:id/*', validateUuidParam('id'))
 
 brokerRoutes.get('/', auth, requireRole('admin'), async (c) => {
-  const brokers = await services.broker.list()
+  const brokers = await services.broker.listWithRatingStatus()
   return ok(c, brokers)
 })
 

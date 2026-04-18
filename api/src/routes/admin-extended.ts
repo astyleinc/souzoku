@@ -4,9 +4,9 @@ import type { AuthUser } from '../middleware/auth'
 import { validateBody, validateQuery } from '../middleware/validate'
 import { validateUuidParam } from '../middleware/param-validator'
 import { auditLogQuerySchema } from '../schemas/audit'
-import { userQuerySchema, userStatusSchema, userRoleSchema, analyticsQuerySchema } from '../schemas/admin-extended'
+import { userQuerySchema, userStatusSchema, userRoleSchema, analyticsQuerySchema, broadcastNotificationSchema } from '../schemas/admin-extended'
 import type { AuditLogQuery } from '../schemas/audit'
-import type { UserQuery, UserStatusInput, UserRoleInput, AnalyticsQuery } from '../schemas/admin-extended'
+import type { UserQuery, UserStatusInput, UserRoleInput, AnalyticsQuery, BroadcastNotificationInput } from '../schemas/admin-extended'
 import { services } from '../lib/services'
 import { ok, paginated } from '../lib/response'
 
@@ -120,5 +120,42 @@ adminExtendedRoutes.get('/nw-companies/:id', validateUuidParam('id'), async (c) 
 // 収益サマリー
 adminExtendedRoutes.get('/revenue/summary', async (c) => {
   const result = await services.admin.getRevenueSummary()
+  return ok(c, result)
+})
+
+// ブロードキャスト通知
+adminExtendedRoutes.post('/notifications/broadcast', validateBody(broadcastNotificationSchema), async (c) => {
+  const input = c.get('validatedBody') as BroadcastNotificationInput
+  const result = await services.admin.broadcastNotification(input)
+  return ok(c, result)
+})
+
+// 詳細KPI — 士業別
+adminExtendedRoutes.get('/kpi/professionals', async (c) => {
+  const result = await services.admin.getProfessionalKPI()
+  return ok(c, result)
+})
+
+// 詳細KPI — NW別
+adminExtendedRoutes.get('/kpi/nw', async (c) => {
+  const result = await services.admin.getNwKPI()
+  return ok(c, result)
+})
+
+// 詳細KPI — 業者別
+adminExtendedRoutes.get('/kpi/brokers', async (c) => {
+  const result = await services.admin.getBrokerKPI()
+  return ok(c, result)
+})
+
+// 詳細KPI — エリア別
+adminExtendedRoutes.get('/kpi/areas', async (c) => {
+  const result = await services.admin.getAreaKPI()
+  return ok(c, result)
+})
+
+// 詳細KPI — ファネル
+adminExtendedRoutes.get('/kpi/funnel', async (c) => {
+  const result = await services.admin.getFunnelKPI()
   return ok(c, result)
 })

@@ -109,3 +109,29 @@ revenueExtendedRoutes.get(
     return paginated(c, result)
   },
 )
+
+// 管理者: 請求書PDFの生成（業者・士業・NW 全対象）
+revenueExtendedRoutes.post(
+  '/invoices/:id/pdf',
+  auth,
+  requireRole('admin'),
+  validateUuidParam('id'),
+  async (c) => {
+    const invoiceId = c.req.param('id')
+    const result = await services.transaction.generateInvoicePdfByAdmin(invoiceId)
+    return ok(c, result)
+  },
+)
+
+// 管理者: 支払IDから請求書作成+PDF生成（まだ請求書がない場合は作成）
+revenueExtendedRoutes.post(
+  '/payments/:id/invoice-pdf',
+  auth,
+  requireRole('admin'),
+  validateUuidParam('id'),
+  async (c) => {
+    const paymentId = c.req.param('id')
+    const result = await services.transaction.ensureInvoicePdfForPayment(paymentId)
+    return ok(c, result)
+  },
+)

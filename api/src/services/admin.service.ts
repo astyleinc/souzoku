@@ -16,9 +16,11 @@ import {
   nwCompanies,
   professionalNwAffiliations,
 } from '../db/schema'
-import { notFound } from '../lib/errors'
-import type { UserQuery, AnalyticsQuery } from '../schemas/admin-extended'
+import { AppError, ERROR_CODE, notFound } from '../lib/errors'
+import type { UserQuery, AnalyticsQuery, BroadcastNotificationInput } from '../schemas/admin-extended'
 import type { PaginatedResponse } from '@shared/types'
+import { createNotificationService } from './notification.service'
+import { logger } from '../lib/logger'
 
 // 物件一覧クエリの型
 type PropertyListQuery = {
@@ -538,5 +540,250 @@ export const createAdminService = (db: Database) => ({
     const rows = await db.select().from(nwCompanies).where(eq(nwCompanies.id, id)).limit(1)
     if (rows.length === 0) throw notFound('NW会社')
     return rows[0]
+  },
+
+  // ブロードキャスト通知（指定ロールの全ユーザーへ同時送信）
+  async broadcastNotification(input: BroadcastNotificationInput) {
+    const where = input.target === 'all'
+      ? undefined
+      : eq(users.role, input.target)
+
+    const targets = where
+      ? await db.select({ id: users.id }).from(users).where(where)
+      : await db.select({ id: users.id }).from(users)
+
+    const notification = createNotificationService(db)
+    let delivered = 0
+
+    for (const target of targets) {
+      try {
+        await notification.create({
+          userId: target.id,
+          event: 'broadcast',
+          channel: input.channel,
+          title: input.title,
+          body: input.body,
+          alsoEmail: input.channel === 'system' ? false : true,
+          linkUrl: input.linkUrl,
+          linkLabel: input.linkLabel,
+        })
+        delivered += 1
+      } catch (err) {
+        logger.error('ブロードキャスト通知の個別配送に失敗', { userId: target.id, error: err })
+      }
+    }
+
+    return { target: input.target, total: targets.length, delivered }
+  },
+
+  // 士業別KPI（紹介件数・成約件数・成約率・総報酬）
+  async getProfessionalKPI() {
+    const rows = await db
+      .select({
+        professionalId: professionals.id,
+        name: users.name,
+        qualificationType: professionals.qualificationType,
+        referralCount: sql<number>`count(distinct ${properties.id})`,
+        closedCount: sql<number>`count(distinct ${properties.id}) filter (where ${properties.status} = 'closed')`,
+        totalReward: sql<number>`coalesce(sum(${revenueDistributions.professionalAmount}), 0)`,
+      })
+      .from(professionals)
+      .leftJoin(users, eq(users.id, professionals.userId))
+      .leftJoin(properties, eq(properties.referringProfessionalId, professionals.id))
+      .leftJoin(revenueDistributions, eq(revenueDistributions.professionalId, professionals.id))
+      .groupBy(professionals.id, users.name, professionals.qualificationType)
+      .orderBy(desc(sql`count(distinct ${properties.id}) filter (where ${properties.status} = 'closed')`))
+
+    return rows.map((r) => {
+      const referral = Number(r.referralCount)
+      const closed = Number(r.closedCount)
+      return {
+        professionalId: r.professionalId,
+        name: r.name,
+        qualificationType: r.qualificationType,
+        referralCount: referral,
+        closedCount: closed,
+        closeRate: referral > 0 ? Number(((closed / referral) * 100).toFixed(2)) : 0,
+        totalReward: Number(r.totalReward),
+      }
+    })
+  },
+
+  // NW別KPI（紹介件数・成約件数・成約率・総ロイヤリティ）
+  async getNwKPI() {
+    const rows = await db
+      .select({
+        nwCompanyId: nwCompanies.id,
+        name: nwCompanies.name,
+        referralCount: sql<number>`count(distinct ${properties.id})`,
+        closedCount: sql<number>`count(distinct ${properties.id}) filter (where ${properties.status} = 'closed')`,
+        totalRoyalty: sql<number>`coalesce(sum(${revenueDistributions.nwAmount}), 0)`,
+      })
+      .from(nwCompanies)
+      .leftJoin(properties, eq(properties.referralNwCompanyId, nwCompanies.id))
+      .leftJoin(revenueDistributions, eq(revenueDistributions.nwCompanyId, nwCompanies.id))
+      .groupBy(nwCompanies.id, nwCompanies.name)
+      .orderBy(desc(sql`count(distinct ${properties.id}) filter (where ${properties.status} = 'closed')`))
+
+    return rows.map((r) => {
+      const referral = Number(r.referralCount)
+      const closed = Number(r.closedCount)
+      return {
+        nwCompanyId: r.nwCompanyId,
+        name: r.name,
+        referralCount: referral,
+        closedCount: closed,
+        closeRate: referral > 0 ? Number(((closed / referral) * 100).toFixed(2)) : 0,
+        totalRoyalty: Number(r.totalRoyalty),
+      }
+    })
+  },
+
+  // 業者別KPI（成約件数・平均評価・総手数料）
+  async getBrokerKPI() {
+    const rows = await db
+      .select({
+        brokerId: brokers.id,
+        companyName: brokers.companyName,
+        totalDeals: brokers.totalDeals,
+        closedCount: sql<number>`count(distinct ${cases.id}) filter (where ${cases.status} = 'settlement_done')`,
+        totalBrokerFee: sql<number>`coalesce(sum(${revenueDistributions.brokerAmount}), 0)`,
+      })
+      .from(brokers)
+      .leftJoin(cases, eq(cases.brokerId, brokers.id))
+      .leftJoin(revenueDistributions, eq(revenueDistributions.brokerId, brokers.id))
+      .groupBy(brokers.id, brokers.companyName, brokers.totalDeals)
+      .orderBy(desc(brokers.totalDeals))
+
+    return rows.map((r) => ({
+      brokerId: r.brokerId,
+      companyName: r.companyName,
+      totalDeals: Number(r.totalDeals),
+      settledCount: Number(r.closedCount),
+      totalBrokerFee: Number(r.totalBrokerFee),
+    }))
+  },
+
+  // エリア別KPI（都道府県・市区町村）
+  async getAreaKPI() {
+    const rows = await db
+      .select({
+        prefecture: properties.prefecture,
+        city: properties.city,
+        listingCount: sql<number>`count(*)`,
+        bidCount: sql<number>`coalesce((select count(*) from ${bids} where ${bids.propertyId} = ${properties.id}), 0)`,
+        closedCount: sql<number>`count(*) filter (where ${properties.status} = 'closed')`,
+      })
+      .from(properties)
+      .groupBy(properties.prefecture, properties.city, properties.id)
+
+    // 市区町村でさらに集約
+    const agg = new Map<string, { prefecture: string; city: string; listingCount: number; bidCount: number; closedCount: number }>()
+    for (const r of rows) {
+      const key = `${r.prefecture}/${r.city}`
+      const cur = agg.get(key) ?? { prefecture: r.prefecture, city: r.city, listingCount: 0, bidCount: 0, closedCount: 0 }
+      cur.listingCount += Number(r.listingCount)
+      cur.bidCount += Number(r.bidCount)
+      cur.closedCount += Number(r.closedCount)
+      agg.set(key, cur)
+    }
+    return Array.from(agg.values()).sort((a, b) => b.listingCount - a.listingCount)
+  },
+
+  // ファネルKPI（登録→公開→成約の平均日数、平均入札数/物件）
+  async getFunnelKPI() {
+    const [funnelRow] = await db
+      .select({
+        avgRegistrationToPublish: sql<number>`coalesce(avg(extract(epoch from (${properties.publishedAt} - ${properties.createdAt})) / 86400.0), 0)`,
+        avgPublishToClose: sql<number>`coalesce(avg(extract(epoch from (${properties.closedAt} - ${properties.publishedAt})) / 86400.0) filter (where ${properties.status} = 'closed'), 0)`,
+      })
+      .from(properties)
+
+    const [bidRow] = await db
+      .select({
+        avgBidsPerProperty: sql<number>`coalesce(count(*)::float / nullif((select count(*) from ${properties}), 0), 0)`,
+      })
+      .from(bids)
+
+    const [counts] = await db
+      .select({
+        totalRegistered: sql<number>`count(*)`,
+        totalPublished: sql<number>`count(*) filter (where ${properties.publishedAt} is not null)`,
+        totalClosed: sql<number>`count(*) filter (where ${properties.status} = 'closed')`,
+      })
+      .from(properties)
+
+    return {
+      avgDaysRegistrationToPublish: Number(Number(funnelRow.avgRegistrationToPublish).toFixed(2)),
+      avgDaysPublishToClose: Number(Number(funnelRow.avgPublishToClose).toFixed(2)),
+      avgBidsPerProperty: Number(Number(bidRow.avgBidsPerProperty).toFixed(2)),
+      totalRegistered: Number(counts.totalRegistered),
+      totalPublished: Number(counts.totalPublished),
+      totalClosed: Number(counts.totalClosed),
+      publishRate: Number(counts.totalRegistered) > 0
+        ? Number(((Number(counts.totalPublished) / Number(counts.totalRegistered)) * 100).toFixed(2))
+        : 0,
+      closeRate: Number(counts.totalPublished) > 0
+        ? Number(((Number(counts.totalClosed) / Number(counts.totalPublished)) * 100).toFixed(2))
+        : 0,
+    }
+  },
+
+  // 売主選択入札の最終承認: 物件を closed に、案件を broker_assigned で作成
+  async confirmSale(propertyId: string, brokerId: string) {
+    const propRow = await db.select().from(properties).where(eq(properties.id, propertyId)).limit(1)
+    if (propRow.length === 0) throw notFound('物件')
+    const prop = propRow[0]
+    if (prop.status !== 'pending_approval') {
+      throw new AppError(
+        ERROR_CODE.INVALID_STATUS_TRANSITION,
+        `成約承認は承認待ち状態の物件のみ可能です（現在: ${prop.status}）`,
+      )
+    }
+
+    const brokerRow = await db.select().from(brokers).where(eq(brokers.id, brokerId)).limit(1)
+    if (brokerRow.length === 0) throw notFound('業者')
+
+    const selectedBid = await db
+      .select()
+      .from(bids)
+      .where(and(eq(bids.propertyId, propertyId), eq(bids.status, 'selected')))
+      .limit(1)
+    if (selectedBid.length === 0) {
+      throw new AppError(ERROR_CODE.VALIDATION_ERROR, '選択された入札が見つかりません')
+    }
+
+    await db.update(properties)
+      .set({ status: 'closed', assignedBrokerId: brokerId, updatedAt: new Date() })
+      .where(eq(properties.id, propertyId))
+
+    const created = await db.insert(cases).values({
+      propertyId,
+      brokerId,
+      buyerId: selectedBid[0].buyerId,
+      sellerId: prop.sellerId,
+      status: 'broker_assigned',
+    }).returning()
+
+    try {
+      const notificationService = createNotificationService(db)
+      await notificationService.create({
+        userId: prop.sellerId,
+        event: 'case_started',
+        channel: 'email',
+        title: '成約が確定し案件が開始されました',
+        body: `物件「${prop.title}」の成約が確定しました。担当業者から連絡が届きます。`,
+        relatedEntityType: 'case',
+        relatedEntityId: created[0].id,
+        alsoEmail: true,
+      })
+    } catch (err) {
+      logger.error('成約確定通知の送信に失敗', {
+        propertyId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+
+    return { case: created[0] }
   },
 })

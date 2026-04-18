@@ -44,3 +44,10 @@ adminRoutes.patch('/properties/:id/close', validateUuidParam('id'), async (c) =>
   const result = await services.property.updateStatus(c.req.param('id'), 'closed')
   return ok(c, result)
 })
+
+// 売主の入札選択後、運営が業者を割当てて成約を確定（pending_approval → closed + case 作成）
+adminRoutes.patch('/properties/:id/confirm-sale', validateUuidParam('id'), validateBody(assignBrokerSchema), async (c) => {
+  const input = c.get('validatedBody') as AssignBrokerInput
+  const result = await services.admin.confirmSale(c.req.param('id'), input.assignedBrokerId)
+  return ok(c, result)
+})

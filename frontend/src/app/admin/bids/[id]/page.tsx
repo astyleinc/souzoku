@@ -40,12 +40,20 @@ type BidItem = {
   updatedAt: string
 }
 
+type BrokerOption = {
+  id: string
+  companyName: string
+  totalDeals: number
+}
+
 const toMan = (yen: number) => Math.round(yen / 10000)
 
 export default function AdminBidDetailPage() {
   const params = useParams()
   const [property, setProperty] = useState<PropertyInfo | null>(null)
   const [bids, setBids] = useState<BidItem[]>([])
+  const [brokers, setBrokers] = useState<BrokerOption[]>([])
+  const [selectedBrokerId, setSelectedBrokerId] = useState('')
   const [loading, setLoading] = useState(true)
   const [reason, setReason] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
@@ -53,15 +61,17 @@ export default function AdminBidDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [propRes, bidRes] = await Promise.all([
+      const [propRes, bidRes, brokerRes] = await Promise.all([
         api.get<unknown>(`/properties/${params.id}`),
         api.get<unknown>(`/bids/property/${params.id}`),
+        api.get<unknown>('/brokers'),
       ])
       if (propRes.success) setProperty(propRes.data as PropertyInfo)
       if (bidRes.success) {
         const sorted = toItems<BidItem>(bidRes.data).sort((a, b) => b.amount - a.amount)
         setBids(sorted)
       }
+      if (brokerRes.success) setBrokers(toItems<BrokerOption>(brokerRes.data))
       setLoading(false)
     }
     load()
@@ -211,11 +221,27 @@ export default function AdminBidDetailPage() {
               {actionError && (
                 <p className="text-xs text-error-600 mb-2">{actionError}</p>
               )}
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1.5">担当業者を割当て</label>
+                <select
+                  value={selectedBrokerId}
+                  onChange={(e) => setSelectedBrokerId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                >
+                  <option value="">業者を選択してください</option>
+                  {brokers.map((b) => (
+                    <option key={b.id} value={b.id}>{b.companyName}（成約 {b.totalDeals} 件）</option>
+                  ))}
+                </select>
+              </div>
+
               <button
                 onClick={async () => {
+                  if (!selectedBrokerId) { setActionError('担当業者を選択してください'); return }
                   setActionLoading(true)
                   setActionError(null)
-                  const res = await api.patch(`/admin/properties/${params.id}/close`, {})
+                  const res = await api.patch(`/admin/properties/${params.id}/confirm-sale`, { assignedBrokerId: selectedBrokerId })
                   if (res.success) {
                     setProperty((prev) => prev ? { ...prev, status: 'closed' } : prev)
                   } else {
@@ -227,7 +253,7 @@ export default function AdminBidDetailPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-success-500 rounded-xl hover:bg-success-600 transition-colors disabled:opacity-50"
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                成約を承認する
+                成約を承認して案件を開始
               </button>
               <button
                 onClick={async () => {

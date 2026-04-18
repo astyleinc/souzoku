@@ -57,6 +57,18 @@ export default function AdminRevenueDetailPage() {
   const [revenue, setRevenue] = useState<RevenueDetail | null>(null)
   const [payments, setPayments] = useState<PaymentItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null)
+
+  const handleGeneratePdf = async (paymentId: string) => {
+    setPdfLoading(paymentId)
+    const res = await api.post<{ pdfUrl: string }>(`/revenue-ext/payments/${paymentId}/invoice-pdf`, {})
+    setPdfLoading(null)
+    if (res.success && res.data?.pdfUrl) {
+      window.open(res.data.pdfUrl, '_blank')
+    } else if (!res.success) {
+      alert(res.error?.message ?? 'PDF生成に失敗しました')
+    }
+  }
 
   const loadData = async () => {
     const [revRes, payRes] = await Promise.all([
@@ -207,13 +219,18 @@ export default function AdminRevenueDetailPage() {
                               入金確認
                             </button>
                           )}
-                          {p.status === 'paid' && (
+                          {(p.status === 'paid' || p.status === 'invoiced') && (
                             <button
-                              onClick={() => window.open(`/api/revenue/invoices/${p.id}/pdf`, '_blank')}
-                              className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600"
+                              onClick={() => handleGeneratePdf(p.id)}
+                              disabled={pdfLoading === p.id}
+                              className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-primary-500 disabled:opacity-50"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                              領収書
+                              {pdfLoading === p.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                              PDF生成
                             </button>
                           )}
                         </td>

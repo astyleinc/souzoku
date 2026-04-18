@@ -38,14 +38,45 @@ export default function AdminNotificationBroadcastPage() {
       setError('送信先ロールを1つ以上選択してください')
       return
     }
+    if (!form.message.trim()) {
+      setError('メッセージを入力してください')
+      return
+    }
     setError(null)
     setSending(true)
-    const res = await api.post('/admin/notifications/broadcast', form)
+
+    // 現状のAPIは target を単一指定のため、選択ロールごとに順次送信
+    const titleMap = {
+      info: 'お知らせ',
+      success: '完了のお知らせ',
+      warning: '注意喚起',
+      error: '重要なお知らせ',
+    } as const
+    const allRoles = ['seller', 'buyer', 'professional', 'broker']
+    const isAll = form.targetRoles.length === allRoles.length
+
+    const targets: Array<'all' | 'seller' | 'buyer' | 'professional' | 'broker'> =
+      isAll ? ['all'] : (form.targetRoles as Array<'seller' | 'buyer' | 'professional' | 'broker'>)
+
+    let failure: string | null = null
+    for (const target of targets) {
+      const res = await api.post('/admin/notifications/broadcast', {
+        target,
+        title: titleMap[form.type],
+        body: form.message,
+        channel: 'system',
+      })
+      if (!res.success) {
+        failure = res.error.message
+        break
+      }
+    }
+
     setSending(false)
-    if (res.success) {
-      setSent(true)
+    if (failure) {
+      setError(failure)
     } else {
-      setError(res.error.message)
+      setSent(true)
     }
   }
 

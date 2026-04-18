@@ -13,6 +13,7 @@ import {
   Globe,
   Users,
   FileText,
+  History,
   Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -46,6 +47,21 @@ type ReferralClient = {
   status: string
 }
 
+type HistoryEntry = {
+  id: string
+  fieldName: string
+  oldValue: string | null
+  newValue: string | null
+  changedAt: string
+}
+
+const HISTORY_FIELD_LABEL: Record<string, string> = {
+  officeName: '所属事務所',
+  employmentType: '就業形態',
+  payoutMethod: '報酬支払先',
+  payoutAccount: '報酬支払口座',
+}
+
 const verificationLabel: Record<string, string> = {
   verified: '認証済み',
   pending: '認証待ち',
@@ -69,18 +85,21 @@ export default function AdminProfessionalDetailPage() {
   const [pro, setPro] = useState<ProfessionalDetail | null>(null)
   const [nwAffiliations, setNwAffiliations] = useState<NwAffiliation[]>([])
   const [clients, setClients] = useState<ReferralClient[]>([])
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
-      const [proRes, nwRes] = await Promise.all([
+      const [proRes, nwRes, historyRes] = await Promise.all([
         api.get<unknown>(`/admin-ext/users/${params.id}`),
         api.get<unknown>(`/professionals/${params.id}/nw`).catch(() => ({ success: false, data: [] })),
+        api.get<unknown>(`/professionals/${params.id}/history`).catch(() => ({ success: false, data: [] })),
       ])
       if (proRes.success) setPro(proRes.data as ProfessionalDetail)
       if (nwRes.success) setNwAffiliations(toItems<NwAffiliation>(nwRes.data))
+      if (historyRes.success) setHistory(toItems<HistoryEntry>(historyRes.data))
       setLoading(false)
     }
     load()
@@ -180,6 +199,35 @@ export default function AdminProfessionalDetailPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* 変更履歴 */}
+          <div className="bg-white rounded-2xl shadow-card p-6">
+            <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+              <History className="w-4 h-4 text-neutral-500" />
+              変更履歴
+            </h3>
+            {history.length === 0 ? (
+              <p className="text-sm text-neutral-400">変更履歴はまだありません</p>
+            ) : (
+              <ul className="space-y-3">
+                {history.slice().reverse().map((h) => (
+                  <li key={h.id} className="flex items-start gap-3 text-sm border-l-2 border-neutral-100 pl-3">
+                    <div className="flex-1">
+                      <p className="font-medium text-neutral-700">
+                        {HISTORY_FIELD_LABEL[h.fieldName] ?? h.fieldName}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        <span className="text-neutral-400">{h.oldValue ?? '(未設定)'}</span>
+                        <span className="mx-1.5 text-neutral-300">→</span>
+                        <span>{h.newValue ?? '(未設定)'}</span>
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-0.5">{new Date(h.changedAt).toLocaleString('ja-JP')}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* NW所属 */}
