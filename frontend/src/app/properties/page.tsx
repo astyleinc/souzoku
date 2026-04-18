@@ -24,7 +24,10 @@ export const metadata: Metadata = {
   },
 }
 
-const API_BASE = process.env.API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
+const API_BASE =
+  process.env.API_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
 
 const ITEMS_PER_PAGE = 12
 

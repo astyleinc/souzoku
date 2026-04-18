@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import { API_TIMEOUT_QUICK_MS } from '@shared/constants'
 
-const API_BASE = process.env.API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
+const API_BASE =
+  process.env.API_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
 
 type Props = {
   params: Promise<{ id: string }>
