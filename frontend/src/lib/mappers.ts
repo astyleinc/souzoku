@@ -16,6 +16,7 @@ export type ApiProperty = {
   urgency: string
   description: string | null
   isRegistrationComplete: boolean
+  inheritanceStartDate?: string | null
   createdAt: string
   nearestStation: string | null
   walkMinutes: number | null

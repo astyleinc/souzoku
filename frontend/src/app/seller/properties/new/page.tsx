@@ -22,15 +22,24 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
 
-const PREFECTURES = [
-  '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
-  '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
-  '新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県',
-  '静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県',
-  '奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県',
-  '徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県',
-  '熊本県','大分県','宮崎県','鹿児島県','沖縄県',
-]
+// Phase 1 対応エリア（東京都・神奈川県のみ）
+const PREFECTURES = ['東京都', '神奈川県']
+
+// 登録時のURLクエリ（?nw=...）が register/page.tsx で保存される
+const REFERRAL_STORAGE_KEY = 'ouver:referral'
+
+// localStorageから紹介NW IDを読み取る（物件登録時に一度だけ使用）
+const readReferralNwId = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const raw = window.localStorage.getItem(REFERRAL_STORAGE_KEY)
+    if (!raw) return undefined
+    const parsed = JSON.parse(raw) as { nwId?: string }
+    return parsed.nwId
+  } catch {
+    return undefined
+  }
+}
 
 const inputClass = 'w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors'
 const selectClass = `${inputClass} bg-white`
@@ -51,6 +60,7 @@ type FormData = {
   instantPrice: string
   urgency: string
   registrationStatus: string
+  inheritanceStartDate: string
 }
 
 const initialForm: FormData = {
@@ -68,6 +78,7 @@ const initialForm: FormData = {
   instantPrice: '',
   urgency: '',
   registrationStatus: '',
+  inheritanceStartDate: '',
 }
 
 const MAX_IMAGES = 20
@@ -254,6 +265,8 @@ export default function NewPropertyPage() {
 
     setSubmitting(true)
 
+    const referralNwCompanyId = readReferralNwId()
+
     const body = {
       title: form.title.trim(),
       propertyType: form.propertyType,
@@ -267,13 +280,21 @@ export default function NewPropertyPage() {
       askingPrice: Number(form.askingPrice) * 10000,
       instantPrice: form.instantPrice ? Number(form.instantPrice) * 10000 : undefined,
       urgency: form.urgency,
+      inheritanceStartDate: form.inheritanceStartDate || undefined,
       isRegistrationComplete: form.registrationStatus === 'completed',
+      ...(referralNwCompanyId ? { referralNwCompanyId, referralChannel: 'nw' as const } : {}),
     }
 
     const res = await api.post<{ id: string }>('/properties', body)
 
     if (res.success) {
       clearDraft()
+      // 物件登録に成功したら紹介情報は消費済みなので削除
+      try {
+        window.localStorage.removeItem(REFERRAL_STORAGE_KEY)
+      } catch {
+        // localStorage操作失敗は無視
+      }
       router.push(`/seller/properties/${res.data.id}`)
     } else {
       setError(res.error.message || '物件の登録に失敗しました')
@@ -698,6 +719,19 @@ export default function NewPropertyPage() {
                   ))}
                 </div>
                 {fieldError('registrationStatus')}
+              </div>
+
+              <div>
+                <label className={labelClass}>相続開始日（任意）</label>
+                <input
+                  type="date"
+                  value={form.inheritanceStartDate}
+                  onChange={set('inheritanceStartDate')}
+                  className={inputClass}
+                />
+                <p className="text-xs text-neutral-400 mt-1.5">
+                  相続税申告期限（10ヶ月）・相続登記期限（3年）までのカウントダウン表示に使用します
+                </p>
               </div>
 
               {/* 書類案内 */}

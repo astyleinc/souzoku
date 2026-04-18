@@ -2,8 +2,8 @@ import { Hono } from 'hono'
 import { auth, requireRole } from '../middleware/auth'
 import { validateBody, validateQuery, paginationSchema } from '../middleware/validate'
 import { validateUuidParam } from '../middleware/param-validator'
-import { updateProfileSchema, changePasswordSchema, deletionRequestSchema } from '../schemas/user'
-import type { UpdateProfileInput, ChangePasswordInput, DeletionRequestInput } from '../schemas/user'
+import { updateProfileSchema, changePasswordSchema, deletionRequestSchema, updateBuyerProfileSchema } from '../schemas/user'
+import type { UpdateProfileInput, ChangePasswordInput, DeletionRequestInput, UpdateBuyerProfileInput } from '../schemas/user'
 import { services } from '../lib/services'
 import { ok, created, paginated } from '../lib/response'
 import { AppError, ERROR_CODE } from '../lib/errors'
@@ -85,6 +85,21 @@ userRoutes.post('/me/export-data', auth, async (c) => {
   const user = c.get('user')
   const data = await services.user.exportData(user.id)
   return ok(c, data)
+})
+
+// 買い手プロフィール取得
+userRoutes.get('/me/buyer-profile', auth, requireRole('buyer'), async (c) => {
+  const user = c.get('user')
+  const profile = await services.user.getBuyerProfile(user.id)
+  return ok(c, profile)
+})
+
+// 買い手プロフィール更新
+userRoutes.put('/me/buyer-profile', auth, requireRole('buyer'), validateBody(updateBuyerProfileSchema), async (c) => {
+  const user = c.get('user')
+  const input = c.get('validatedBody') as UpdateBuyerProfileInput
+  const profile = await services.user.upsertBuyerProfile(user.id, input)
+  return ok(c, profile)
 })
 
 // お気に入り一覧取得

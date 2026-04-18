@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { UrgencyBadge } from '@/components/shared/UrgencyBadge'
 import { PriceDisplay } from '@/components/shared/PriceDisplay'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
+import { InheritanceDeadlineBanner } from '@/components/shared/InheritanceDeadlineBanner'
 import { sellerNav } from '@/config/navigation'
 import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
@@ -54,8 +55,11 @@ export default function SellerPropertyDetailPage({
   const { id } = use(params)
   const [loading, setLoading] = useState(true)
   const [property, setProperty] = useState<ReturnType<typeof toProperty> | null>(null)
+  const [inheritanceStartDate, setInheritanceStartDate] = useState<string | null>(null)
   const [bids, setBids] = useState<ApiBid[]>([])
   const [documents, setDocuments] = useState<ApiDocument[]>([])
+  const [relisting, setRelisting] = useState<null | 'normal_listing' | 'bidding'>(null)
+  const [relistError, setRelistError] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -67,6 +71,7 @@ export default function SellerPropertyDetailPage({
 
       if (propRes.success) {
         setProperty(toProperty(propRes.data))
+        setInheritanceStartDate(propRes.data.inheritanceStartDate ?? null)
       }
       if (bidRes.success) {
         setBids(toItems<ApiBid>(bidRes.data).sort((a, b) => b.amount - a.amount))
@@ -121,6 +126,19 @@ export default function SellerPropertyDetailPage({
     rejected: '再提出要',
   }
 
+  // 不成立物件の再出品 / 通常掲載切替
+  const handleRelist = async (mode: 'normal_listing' | 'bidding') => {
+    setRelistError(null)
+    setRelisting(mode)
+    const res = await api.patch<ApiProperty>(`/properties/${id}/relist`, { mode })
+    if (res.success) {
+      setProperty(toProperty(res.data))
+    } else {
+      setRelistError(res.error?.message ?? '操作に失敗しました')
+    }
+    setRelisting(null)
+  }
+
   return (
     <DashboardShell
       title="物件詳細"
@@ -134,6 +152,12 @@ export default function SellerPropertyDetailPage({
         <ArrowLeft className="w-4 h-4" />
         出品物件一覧に戻る
       </Link>
+
+      {inheritanceStartDate && (
+        <div className="mb-6">
+          <InheritanceDeadlineBanner inheritanceStartDate={inheritanceStartDate} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* 左: 物件情報 + 入札 */}
@@ -200,7 +224,7 @@ export default function SellerPropertyDetailPage({
               </div>
             )}
 
-            <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center gap-3">
+            <div className="mt-5 pt-4 border-t border-neutral-100 flex flex-wrap items-center gap-3">
               <Link
                 href={`/properties/${property.id}`}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-500 border border-primary-200 rounded-xl hover:bg-primary-50 transition-colors"
@@ -217,7 +241,32 @@ export default function SellerPropertyDetailPage({
                   物件情報を編集
                 </Link>
               )}
+              {property.status === 'failed' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleRelist('bidding')}
+                    disabled={Boolean(relisting)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 disabled:opacity-60 transition-colors"
+                  >
+                    {relisting === 'bidding' && <Loader2 className="w-4 h-4 animate-spin" />}
+                    再出品する
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRelist('normal_listing')}
+                    disabled={Boolean(relisting)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-200 rounded-xl hover:bg-neutral-50 disabled:opacity-60 transition-colors"
+                  >
+                    {relisting === 'normal_listing' && <Loader2 className="w-4 h-4 animate-spin" />}
+                    通常掲載に切替
+                  </button>
+                </>
+              )}
             </div>
+            {relistError && (
+              <p className="mt-3 text-xs text-error-500">{relistError}</p>
+            )}
           </div>
 
           {/* 入札状況 */}

@@ -32,3 +32,15 @@ export const favoriteParamSchema = z.object({
 })
 
 export type FavoriteParam = z.infer<typeof favoriteParamSchema>
+
+// 買い手プロフィール更新
+export const updateBuyerProfileSchema = z.object({
+  buyerType: z.enum(['individual', 'real_estate_company', 'investor', 'other_company']),
+  companyName: z.string().max(200).optional(),
+  preferredAreas: z.string().max(500).optional(),
+  preferredPriceMin: z.string().max(20).optional(),
+  preferredPriceMax: z.string().max(20).optional(),
+  preferredPropertyTypes: z.string().max(500).optional(),
+})
+
+export type UpdateBuyerProfileInput = z.infer<typeof updateBuyerProfileSchema>

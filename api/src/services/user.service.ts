@@ -52,6 +52,48 @@ export const createUserService = (db: Database) => ({
     return result[0]
   },
 
+  // 買い手プロフィール取得（未作成ならnullを返す）
+  async getBuyerProfile(userId: string) {
+    const result = await db.select().from(buyerProfiles).where(eq(buyerProfiles.userId, userId)).limit(1)
+    return result[0] ?? null
+  },
+
+  // 買い手プロフィール作成または更新
+  async upsertBuyerProfile(userId: string, input: {
+    buyerType: 'individual' | 'real_estate_company' | 'investor' | 'other_company'
+    companyName?: string
+    preferredAreas?: string
+    preferredPriceMin?: string
+    preferredPriceMax?: string
+    preferredPropertyTypes?: string
+  }) {
+    const existing = await db.select({ id: buyerProfiles.id }).from(buyerProfiles).where(eq(buyerProfiles.userId, userId)).limit(1)
+    if (existing.length > 0) {
+      const result = await db.update(buyerProfiles)
+        .set({
+          buyerType: input.buyerType,
+          companyName: input.companyName ?? null,
+          preferredAreas: input.preferredAreas ?? null,
+          preferredPriceMin: input.preferredPriceMin ?? null,
+          preferredPriceMax: input.preferredPriceMax ?? null,
+          preferredPropertyTypes: input.preferredPropertyTypes ?? null,
+        })
+        .where(eq(buyerProfiles.id, existing[0].id))
+        .returning()
+      return result[0]
+    }
+    const result = await db.insert(buyerProfiles).values({
+      userId,
+      buyerType: input.buyerType,
+      companyName: input.companyName ?? null,
+      preferredAreas: input.preferredAreas ?? null,
+      preferredPriceMin: input.preferredPriceMin ?? null,
+      preferredPriceMax: input.preferredPriceMax ?? null,
+      preferredPropertyTypes: input.preferredPropertyTypes ?? null,
+    }).returning()
+    return result[0]
+  },
+
   // セキュリティログ取得
   async getSecurityLog(userId: string, limit = 50) {
     return db.select()
