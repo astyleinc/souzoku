@@ -22,6 +22,13 @@
       "when": 1776512158576,
       "tag": "0002_add_property_cron_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776531504113,
+      "tag": "0003_add_invoice_target_and_inheritance",
+      "breakpoints": true
     }
   ]
 }
