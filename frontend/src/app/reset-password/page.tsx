@@ -2,23 +2,34 @@
 
 import { useState, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import {
-  Lock,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react'
 import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-neutral-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-warm" />}>
       <ResetPasswordForm />
     </Suspense>
   )
 }
+
+const Shell = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-warm flex flex-col">
+    <header className="py-7">
+      <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+        <Link href="/" className="inline-flex items-center gap-3 w-fit">
+          <div className="w-8 h-8 bg-bark rounded-[8px] flex items-center justify-center">
+            <span className="text-warm font-bold text-[13px]">O</span>
+          </div>
+          <span className="text-[14px] font-bold text-bark tracking-[-0.01em]">Ouver</span>
+        </Link>
+      </div>
+    </header>
+    <main className="flex-1 flex items-center justify-center px-5 md:px-9 pb-20">
+      <div className="w-full max-w-[440px]">{children}</div>
+    </main>
+  </div>
+)
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams()
@@ -44,10 +55,9 @@ function ResetPasswordForm() {
     setError(null)
 
     if (!token) {
-      setError('リセットトークンが見つかりません。メールのリンクを再度クリックしてください。')
+      setError('再設定用のトークンが見つかりませんでした。メールに届いたリンクをもう一度開いてください。')
       return
     }
-
     if (!isValid) return
 
     setSubmitting(true)
@@ -63,157 +73,193 @@ function ResetPasswordForm() {
         setDone(true)
       } else {
         const json = await res.json().catch(() => null)
-        setError(json?.message ?? 'パスワードの変更に失敗しました。リンクの有効期限が切れている可能性があります。')
+        setError(json?.message ?? 'パスワードを変更できませんでした。リンクの有効期限が切れている可能性があります。')
       }
     } catch {
-      setError('通信エラーが発生しました。時間をおいて再度お試しください。')
+      setError('通信エラーが発生しました。少し時間をおいて、もう一度お試しください。')
     }
     setSubmitting(false)
   }
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <Link href="/" className="text-2xl font-bold text-primary-500 tracking-tight">
-              Ouver
-            </Link>
+      <Shell>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+            INVALID LINK
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
           </div>
-          <div className="bg-white rounded-2xl shadow-card p-8 text-center">
-            <AlertTriangle className="w-10 h-10 text-warning-500 mx-auto mb-4" />
-            <h1 className="text-xl font-bold mb-2">無効なリンクです</h1>
-            <p className="text-sm text-neutral-400 mb-6">
-              パスワードリセットのリンクが無効です。<br />
-              もう一度パスワードリセットをお試しください。
-            </p>
-            <Link href="/forgot-password" className="text-sm text-primary-500 hover:underline">
-              パスワードリセットに戻る
-            </Link>
-          </div>
+          <h1 className="font-bold text-[clamp(28px,3.6vw,36px)] leading-[1.25] tracking-[-0.02em] text-bark mb-3 [word-break:keep-all]">
+            リンクが
+            <br />
+            無効になっています
+          </h1>
+          <p className="text-[13px] text-bark-2 leading-[1.9]">
+            お手数ですが、もう一度パスワードの再設定を行ってください。
+          </p>
         </div>
-      </div>
+        <div className="surface-card rounded-[16px] p-8 md:p-10 text-center">
+          <p className="text-[13px] text-bark-2 leading-[1.9] mb-6">
+            リンクの有効期限が切れているか、一度使用された可能性があります。
+          </p>
+          <Link
+            href="/forgot-password"
+            className="inline-flex items-center justify-center w-full py-3.5 bg-bark text-warm rounded-full text-[14px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px"
+          >
+            再設定をやり直す
+          </Link>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (done) {
+    return (
+      <Shell>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+            COMPLETED
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+          </div>
+          <h1 className="font-bold text-[clamp(28px,3.6vw,36px)] leading-[1.25] tracking-[-0.02em] text-bark mb-3 [word-break:keep-all]">
+            パスワードを
+            <br />
+            変更しました
+          </h1>
+          <p className="text-[13px] text-bark-2 leading-[1.9]">
+            新しいパスワードで、ログインいただけます。
+          </p>
+        </div>
+        <div className="surface-card rounded-[16px] p-8 md:p-10 text-center">
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center w-full py-3.5 bg-bark text-warm rounded-full text-[14px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px"
+          >
+            ログインに進む
+          </Link>
+        </div>
+      </Shell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-500 tracking-tight">
-            Ouver
-          </Link>
+    <Shell>
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+          <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+          NEW PASSWORD
+          <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
         </div>
-
-        <div className="bg-white rounded-2xl shadow-card p-8">
-          {done ? (
-            <div className="text-center">
-              <CheckCircle className="w-10 h-10 text-success-500 mx-auto mb-4" />
-              <h1 className="text-xl font-bold mb-2">パスワードを変更しました</h1>
-              <p className="text-sm text-neutral-400 mb-6">
-                新しいパスワードでログインできます。
-              </p>
-              <Link
-                href="/login"
-                className="inline-flex items-center px-6 py-2.5 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
-              >
-                ログインする
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="w-14 h-14 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
-                <Lock className="w-6 h-6 text-primary-500" />
-              </div>
-
-              <h1 className="text-xl font-bold text-center mb-2">新しいパスワードを設定</h1>
-              <p className="text-sm text-neutral-400 text-center mb-6">
-                新しいパスワードを入力してください。
-              </p>
-
-              {error && (
-                <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-xl text-sm text-error-600">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">新しいパスワード</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="8文字以上で入力"
-                      className="w-full px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                    >
-                      {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">パスワード確認</label>
-                  <div className="relative">
-                    <input
-                      type={showConfirm ? 'text' : 'password'}
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      placeholder="もう一度入力"
-                      className="w-full px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                    >
-                      {showConfirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {confirm && password !== confirm && (
-                    <p className="text-xs text-error-500 mt-1">パスワードが一致しません</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 text-xs text-neutral-400">
-                  <p className="font-medium">パスワード要件:</p>
-                  <div className="space-y-1 pl-1">
-                    <p className="flex items-center gap-1.5">
-                      <CheckCircle className={`w-3.5 h-3.5 ${checks.length ? 'text-success-500' : 'text-neutral-300'}`} />
-                      8文字以上
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <CheckCircle className={`w-3.5 h-3.5 ${checks.alphanumeric ? 'text-success-500' : 'text-neutral-300'}`} />
-                      英字と数字を含む
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!isValid || submitting}
-                  className="w-full py-3 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  パスワードを変更する
-                </button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <Link href="/login" className="text-sm text-primary-500 hover:underline">
-                  ログインページに戻る
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
+        <h1 className="font-bold text-[clamp(28px,3.6vw,36px)] leading-[1.25] tracking-[-0.02em] text-bark mb-3 [word-break:keep-all]">
+          新しいパスワードを
+          <br />
+          ご入力ください
+        </h1>
+        <p className="text-[13px] text-bark-2 leading-[1.9]">
+          これから使うパスワードを、2回ご入力ください。
+        </p>
       </div>
-    </div>
+
+      <div className="surface-card rounded-[16px] p-8 md:p-10">
+        {error && (
+          <div className="mb-5 p-4 bg-white border border-black/10 rounded-[10px] text-[13px] text-bark-2 leading-[1.7]">
+            <span className="font-bold text-bark">変更できませんでした</span>
+            <span className="block mt-1">{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
+              新しいパスワード
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="8文字以上でご入力ください"
+                className="w-full px-4 py-3 pr-16 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold tracking-[0.08em] text-sage-deep hover:text-bark transition-colors px-2 py-1"
+              >
+                {showPassword ? '非表示' : '表示'}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
+              確認のためもう一度
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="同じパスワードをご入力ください"
+                className="w-full px-4 py-3 pr-16 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold tracking-[0.08em] text-sage-deep hover:text-bark transition-colors px-2 py-1"
+              >
+                {showConfirm ? '非表示' : '表示'}
+              </button>
+            </div>
+            {confirm && password !== confirm && (
+              <p className="text-[12px] text-bark-3 mt-2">パスワードが一致していません。</p>
+            )}
+          </div>
+
+          <ul className="text-[12px] text-bark-3 leading-[1.85] space-y-1.5 pt-1">
+            <li className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className={`inline-block w-1.5 h-1.5 rounded-full ${
+                  checks.length ? 'bg-sage-deep' : 'bg-bark-4/30'
+                }`}
+              />
+              <span className={checks.length ? 'text-bark-2' : 'text-bark-4'}>8文字以上</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className={`inline-block w-1.5 h-1.5 rounded-full ${
+                  checks.alphanumeric ? 'bg-sage-deep' : 'bg-bark-4/30'
+                }`}
+              />
+              <span className={checks.alphanumeric ? 'text-bark-2' : 'text-bark-4'}>
+                英字と数字を両方含む
+              </span>
+            </li>
+          </ul>
+
+          <button
+            type="submit"
+            disabled={!isValid || submitting}
+            className="w-full py-3.5 bg-bark text-warm rounded-full text-[14px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 inline-flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+            パスワードを変更する
+          </button>
+        </form>
+      </div>
+
+      <p className="text-center text-[13px] text-bark-2 mt-7">
+        <Link
+          href="/login"
+          className="text-sage-deep underline-offset-[4px] hover:underline decoration-sage-deep/40"
+        >
+          ログインに戻る
+        </Link>
+      </p>
+    </Shell>
   )
 }

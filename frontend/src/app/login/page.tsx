@@ -16,7 +16,7 @@ const roleDashboard: Record<string, string> = {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-neutral-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-warm" />}>
       <LoginForm />
     </Suspense>
   )
@@ -32,7 +32,6 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // 既にログイン済みならダッシュボードへ
   useEffect(() => {
     if (user) {
       router.replace(roleDashboard[user.role] ?? '/')
@@ -46,7 +45,7 @@ function LoginForm() {
     setError(null)
 
     if (!email || !password) {
-      setError('メールアドレスとパスワードを入力してください')
+      setError('メールアドレスとパスワードをご入力ください。')
       return
     }
 
@@ -59,42 +58,50 @@ function LoginForm() {
       const role = refreshedUser?.role ?? 'buyer'
       router.push(redirectTo ?? roleDashboard[role] ?? '/')
     } else {
-      setError(result.error ?? 'ログインに失敗しました')
+      setError(result.error ?? 'ログインできませんでした。もう一度お試しください。')
     }
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      <header className="py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <Link href="/" className="flex items-center gap-2 w-fit">
-            <div className="w-7 h-7 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">O</span>
+    <div className="min-h-screen bg-warm flex flex-col">
+      <header className="py-7">
+        <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+          <Link href="/" className="inline-flex items-center gap-3 w-fit">
+            <div className="w-8 h-8 bg-bark rounded-[8px] flex items-center justify-center">
+              <span className="text-warm font-bold text-[13px]">O</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">相続不動産マッチング</span>
+            <span className="text-[14px] font-bold text-bark tracking-[-0.01em]">Ouver</span>
           </Link>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 pb-16">
-        <div className="w-full max-w-sm">
-          <div className="bg-white rounded-2xl shadow-card p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-xl font-bold text-foreground mb-2">おかえりなさい</h1>
-              <p className="text-sm text-neutral-400">
-                アカウントにログインして始めましょう
-              </p>
+      <main className="flex-1 flex items-center justify-center px-5 md:px-9 pb-20">
+        <div className="w-full max-w-[440px]">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+              <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+              LOG IN
+              <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
             </div>
+            <h1 className="font-bold text-[clamp(28px,3.6vw,36px)] leading-[1.25] tracking-[-0.02em] text-bark mb-3 [word-break:keep-all]">
+              おかえりなさい
+            </h1>
+            <p className="text-[13px] text-bark-2 leading-[1.9]">
+              メールアドレスとパスワードで、ログインしてください。
+            </p>
+          </div>
 
+          <div className="surface-card rounded-[16px] p-8 md:p-10">
             {error && (
-              <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-xl text-sm text-error-600">
-                {error}
+              <div className="mb-5 p-4 bg-white border border-black/10 rounded-[10px] text-[13px] text-bark-2 leading-[1.7]">
+                <span className="font-bold text-bark">ログインできませんでした</span>
+                <span className="block mt-1">{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+                <label className="block text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
                   メールアドレス
                 </label>
                 <input
@@ -103,54 +110,58 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="mail@example.com"
                   autoComplete="email"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  className="w-full px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1.5">
-                  パスワード
-                </label>
+                <div className="flex items-baseline justify-between mb-2">
+                  <label className="text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase">
+                    パスワード
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-[12px] text-sage-deep underline-offset-[4px] hover:underline decoration-sage-deep/40"
+                  >
+                    お忘れの方
+                  </Link>
+                </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+                  className="w-full px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
                 />
-              </div>
-              <div className="flex items-center justify-end">
-                <Link href="/forgot-password" className="text-xs text-primary-500 hover:text-primary-600">
-                  パスワードを忘れた方
-                </Link>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 text-sm font-medium text-white bg-cta-500 rounded-xl hover:bg-cta-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-bark text-warm rounded-full text-[14px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 inline-flex items-center justify-center gap-2"
               >
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                ログイン
+                {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+                ログインする
               </button>
             </form>
 
-            {/* 区切り線 */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200" />
+            <div className="relative my-7">
+              <div aria-hidden className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-black/8" />
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-3 text-neutral-400">または</span>
+              <div className="relative flex justify-center">
+                <span className="bg-warm px-4 text-[11px] tracking-[0.2em] text-bark-4 font-semibold">
+                  OR
+                </span>
               </div>
             </div>
 
-            {/* OAuth（ローカル開発では無効表示） */}
             <div className="space-y-3">
               <button
+                type="button"
                 disabled
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-300 cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-[10px] text-[13px] font-semibold text-bark-4 cursor-not-allowed bg-white/60"
               >
-                <svg className="w-5 h-5 opacity-40" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 opacity-60" viewBox="0 0 24 24" aria-hidden>
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -158,28 +169,39 @@ function LoginForm() {
                 </svg>
                 Googleでログイン
               </button>
-
               <button
+                type="button"
                 disabled
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-neutral-100 rounded-xl text-sm font-medium text-neutral-300 cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-black/10 rounded-[10px] text-[13px] font-semibold text-bark-4 cursor-not-allowed bg-white/60"
               >
                 LINEでログイン
               </button>
+              <p className="text-center text-[11px] text-bark-4 pt-1">
+                ソーシャルログインは近日対応予定です
+              </p>
             </div>
-            <p className="text-center text-[10px] text-neutral-300 mt-2">ソーシャルログインは今後追加予定です</p>
 
-            <p className="mt-6 text-center text-[11px] text-neutral-400 leading-relaxed">
-              ログインすることで、
-              <Link href="/terms" className="text-primary-500 hover:underline">利用規約</Link>
-              および
-              <Link href="/privacy" className="text-primary-500 hover:underline">プライバシーポリシー</Link>
-              に同意したものとみなされます。
+            <p className="mt-7 text-center text-[11px] text-bark-4 leading-[1.85]">
+              ログインすると
+              <Link href="/terms" className="text-sage-deep underline underline-offset-[3px] decoration-sage-deep/30 mx-0.5">
+                利用規約
+              </Link>
+              と
+              <Link href="/privacy" className="text-sage-deep underline underline-offset-[3px] decoration-sage-deep/30 mx-0.5">
+                プライバシーポリシー
+              </Link>
+              に同意したことになります。
             </p>
           </div>
 
-          <p className="text-center text-sm text-neutral-400 mt-6">
+          <p className="text-center text-[13px] text-bark-2 mt-7">
             アカウントをお持ちでない方は
-            <Link href="/register" className="text-primary-500 hover:text-primary-600 font-medium ml-1">新規登録</Link>
+            <Link
+              href="/register"
+              className="text-sage-deep font-bold ml-1 underline-offset-[4px] hover:underline decoration-sage-deep/40"
+            >
+              新規登録
+            </Link>
           </p>
         </div>
       </main>

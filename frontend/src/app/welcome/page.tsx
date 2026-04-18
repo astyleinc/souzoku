@@ -1,66 +1,64 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  UserCheck,
-  FileText,
-  Rocket,
-  ArrowRight,
-  ArrowLeft,
-  CheckCircle,
-  Loader2,
-} from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/providers/AuthProvider'
 import { api } from '@/lib/api'
 
-const steps = [
+type RoleKey = 'seller' | 'buyer' | 'professional'
+
+type Role = {
+  key: RoleKey
+  label: string
+  eyebrow: string
+  description: string
+  href: string
+}
+
+const ROLES: Role[] = [
   {
-    icon: UserCheck,
-    title: 'ロールを確認',
-    description: 'あなたの利用目的に合ったロールを選択してください。',
+    key: 'seller',
+    label: '売主（相続人）として',
+    eyebrow: 'FOR SELLERS',
+    description: '相続した不動産を、入札で売却したい方へ。',
+    href: '/seller',
   },
   {
-    icon: FileText,
-    title: 'プロフィールを完成',
-    description: '基本情報を入力して、サービスをフル活用しましょう。',
+    key: 'buyer',
+    label: '買い手として',
+    eyebrow: 'FOR BUYERS',
+    description: '相続不動産を購入したい・投資したい方へ。',
+    href: '/buyer',
   },
   {
-    icon: Rocket,
-    title: '最初のアクション',
-    description: '準備ができました。さっそく始めましょう。',
+    key: 'professional',
+    label: '士業パートナーとして',
+    eyebrow: 'FOR PROFESSIONALS',
+    description: '相続のご相談を、Ouverにつないでくださる方へ。',
+    href: '/professional',
   },
 ]
 
-const roles = [
-  { key: 'seller', label: '売主（相続人）', description: '相続した不動産を売却したい', href: '/seller', color: 'primary' },
-  { key: 'buyer', label: '買い手', description: '相続不動産を購入・投資したい', href: '/buyer', color: 'info' },
-  { key: 'professional', label: '士業パートナー', description: '相続案件のクライアントを紹介したい', href: '/professional', color: 'secondary' },
-] as const
-
-const roleColorMap: Record<string, string> = {
-  primary: 'border-primary-300 bg-primary-50',
-  info: 'border-info-300 bg-info-50',
-  secondary: 'border-secondary-300 bg-secondary-50',
-}
+const STEP_LABELS = ['ご利用目的', 'プロフィール', 'スタート'] as const
 
 export default function WelcomePage() {
   const router = useRouter()
   const { user, refresh } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
-  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<RoleKey | null>(null)
   const [name, setName] = useState(user?.name ?? '')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const selectedRoleData = roles.find((r) => r.key === selectedRole)
+  const selectedRoleData = ROLES.find((r) => r.key === selectedRole)
 
   const handleSaveProfile = async () => {
     if (!name.trim()) {
-      setError('表示名を入力してください')
+      setError('表示名をご入力ください。')
       return
     }
     setSaving(true)
@@ -77,192 +75,266 @@ export default function WelcomePage() {
       await refresh()
       setCurrentStep(2)
     } else {
-      setError('プロフィールの保存に失敗しました。もう一度お試しください。')
+      setError('プロフィールを保存できませんでした。もう一度お試しください。')
     }
     setSaving(false)
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg">
-        {/* ロゴ */}
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary-500 tracking-tight">
-            Ouver
+    <div className="min-h-screen bg-warm flex flex-col">
+      <header className="py-7">
+        <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+          <Link href="/" className="inline-flex items-center gap-3 w-fit">
+            <div className="w-8 h-8 bg-bark rounded-[8px] flex items-center justify-center">
+              <span className="text-warm font-bold text-[13px]">O</span>
+            </div>
+            <span className="text-[14px] font-bold text-bark tracking-[-0.01em]">Ouver</span>
           </Link>
-          <p className="text-sm text-neutral-400 mt-1">ようこそ！アカウントの設定を始めましょう。</p>
         </div>
+      </header>
 
-        {/* プログレスバー */}
-        <div className="flex items-center gap-2 mb-8">
-          {steps.map((step, i) => (
-            <div key={step.title} className="flex-1 flex items-center gap-2">
-              <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold shrink-0 ${
-                i < currentStep
-                  ? 'bg-success-500 text-white'
-                  : i === currentStep
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-neutral-200 text-neutral-400'
-              }`}>
-                {i < currentStep ? <CheckCircle className="w-4 h-4" /> : i + 1}
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 ${i < currentStep ? 'bg-success-500' : 'bg-neutral-200'}`} />
-              )}
+      <main className="flex-1 flex items-center justify-center px-5 md:px-9 pb-20">
+        <div className="w-full max-w-[620px]">
+          <div className="text-center mb-10">
+            <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+              <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+              WELCOME
+              <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
             </div>
-          ))}
-        </div>
-
-        {/* ステップラベル */}
-        <div className="flex justify-between mb-6">
-          {steps.map((step, i) => (
-            <p key={step.title} className={`text-xs text-center flex-1 ${i === currentStep ? 'text-primary-500 font-medium' : 'text-neutral-400'}`}>
-              {step.title}
+            <h1 className="font-bold text-[clamp(28px,3.6vw,36px)] leading-[1.25] tracking-[-0.02em] text-bark mb-3 [word-break:keep-all]">
+              Ouverへようこそ
+            </h1>
+            <p className="text-[13px] text-bark-2 leading-[1.95]">
+              はじめに、いくつかの設定だけお願いします。あとからでも変更いただけます。
             </p>
-          ))}
-        </div>
+          </div>
 
-        {/* コンテンツ */}
-        <div className="bg-white rounded-2xl shadow-card p-8">
-          {currentStep === 0 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-1">利用目的を教えてください</h2>
-              <p className="text-sm text-neutral-400 mb-5">後から変更することもできます。</p>
-              <div className="space-y-3">
-                {roles.map((role) => (
+          <div className="mb-10">
+            <ul className="grid grid-cols-3 gap-3">
+              {STEP_LABELS.map((label, i) => {
+                const done = i < currentStep
+                const active = i === currentStep
+                return (
+                  <li key={label} className="flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-2 w-full">
+                      <span
+                        className={`price flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold ${
+                          done
+                            ? 'bg-sage-deep text-warm'
+                            : active
+                              ? 'bg-bark text-warm'
+                              : 'bg-bark-4/10 text-bark-4'
+                        }`}
+                      >
+                        {i + 1}
+                      </span>
+                      {i < STEP_LABELS.length - 1 && (
+                        <span
+                          aria-hidden
+                          className={`flex-1 h-px ${
+                            done ? 'bg-sage-deep' : 'bg-bark-4/20'
+                          }`}
+                        />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[11px] tracking-[0.12em] font-semibold ${
+                        active ? 'text-bark' : 'text-bark-4'
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div className="surface-card rounded-[16px] p-8 md:p-10">
+            {currentStep === 0 && (
+              <div>
+                <h2 className="text-[18px] md:text-[20px] font-bold text-bark tracking-[-0.015em] mb-2">
+                  どのような立場でご利用ですか
+                </h2>
+                <p className="text-[13px] text-bark-2 leading-[1.9] mb-6">
+                  いちばん近いものをお選びください。
+                </p>
+
+                <ul className="space-y-3">
+                  {ROLES.map((role) => {
+                    const active = selectedRole === role.key
+                    return (
+                      <li key={role.key}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRole(role.key)}
+                          className={`w-full text-left p-5 rounded-[12px] border transition-colors ${
+                            active
+                              ? 'border-sage-deep/40 bg-sage-xlight/50'
+                              : 'border-black/10 bg-white hover:border-black/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-[10px] tracking-[0.28em] font-semibold text-sage-deep mb-1.5">
+                                {role.eyebrow}
+                              </p>
+                              <p className="text-[15px] font-bold text-bark mb-1">
+                                {role.label}
+                              </p>
+                              <p className="text-[12px] text-bark-3 leading-[1.8]">
+                                {role.description}
+                              </p>
+                            </div>
+                            <span
+                              aria-hidden
+                              className={`mt-1 flex-none w-4 h-4 rounded-full border-2 ${
+                                active
+                                  ? 'border-sage-deep bg-sage-deep'
+                                  : 'border-bark-4/30 bg-white'
+                              }`}
+                            />
+                          </div>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                <div className="flex justify-end mt-8 pt-6 border-t border-black/8">
                   <button
-                    key={role.key}
-                    onClick={() => setSelectedRole(role.key)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-colors ${
-                      selectedRole === role.key
-                        ? roleColorMap[role.color]
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    disabled={!selectedRole}
+                    className="px-7 py-3 bg-bark text-warm rounded-full text-[13px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0 inline-flex items-center gap-2"
                   >
-                    <p className="text-sm font-medium">{role.label}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">{role.description}</p>
+                    次へ進む
+                    <span aria-hidden>→</span>
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {currentStep === 1 && (
-            <div>
-              <h2 className="text-lg font-semibold mb-1">プロフィールを完成させましょう</h2>
-              <p className="text-sm text-neutral-400 mb-5">
-                {selectedRoleData?.label}として登録します。基本情報を入力してください。
-              </p>
-              {error && (
-                <p className="text-sm text-error-500 mb-4">{error}</p>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">表示名 <span className="text-error-500">*</span></label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="お名前または会社名"
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">電話番号</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="03-1234-5678"
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">住所</label>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="東京都○○区○○"
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
-                  />
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {currentStep === 2 && (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-success-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Rocket className="w-7 h-7 text-success-500" />
-              </div>
-              <h2 className="text-lg font-semibold mb-1">準備ができました！</h2>
-              <p className="text-sm text-neutral-400 mb-6">
-                {selectedRoleData?.label}としてOuverをご利用いただけます。
-              </p>
-              <button
-                onClick={() => router.push(selectedRoleData?.href ?? '/')}
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors"
-              >
-                ダッシュボードへ
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            {currentStep === 1 && (
+              <div>
+                <h2 className="text-[18px] md:text-[20px] font-bold text-bark tracking-[-0.015em] mb-2">
+                  プロフィールをご入力ください
+                </h2>
+                <p className="text-[13px] text-bark-2 leading-[1.9] mb-6">
+                  {selectedRoleData?.label}として登録します。
+                </p>
 
-          {/* ナビゲーション */}
-          {currentStep === 0 && (
-            <div className="flex items-center justify-end mt-6 pt-4 border-t border-neutral-100">
-              <button
-                onClick={() => setCurrentStep(1)}
-                disabled={!selectedRole}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                次へ
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {currentStep === 1 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-100">
-              <button
-                onClick={() => { setCurrentStep(0); setError('') }}
-                className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                戻る
-              </button>
-              <button
-                onClick={handleSaveProfile}
-                disabled={saving || !name.trim()}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    保存中...
-                  </>
-                ) : (
-                  <>
-                    保存して次へ
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+                {error && (
+                  <div className="mb-5 p-4 bg-white border border-black/10 rounded-[10px] text-[13px] text-bark-2 leading-[1.7]">
+                    <span className="font-bold text-bark">保存できませんでした</span>
+                    <span className="block mt-1">{error}</span>
+                  </div>
                 )}
-              </button>
-            </div>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="flex items-center gap-2 text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
+                      表示名
+                      <span className="text-[10px] text-sage-deep tracking-[0.16em]">
+                        REQUIRED
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="お名前または会社名"
+                      className="w-full px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
+                      電話番号
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="03-1234-5678"
+                      className="w-full px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] tracking-[0.14em] font-semibold text-bark-3 uppercase mb-2">
+                      ご住所
+                    </label>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="東京都〇〇区〇〇"
+                      className="w-full px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-8 pt-6 border-t border-black/8">
+                  <button
+                    type="button"
+                    onClick={() => { setCurrentStep(0); setError('') }}
+                    className="text-[13px] text-bark-3 font-semibold hover:text-bark transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span aria-hidden>←</span>
+                    戻る
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={saving || !name.trim()}
+                    className="px-7 py-3 bg-bark text-warm rounded-full text-[13px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0 inline-flex items-center gap-2"
+                  >
+                    {saving && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+                    保存して次へ
+                    <span aria-hidden>→</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="text-center py-2">
+                <div className="flex items-center justify-center gap-3 mb-5 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+                  <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+                  READY
+                  <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+                </div>
+                <h2 className="text-[22px] md:text-[24px] font-bold text-bark tracking-[-0.02em] mb-3 [word-break:keep-all]">
+                  これで準備が整いました
+                </h2>
+                <p className="text-[13px] text-bark-2 leading-[1.95] mb-8">
+                  {selectedRoleData?.label}として、Ouverをご利用いただけます。
+                  <br />
+                  まずはダッシュボードから、ご確認ください。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push(selectedRoleData?.href ?? '/')}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-bark text-warm rounded-full text-[14px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px"
+                >
+                  ダッシュボードへ
+                  <span aria-hidden>→</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {currentStep < 2 && (
+            <p className="text-center text-[12px] text-bark-4 mt-7">
+              <Link
+                href="/"
+                className="underline-offset-[4px] hover:underline decoration-bark-4/40"
+              >
+                あとで設定する
+              </Link>
+            </p>
           )}
         </div>
-
-        {/* スキップ */}
-        {currentStep < 2 && (
-          <p className="text-center mt-4">
-            <Link href="/" className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors">
-              スキップしてトップへ
-            </Link>
-          </p>
-        )}
-      </div>
+      </main>
     </div>
   )
 }
