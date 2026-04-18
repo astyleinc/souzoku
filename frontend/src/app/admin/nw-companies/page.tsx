@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import {
   Plus,
   Globe,
-  Loader2,
   CheckCircle,
   XCircle,
 } from 'lucide-react'
@@ -12,6 +11,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type NwCompany = {
   id: string
@@ -48,9 +48,7 @@ export default function AdminNwCompaniesPage() {
   if (loading) {
     return (
       <DashboardShell title="NW会社マスタ" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

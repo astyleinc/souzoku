@@ -10,12 +10,12 @@ import {
   CheckCircle,
   Circle,
   DollarSign,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ClientDetail = {
   id: string
@@ -88,9 +88,7 @@ export default function ProfessionalClientDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="クライアント詳細" roleLabel="士業パートナー" navItems={professionalNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

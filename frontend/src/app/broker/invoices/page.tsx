@@ -8,12 +8,12 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Loader2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { brokerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Invoice = {
   id: string
@@ -65,9 +65,7 @@ export default function BrokerInvoicesPage() {
   if (loading) {
     return (
       <DashboardShell title="請求書" roleLabel="提携業者" navItems={brokerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

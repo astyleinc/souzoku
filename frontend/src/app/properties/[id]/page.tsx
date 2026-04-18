@@ -14,7 +14,6 @@ import {
   Share2,
   ChevronDown,
   ChevronUp,
-  Loader2,
 } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -25,6 +24,7 @@ import { UrgencyBadge } from '@/components/shared/UrgencyBadge'
 import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { toProperty } from '@/lib/mappers'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function PropertyDetailPage({
   params,
@@ -70,7 +70,7 @@ export default function PropertyDetailPage({
       <>
         <Header />
         <main className="bg-neutral-50 min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-300" />
+          <LoadingSpinner size="lg" variant="inline" />
         </main>
       </>
     )

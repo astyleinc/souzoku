@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation'
 import {
   Send,
   ArrowLeft,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { brokerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type CaseMessage = {
   id: string
@@ -63,9 +63,7 @@ export default function BrokerMessageDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="メッセージ" roleLabel="提携業者" navItems={brokerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

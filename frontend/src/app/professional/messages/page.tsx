@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import {
   MessageSquare,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Thread = {
   id: string
@@ -49,9 +49,7 @@ export default function ProfessionalMessagesPage() {
   if (loading) {
     return (
       <DashboardShell title="メッセージ" roleLabel="士業パートナー" navItems={professionalNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

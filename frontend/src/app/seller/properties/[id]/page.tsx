@@ -30,6 +30,7 @@ import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
 import type { ApiProperty } from '@/lib/mappers'
 import { toProperty } from '@/lib/mappers'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiBid = {
   id: string
@@ -87,9 +88,7 @@ export default function SellerPropertyDetailPage({
   if (loading) {
     return (
       <DashboardShell title="物件詳細" roleLabel="売主" navItems={sellerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

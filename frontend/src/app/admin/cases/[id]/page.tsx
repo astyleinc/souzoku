@@ -7,7 +7,6 @@ import {
   Building2,
   Users,
   FileText,
-  Loader2,
   CheckCircle,
   XCircle,
 } from 'lucide-react'
@@ -17,6 +16,7 @@ import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type CaseDetail = {
   id: string
@@ -96,9 +96,7 @@ export default function AdminCaseDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="案件詳細" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

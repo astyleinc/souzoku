@@ -15,6 +15,7 @@ import { Footer } from '@/components/layout/Footer'
 import { api } from '@/lib/api'
 import { toProperty } from '@/lib/mappers'
 import type { ApiProperty } from '@/lib/mappers'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function PropertyBidPage({
   params,
@@ -74,7 +75,7 @@ export default function PropertyBidPage({
       <div className="min-h-screen bg-neutral-50 flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neutral-300" />
+          <LoadingSpinner size="lg" variant="inline" />
         </main>
       </div>
     )

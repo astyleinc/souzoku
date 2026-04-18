@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Heart, Loader2 } from 'lucide-react'
+import { X, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -10,6 +10,7 @@ import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
 import { toProperty } from '@/lib/mappers'
 import type { ApiProperty } from '@/lib/mappers'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function BuyerFavoritesPage() {
   const [favorites, setFavorites] = useState<ReturnType<typeof toProperty>[]>([])
@@ -36,9 +37,7 @@ export default function BuyerFavoritesPage() {
   if (loading) {
     return (
       <DashboardShell title="お気に入り" roleLabel="買い手" navItems={buyerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

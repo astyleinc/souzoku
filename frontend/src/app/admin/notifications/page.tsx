@@ -8,7 +8,6 @@ import {
   Info,
   AlertTriangle,
   Check,
-  Loader2,
   Send,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -18,6 +17,7 @@ import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
 import { toNotification } from '@/types/dashboard'
 import type { ApiNotification } from '@/types/dashboard'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const typeConfig = {
   info: { icon: Info, iconColor: 'text-info-500', bgColor: 'bg-info-50' },
@@ -70,9 +70,7 @@ export default function AdminNotificationsPage() {
   if (loading) {
     return (
       <DashboardShell title="通知" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

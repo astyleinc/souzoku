@@ -11,13 +11,13 @@ import {
   Briefcase,
   FileText,
   Landmark,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BrokerDetail = {
   id: string
@@ -76,9 +76,7 @@ export default function AdminBrokerDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="宅建業者詳細" roleLabel="管理者" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

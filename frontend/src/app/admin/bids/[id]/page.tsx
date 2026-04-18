@@ -18,6 +18,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type PropertyInfo = {
   id: string
@@ -80,9 +81,7 @@ export default function AdminBidDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="入札審査" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

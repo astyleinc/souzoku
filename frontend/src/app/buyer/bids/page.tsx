@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Loader2, Gavel } from 'lucide-react'
+import { Gavel } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { buyerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiBid = {
   id: string
@@ -39,9 +40,7 @@ export default function BuyerBidsPage() {
   if (loading) {
     return (
       <DashboardShell title="入札履歴" roleLabel="買い手" navItems={buyerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

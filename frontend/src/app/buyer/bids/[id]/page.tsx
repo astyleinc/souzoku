@@ -17,6 +17,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { buyerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BidDetail = {
   id: string
@@ -51,9 +52,7 @@ export default function BuyerBidDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="入札詳細" roleLabel="買い手" navItems={buyerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

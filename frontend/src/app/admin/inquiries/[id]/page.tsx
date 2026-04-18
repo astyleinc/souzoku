@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type InquiryDetail = {
   id: string
@@ -84,9 +85,7 @@ export default function AdminInquiryDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="お問い合わせ詳細" roleLabel="管理者" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

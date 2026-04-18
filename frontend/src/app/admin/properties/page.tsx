@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import {
   Search,
   Eye,
-  Loader2,
   Home,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -15,6 +14,7 @@ import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
 import { toProperty } from '@/lib/mappers'
 import type { ApiProperty } from '@/lib/mappers'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<ReturnType<typeof toProperty>[]>([])
@@ -106,9 +106,7 @@ export default function AdminPropertiesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       ) : fetchError ? (
         <div className="bg-white rounded-2xl shadow-card p-10 text-center">
           <p className="text-sm text-error-500 mb-3">データの取得に失敗しました</p>

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const inputClass = 'w-full px-4 py-3 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors'
 const labelClass = 'block text-xs font-medium text-neutral-500 mb-1.5'
@@ -85,9 +86,7 @@ export default function AdminEditNwCompanyPage() {
   if (loading) {
     return (
       <DashboardShell title="NW会社編集" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

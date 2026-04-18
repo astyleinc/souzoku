@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Loader2, Users } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { ROLE_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiUser = {
   id: string
@@ -92,9 +93,7 @@ export default function AdminUsersPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       ) : users.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-card p-10 text-center">
           <Users className="w-8 h-8 text-neutral-200 mx-auto mb-2" />

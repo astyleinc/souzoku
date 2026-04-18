@@ -6,7 +6,6 @@ import {
   CheckCircle,
   MessageSquare,
   AlertCircle,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -14,6 +13,7 @@ import { SearchInput } from '@/components/shared/SearchInput'
 import { FilterSelect } from '@/components/shared/FilterSelect'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Inquiry = {
   id: string
@@ -124,9 +124,7 @@ export default function AdminInquiriesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       ) : (
         <>
           {/* PC: テーブル */}

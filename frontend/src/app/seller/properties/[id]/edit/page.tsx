@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
 import type { ApiProperty } from '@/lib/mappers'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 // Phase 1 対応エリア（東京都・神奈川県のみ）
 const PREFECTURES = ['東京都', '神奈川県']
@@ -116,9 +117,7 @@ export default function EditPropertyPage({
   if (loading || !form) {
     return (
       <DashboardShell title="物件情報の編集" roleLabel="売主" navItems={sellerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

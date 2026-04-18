@@ -7,12 +7,12 @@ import {
   CheckCircle,
   Circle,
   Mail,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -58,9 +58,7 @@ export default function SellerCaseDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="案件詳細" roleLabel="売主" navItems={sellerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

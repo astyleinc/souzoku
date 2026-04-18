@@ -8,13 +8,13 @@ import {
   Clock,
   Shield,
   AlertTriangle,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { ROLE_LABEL } from '@/data/mock-dashboard'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const roleStyle: Record<string, string> = {
   seller: 'bg-secondary-50 text-secondary-700',
@@ -72,9 +72,7 @@ export default function AdminUserDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="ユーザー詳細" roleLabel="管理者" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

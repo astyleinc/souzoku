@@ -7,12 +7,12 @@ import {
   EyeOff,
   FileText,
   Users,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type PropertyDoc = {
   id: string
@@ -96,9 +96,7 @@ export default function SellerDocumentPermissionsPage() {
   if (loading) {
     return (
       <DashboardShell title="書類閲覧許可" roleLabel="売主" navItems={sellerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

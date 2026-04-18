@@ -14,12 +14,12 @@ import {
   Users,
   FileText,
   History,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ProfessionalDetail = {
   id: string
@@ -108,9 +108,7 @@ export default function AdminProfessionalDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="士業パートナー詳細" roleLabel="管理者" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

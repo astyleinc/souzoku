@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { brokerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const statusSteps = [
   { key: 'broker_assigned', label: '業者割当済み' },
@@ -135,9 +136,7 @@ export default function BrokerCaseDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="案件詳細" roleLabel="提携業者" navItems={brokerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

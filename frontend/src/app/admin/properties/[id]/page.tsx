@@ -11,7 +11,6 @@ import {
   Home,
   Ruler,
   Calendar,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -19,6 +18,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { adminNav } from '@/config/navigation'
 import { type PropertyType, PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type PropertyDetail = {
   id: string
@@ -91,9 +91,7 @@ export default function AdminPropertyDetailPage() {
   if (loading) {
     return (
       <DashboardShell title="物件審査" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

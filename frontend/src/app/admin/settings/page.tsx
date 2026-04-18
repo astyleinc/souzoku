@@ -7,12 +7,12 @@ import {
   Clock,
   Bell,
   Shield,
-  Loader2,
   CheckCircle,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type SystemSettings = {
   commissionRate: number
@@ -76,9 +76,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <DashboardShell title="システム設定" roleLabel="管理画面" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

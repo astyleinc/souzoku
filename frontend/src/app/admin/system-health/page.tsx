@@ -9,12 +9,12 @@ import {
   Users,
   Zap,
   RefreshCw,
-  Loader2,
   Building2,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type SystemHealth = {
   status: 'healthy' | 'degraded' | 'unhealthy'
@@ -65,9 +65,7 @@ export default function AdminSystemHealthPage() {
   if (loading) {
     return (
       <DashboardShell title="システム状態" roleLabel="管理者" navItems={adminNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

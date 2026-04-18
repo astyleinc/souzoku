@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Loader2, Briefcase } from 'lucide-react'
+import { Briefcase } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { brokerNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
 import type { Case } from '@/types/dashboard'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function BrokerCasesPage() {
   const [cases, setCases] = useState<Case[]>([])
@@ -31,9 +32,7 @@ export default function BrokerCasesPage() {
   if (loading) {
     return (
       <DashboardShell title="案件管理" roleLabel="提携業者" navItems={brokerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

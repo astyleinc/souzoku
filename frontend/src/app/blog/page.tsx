@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Loader2 } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BlogPost = {
   slug: string
@@ -84,9 +85,7 @@ export default function BlogPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-            </div>
+            <LoadingSpinner />
           ) : posts.length === 0 ? (
             <p className="text-sm text-neutral-400 text-center py-20">記事がありません</p>
           ) : (

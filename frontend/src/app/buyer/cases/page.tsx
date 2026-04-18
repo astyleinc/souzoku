@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import {
   CheckCircle,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
@@ -13,6 +12,7 @@ import { buyerNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
 import type { Case } from '@/types/dashboard'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const statusSteps = ['broker_assigned', 'seller_contacted', 'buyer_contacted', 'explanation_done', 'contract_signed', 'settlement_done']
 
@@ -44,9 +44,7 @@ export default function BuyerCasesPage() {
   if (loading) {
     return (
       <DashboardShell title="案件進捗" roleLabel="買い手" navItems={buyerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

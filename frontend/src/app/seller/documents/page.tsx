@@ -23,6 +23,7 @@ import {
   FILE_UPLOAD_MAX_SIZE_BYTES,
   FILE_UPLOAD_MAX_SIZE_MB,
 } from '@shared/constants'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Document = {
   id: string
@@ -105,9 +106,7 @@ export default function SellerDocumentsPage() {
   if (loading) {
     return (
       <DashboardShell title="書類管理" roleLabel="売主" navItems={sellerNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }

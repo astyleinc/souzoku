@@ -5,12 +5,12 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Loader2,
   Banknote,
 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type RevenueItem = {
   id: string
@@ -49,9 +49,7 @@ export default function ProfessionalEarningsPage() {
   if (loading) {
     return (
       <DashboardShell title="紹介料実績" roleLabel="士業パートナー" navItems={professionalNav}>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
-        </div>
+        <LoadingSpinner />
       </DashboardShell>
     )
   }
