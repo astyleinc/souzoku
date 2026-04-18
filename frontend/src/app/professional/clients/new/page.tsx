@@ -13,6 +13,15 @@ import { useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import {
+  FILE_UPLOAD_ACCEPT_ATTR,
+  FILE_UPLOAD_MAX_SIZE_BYTES,
+  FILE_UPLOAD_MAX_SIZE_MB,
+  MIN_LISTING_PRICE,
+} from '@shared/constants'
+
+// 最低出品価格の万円単位
+const MIN_LISTING_PRICE_MAN = MIN_LISTING_PRICE / 10_000
 
 const inputClass = 'w-full px-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors'
 const selectClass = inputClass
@@ -89,12 +98,12 @@ export default function ProfessionalClientNewPage() {
   const handleFileSelect = (index: number) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.pdf,.jpg,.jpeg,.png'
+    input.accept = FILE_UPLOAD_ACCEPT_ATTR
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (file) {
-        if (file.size > 10 * 1024 * 1024) {
-          setError('ファイルサイズは10MB以下にしてください')
+        if (file.size > FILE_UPLOAD_MAX_SIZE_BYTES) {
+          setError(`ファイルサイズは${FILE_UPLOAD_MAX_SIZE_MB}MB以下にしてください`)
           return
         }
         setDocs((prev) => prev.map((d, i) => i === index ? { ...d, file } : d))
@@ -245,7 +254,7 @@ export default function ProfessionalClientNewPage() {
                 <div>
                   <label className={labelClass}>希望売出価格（万円） <span className="text-error-500">*</span></label>
                   <input type="number" placeholder="3500" className={inputClass} value={form.askingPrice} onChange={set('askingPrice')} />
-                  <p className="text-xs text-neutral-400 mt-1">最低出品価格: 1,000万円</p>
+                  <p className="text-xs text-neutral-400 mt-1">最低出品価格: {MIN_LISTING_PRICE_MAN.toLocaleString()}万円</p>
                 </div>
                 <div>
                   <label className={labelClass}>即決価格（万円・任意）</label>

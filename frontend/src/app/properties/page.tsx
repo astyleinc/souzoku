@@ -13,6 +13,7 @@ import {
 } from '@/components/property/PropertyFilters'
 import { toProperty, type ApiProperty } from '@/lib/mappers'
 import type { Property, Urgency } from '@/data/mock'
+import { API_TIMEOUT_QUICK_MS } from '@shared/constants'
 
 export const metadata: Metadata = {
   title: '物件一覧｜Ouver',
@@ -46,7 +47,7 @@ const fetchProperties = async (params: Record<string, string | undefined>) => {
   const url = `${API_BASE}/api/properties?${query.toString()}`
 
   try {
-    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(3000) })
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(API_TIMEOUT_QUICK_MS) })
     if (!res.ok) return null
     const json = await res.json() as { success: boolean; data?: { items: ApiProperty[]; total: number } }
     if (json.success && json.data) {

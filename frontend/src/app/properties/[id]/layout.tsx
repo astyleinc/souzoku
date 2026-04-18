@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { API_TIMEOUT_QUICK_MS } from '@shared/constants'
 
 const API_BASE = process.env.API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
 
@@ -10,7 +11,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   const { id } = await params
   try {
     const res = await fetch(`${API_BASE}/api/properties/${id}`, {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(API_TIMEOUT_QUICK_MS),
     })
     if (res.ok) {
       const json = await res.json()

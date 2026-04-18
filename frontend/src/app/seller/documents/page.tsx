@@ -18,6 +18,11 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import {
+  FILE_UPLOAD_ACCEPTED_MIME,
+  FILE_UPLOAD_MAX_SIZE_BYTES,
+  FILE_UPLOAD_MAX_SIZE_MB,
+} from '@shared/constants'
 
 type Document = {
   id: string
@@ -40,8 +45,8 @@ const docStatusLabel = {
   rejected: '再提出要',
 }
 
-const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+const ACCEPTED_TYPES = FILE_UPLOAD_ACCEPTED_MIME
+const MAX_FILE_SIZE = FILE_UPLOAD_MAX_SIZE_BYTES
 
 export default function SellerDocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -64,12 +69,12 @@ export default function SellerDocumentsPage() {
 
   const uploadFiles = async (files: File[]) => {
     const valid = files.filter((f) => {
-      if (!ACCEPTED_TYPES.includes(f.type)) return false
+      if (!(ACCEPTED_TYPES as readonly string[]).includes(f.type)) return false
       if (f.size > MAX_FILE_SIZE) return false
       return true
     })
     if (valid.length === 0) {
-      setUploadError('対応形式（PDF, JPG, PNG）で10MB以下のファイルを選択してください')
+      setUploadError(`対応形式（PDF, JPG, PNG）で${FILE_UPLOAD_MAX_SIZE_MB}MB以下のファイルを選択してください`)
       return
     }
     setUploadError(null)
@@ -152,7 +157,7 @@ export default function SellerDocumentsPage() {
             {uploading ? 'アップロード中...' : '書類をアップロード'}
           </p>
           <p className="text-xs text-neutral-400">
-            クリックまたはドラッグ&ドロップ（PDF, JPG, PNG / 最大10MB）
+            クリックまたはドラッグ&ドロップ（PDF, JPG, PNG / 最大{FILE_UPLOAD_MAX_SIZE_MB}MB）
           </p>
         </div>
         {uploadError && (

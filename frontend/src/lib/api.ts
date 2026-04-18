@@ -1,3 +1,5 @@
+import { API_TIMEOUT_DEFAULT_MS, API_TIMEOUT_UPLOAD_MS } from '@shared/constants'
+
 type ApiResponse<T> = {
   success: true
   data: T
@@ -32,7 +34,7 @@ const request = async <T>(
       headers,
       body: body ? JSON.stringify(body) : undefined,
       credentials: 'include',
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(API_TIMEOUT_DEFAULT_MS),
     })
 
     if (!res.ok) {
@@ -80,7 +82,7 @@ export const api = {
         method: 'POST',
         body: formData,
         credentials: 'include',
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(API_TIMEOUT_UPLOAD_MS),
       })
       if (!res.ok) {
         if (res.status === 401 && typeof window !== 'undefined') {

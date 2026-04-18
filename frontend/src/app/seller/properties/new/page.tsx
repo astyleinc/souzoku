@@ -21,9 +21,19 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import {
+  ALLOWED_PREFECTURES,
+  FILE_UPLOAD_ACCEPT_ATTR,
+  FILE_UPLOAD_MAX_SIZE_BYTES,
+  FILE_UPLOAD_MAX_SIZE_MB,
+  MIN_LISTING_PRICE,
+} from '@shared/constants'
 
-// Phase 1 対応エリア（東京都・神奈川県のみ）
-const PREFECTURES = ['東京都', '神奈川県']
+// Phase 1 対応エリア（shared定数から取り込み）
+const PREFECTURES = ALLOWED_PREFECTURES
+
+// 最低出品価格を万円単位で表示するための換算値
+const MIN_LISTING_PRICE_MAN = MIN_LISTING_PRICE / 10_000
 
 // 登録時のURLクエリ（?nw=...）が register/page.tsx で保存される
 const REFERRAL_STORAGE_KEY = 'ouver:referral'
@@ -82,7 +92,7 @@ const initialForm: FormData = {
 }
 
 const MAX_IMAGES = 20
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = FILE_UPLOAD_MAX_SIZE_BYTES
 
 type ImageFile = {
   id: string
@@ -165,8 +175,8 @@ export default function NewPropertyPage() {
     if (s === 2) {
       if (!form.askingPrice) {
         errors.askingPrice = '希望価格を入力してください'
-      } else if (Number(form.askingPrice) < 1000) {
-        errors.askingPrice = '最低出品価格は1,000万円です'
+      } else if (Number(form.askingPrice) < MIN_LISTING_PRICE_MAN) {
+        errors.askingPrice = `最低出品価格は${MIN_LISTING_PRICE_MAN.toLocaleString()}万円です`
       }
       if (form.instantPrice && Number(form.instantPrice) <= Number(form.askingPrice)) {
         errors.instantPrice = '即決価格は希望価格より高く設定してください'
@@ -213,7 +223,7 @@ export default function NewPropertyPage() {
         continue
       }
       if (file.size > MAX_FILE_SIZE) {
-        setImageError('1枚あたり10MB以下のファイルを選択してください')
+        setImageError(`1枚あたり${FILE_UPLOAD_MAX_SIZE_MB}MB以下のファイルを選択してください`)
         continue
       }
       validFiles.push({
@@ -637,10 +647,10 @@ export default function NewPropertyPage() {
                   希望価格（最低入札価格） <span className="text-error-500">*</span>
                 </label>
                 <div className="relative">
-                  <input type="number" min={1000} value={form.askingPrice} onChange={set('askingPrice')} placeholder="3500" className={`${inputClass} pr-14`} />
+                  <input type="number" min={MIN_LISTING_PRICE_MAN} value={form.askingPrice} onChange={set('askingPrice')} placeholder="3500" className={`${inputClass} pr-14`} />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-400">万円</span>
                 </div>
-                <p className="text-xs text-neutral-400 mt-1.5">最低出品価格は1,000万円です</p>
+                <p className="text-xs text-neutral-400 mt-1.5">最低出品価格は{MIN_LISTING_PRICE_MAN.toLocaleString()}万円です</p>
                 {fieldError('askingPrice')}
               </div>
 
