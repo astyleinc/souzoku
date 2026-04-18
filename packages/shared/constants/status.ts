@@ -50,6 +50,17 @@ export const CASE_STATUS = {
 
 export type CaseStatus = (typeof CASE_STATUS)[keyof typeof CASE_STATUS]
 
+// 案件ステータスの日本語ラベル
+export const CASE_STATUS_LABEL: Record<CaseStatus, string> = {
+  broker_assigned: '業者割当済み',
+  seller_contacted: '売主連絡済み',
+  buyer_contacted: '買い手連絡済み',
+  explanation_done: '重説完了',
+  contract_signed: '契約締結',
+  settlement_done: '決済完了',
+  cancelled: '案件中止',
+}
+
 // 士業認証ステータス
 export const VERIFICATION_STATUS = {
   PENDING: 'pending',
@@ -69,6 +80,13 @@ export const PAYMENT_STATUS = {
 } as const
 
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS]
+
+// 支払いステータスの日本語ラベル
+export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  not_invoiced: '未請求',
+  invoiced: '請求済み',
+  confirmed: '入金確認済み',
+}
 
 // 物件種別
 export const PROPERTY_TYPE = {
