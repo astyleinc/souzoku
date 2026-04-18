@@ -19,9 +19,6 @@ const PREFECTURE_OPTIONS = ['東京都', '神奈川県'] as const
 
 type FilterTag = { label: string; paramKey: string; paramValue?: string }
 
-/**
- * 現在のsearchParamsからアクティブなフィルタータグを生成
- */
 const buildFilterTags = (params: URLSearchParams): FilterTag[] => {
   const tags: FilterTag[] = []
   const q = params.get('q')
@@ -61,7 +58,7 @@ const buildFilterTags = (params: URLSearchParams): FilterTag[] => {
   return tags
 }
 
-export const PropertyFilterTags = ({ biddingCount }: { biddingCount: number }) => {
+export const PropertyFilterTags = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tags = buildFilterTags(searchParams)
@@ -102,7 +99,7 @@ export const PropertyFilterTags = ({ biddingCount }: { biddingCount: number }) =
         <button
           key={`${tag.paramKey}-${tag.paramValue ?? tag.label}`}
           onClick={() => removeTag(tag)}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-sage-light text-sage-deep rounded-lg hover:bg-sage-xlight transition-colors"
         >
           {tag.label}
           <X className="w-3 h-3" />
@@ -110,7 +107,7 @@ export const PropertyFilterTags = ({ biddingCount }: { biddingCount: number }) =
       ))}
       <button
         onClick={clearAll}
-        className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+        className="text-xs text-bark-4 hover:text-bark-2 transition-colors"
       >
         すべて解除
       </button>
@@ -130,7 +127,6 @@ export const PropertyFilterPanel = ({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // ローカル状態（検索ボタンを押すまでURLに反映しない）
   const [keyword, setKeyword] = useState(searchParams.get('q') ?? '')
   const [prefecture, setPrefecture] = useState(searchParams.get('prefecture') ?? '')
   const [types, setTypes] = useState<PropertyType[]>(
@@ -161,7 +157,6 @@ export const PropertyFilterPanel = ({
   const applyFilters = () => {
     const params = new URLSearchParams()
 
-    // ソートは維持
     const sort = searchParams.get('sort')
     if (sort) params.set('sort', sort)
 
@@ -195,30 +190,37 @@ export const PropertyFilterPanel = ({
     onClose?.()
   }
 
+  const inputBase =
+    'w-full px-3 py-2.5 text-[13px] border border-warm-2 rounded-xl bg-warm/50 focus:bg-card focus:outline-none focus:ring-2 focus:ring-sage/25 focus:border-sage/50 transition-colors'
+
   const filterContent = (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* キーワード */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1.5">キーワード</label>
+        <label className="block text-[11px] font-medium text-bark-3 mb-1.5 tracking-[0.02em]">
+          キーワード
+        </label>
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-bark-4" />
           <input
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="エリア・沿線・特徴"
-            className="w-full pl-9 pr-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+            className={`${inputBase} pl-9`}
           />
         </div>
       </div>
 
       {/* エリア */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1.5">エリア</label>
+        <label className="block text-[11px] font-medium text-bark-3 mb-1.5 tracking-[0.02em]">
+          エリア
+        </label>
         <select
           value={prefecture}
           onChange={(e) => setPrefecture(e.target.value)}
-          className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 transition-colors"
+          className={inputBase.replace('bg-warm/50', 'bg-card')}
         >
           <option value="">すべてのエリア</option>
           {PREFECTURE_OPTIONS.map((p) => (
@@ -229,17 +231,19 @@ export const PropertyFilterPanel = ({
 
       {/* 物件種別 */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-2">物件種別</label>
+        <label className="block text-[11px] font-medium text-bark-3 mb-2 tracking-[0.02em]">
+          物件種別
+        </label>
         <div className="flex flex-wrap gap-2">
           {(Object.entries(PROPERTY_TYPE_LABEL) as [PropertyType, string][]).map(([key, label]) => (
             <button
               key={key}
               type="button"
               onClick={() => toggleType(key)}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+              className={`px-3 py-1.5 text-[12px] rounded-lg border-[1.5px] transition-colors ${
                 types.includes(key)
-                  ? 'bg-primary-500 text-white border-primary-500'
-                  : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300'
+                  ? 'bg-sage-xlight text-sage-deep border-sage'
+                  : 'bg-card text-bark-3 border-warm-2 hover:border-sage hover:text-sage'
               }`}
             >
               {label}
@@ -250,39 +254,43 @@ export const PropertyFilterPanel = ({
 
       {/* 価格帯 */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1.5">価格帯（万円）</label>
+        <label className="block text-[11px] font-medium text-bark-3 mb-1.5 tracking-[0.02em]">
+          価格帯（万円）
+        </label>
         <div className="flex items-center gap-2">
           <input
             type="number"
             value={priceMin}
             onChange={(e) => setPriceMin(e.target.value)}
             placeholder="下限"
-            className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className={inputBase}
           />
-          <span className="text-neutral-300 shrink-0">〜</span>
+          <span className="text-bark-4 shrink-0">〜</span>
           <input
             type="number"
             value={priceMax}
             onChange={(e) => setPriceMax(e.target.value)}
             placeholder="上限"
-            className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-xl bg-neutral-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className={inputBase}
           />
         </div>
       </div>
 
       {/* 緊急度 */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-2">売却の緊急度</label>
+        <label className="block text-[11px] font-medium text-bark-3 mb-2 tracking-[0.02em]">
+          売却の緊急度
+        </label>
         <div className="flex flex-wrap gap-2">
           {(Object.entries(URGENCY_LABEL) as [Urgency, string][]).map(([key, label]) => (
             <button
               key={key}
               type="button"
               onClick={() => toggleUrgency(key)}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+              className={`px-3 py-1.5 text-[12px] rounded-lg border-[1.5px] transition-colors ${
                 urgencies.includes(key)
-                  ? 'bg-primary-500 text-white border-primary-500'
-                  : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300'
+                  ? 'bg-sage-xlight text-sage-deep border-sage'
+                  : 'bg-card text-bark-3 border-warm-2 hover:border-sage hover:text-sage'
               }`}
             >
               {label}
@@ -297,11 +305,11 @@ export const PropertyFilterPanel = ({
           type="checkbox"
           checked={biddingOnly}
           onChange={(e) => setBiddingOnly(e.target.checked)}
-          className="w-4 h-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
+          className="w-4 h-4 rounded border-warm-2 text-sage focus:ring-sage/30 accent-sage-deep"
         />
-        <span className="text-sm text-neutral-600">入札受付中のみ表示</span>
+        <span className="text-[13px] text-bark-2">入札受付中のみ表示</span>
         {biddingCount > 0 && (
-          <span className="flex items-center gap-0.5 text-xs text-cta-600">
+          <span className="flex items-center gap-0.5 text-[11px] text-badge-pop">
             <Flame className="w-3 h-3" />
             {biddingCount}件
           </span>
@@ -310,31 +318,34 @@ export const PropertyFilterPanel = ({
     </div>
   )
 
-  // デスクトップサイドバー
   if (variant === 'sidebar') {
     return (
-      <div className="bg-white rounded-2xl shadow-card p-5 sticky top-20">
+      <div className="bg-card rounded-[14px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 sticky top-20">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-neutral-400" />
-            <h2 className="text-sm font-semibold">絞り込み</h2>
+            <SlidersHorizontal className="w-4 h-4 text-bark-4" />
+            <h2 className="text-[13px] font-bold text-bark tracking-[-0.01em]">
+              絞り込み
+            </h2>
           </div>
           {localFilterCount > 0 && (
-            <span className="text-xs text-primary-500">{localFilterCount}件の条件</span>
+            <span className="text-[11px] text-sage-deep font-medium">
+              {localFilterCount}件の条件
+            </span>
           )}
         </div>
         {filterContent}
         <div className="mt-6 space-y-2">
           <button
             onClick={applyFilters}
-            className="w-full py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 active:scale-[0.98] transition-all"
+            className="w-full py-2.5 text-[13px] font-medium text-white bg-sage-deep rounded-xl hover:bg-sage transition-colors active:scale-[0.98]"
           >
             この条件で検索
           </button>
           {localFilterCount > 0 && (
             <button
               onClick={resetAndApply}
-              className="w-full text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+              className="w-full text-[12px] text-bark-4 hover:text-bark-2 transition-colors"
             >
               条件をリセット
             </button>
@@ -344,19 +355,18 @@ export const PropertyFilterPanel = ({
     )
   }
 
-  // モバイルボトムシート
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 shrink-0">
-          <h2 className="text-base font-semibold">絞り込み条件</h2>
+      <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-[18px] max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-warm-2 shrink-0">
+          <h2 className="text-[15px] font-bold text-bark">絞り込み条件</h2>
           <button
             onClick={onClose}
-            className="p-1 text-neutral-400 hover:text-neutral-600"
+            className="p-1 text-bark-4 hover:text-bark-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -364,18 +374,18 @@ export const PropertyFilterPanel = ({
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {filterContent}
         </div>
-        <div className="px-5 py-4 border-t border-neutral-100 flex gap-3 shrink-0">
+        <div className="px-5 py-4 border-t border-warm-2 flex gap-3 shrink-0">
           {localFilterCount > 0 && (
             <button
               onClick={resetLocal}
-              className="flex-1 py-2.5 text-sm font-medium text-neutral-500 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+              className="flex-1 py-2.5 text-[13px] font-medium text-bark-3 border border-warm-2 rounded-xl hover:bg-warm transition-colors"
             >
               リセット
             </button>
           )}
           <button
             onClick={applyFilters}
-            className="flex-1 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 active:scale-[0.98] transition-all"
+            className="flex-1 py-2.5 text-[13px] font-medium text-white bg-sage-deep rounded-xl hover:bg-sage transition-colors active:scale-[0.98]"
           >
             この条件で検索
           </button>
@@ -396,16 +406,16 @@ export const MobileFilterButton = ({
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm border rounded-xl transition-colors ${
+        className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] border-[1.5px] rounded-xl transition-colors ${
           activeCount > 0
-            ? 'bg-primary-50 text-primary-700 border-primary-200'
-            : 'bg-white text-neutral-600 border-neutral-200'
+            ? 'bg-sage-xlight text-sage-deep border-sage'
+            : 'bg-card text-bark-3 border-warm-2'
         }`}
       >
         <SlidersHorizontal className="w-4 h-4" />
         絞り込み
         {activeCount > 0 && (
-          <span className="w-5 h-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+          <span className="w-5 h-5 bg-sage-deep text-white text-[11px] rounded-full flex items-center justify-center">
             {activeCount}
           </span>
         )}
@@ -448,7 +458,7 @@ export const SortSelect = () => {
     <select
       value={sort}
       onChange={(e) => handleSort(e.target.value)}
-      className="appearance-none pl-8 pr-8 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors cursor-pointer"
+      className="appearance-none pl-8 pr-8 py-2 text-[13px] border border-warm-2 rounded-xl bg-card text-bark-2 focus:outline-none focus:ring-2 focus:ring-sage/25 focus:border-sage/50 transition-colors cursor-pointer"
     >
       {Object.entries(SORT_LABELS).map(([key, label]) => (
         <option key={key} value={key}>{label}</option>

@@ -50,15 +50,20 @@ export const Header = () => {
   const dashboard = user ? roleDashboard[user.role] : null
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-50 bg-warm/90 backdrop-blur-md border-b border-black/5">
+      <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+        <div className="flex items-center justify-between h-14">
           {/* ロゴ */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">O</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-[30px] h-[30px] bg-sage rounded-[7px] flex items-center justify-center">
+              <span className="text-white font-bold text-sm">O</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">相続不動産マッチング</span>
+            <span className="text-[17px] font-bold text-bark tracking-[-0.02em]">
+              Ouver
+              <span className="font-serif italic font-normal text-sage text-[19px]" aria-hidden>
+                .
+              </span>
+            </span>
           </Link>
 
           {/* ナビゲーション（デスクトップ） */}

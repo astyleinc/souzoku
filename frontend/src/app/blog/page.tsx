@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -18,7 +17,9 @@ type BlogPost = {
   thumbnailUrl: string | null
 }
 
-const categories = [
+type CategoryKey = 'all' | 'news' | 'column' | 'case' | 'update'
+
+const CATEGORIES: { key: CategoryKey; label: string }[] = [
   { key: 'all', label: 'すべて' },
   { key: 'news', label: 'お知らせ' },
   { key: 'column', label: '相続コラム' },
@@ -26,22 +27,15 @@ const categories = [
   { key: 'update', label: '更新情報' },
 ]
 
-const categoryLabel: Record<string, string> = {
+const CATEGORY_LABEL: Record<string, string> = {
   news: 'お知らせ',
   column: '相続コラム',
   case: '活用事例',
   update: '更新情報',
 }
 
-const categoryColor: Record<string, string> = {
-  news: 'bg-primary-50 text-primary-700',
-  column: 'bg-secondary-50 text-secondary-700',
-  case: 'bg-cta-50 text-cta-700',
-  update: 'bg-info-50 text-info-700',
-}
-
 export default function BlogPage() {
-  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>('all')
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -59,74 +53,121 @@ export default function BlogPage() {
   }, [activeCategory])
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="bg-warm min-h-screen">
       <Header />
-      <main className="flex-1 bg-neutral-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-2xl font-bold mb-2">お知らせ・コラム</h1>
-          <p className="text-sm text-neutral-400 mb-6">
-            相続不動産に関する情報やサービスの最新情報をお届けします。
-          </p>
 
-          {/* カテゴリタブ */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                  activeCategory === cat.key
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-white text-neutral-500 border border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <LoadingSpinner />
-          ) : posts.length === 0 ? (
-            <p className="text-sm text-neutral-400 text-center py-20">記事がありません</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-              {posts.map((article) => (
-                <Link
-                  key={article.slug}
-                  href={`/blog/${article.slug}`}
-                  className="bg-white rounded-2xl shadow-card overflow-hidden hover:shadow-md transition-shadow group"
-                >
-                  <div className="h-40 bg-neutral-100 flex items-center justify-center">
-                    {article.thumbnailUrl ? (
-                      <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs text-neutral-400">サムネイル画像</span>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${categoryColor[article.category] ?? 'bg-neutral-100 text-neutral-600'}`}>
-                        {categoryLabel[article.category] ?? article.category}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-neutral-400">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(article.publishedAt)}
-                      </span>
-                    </div>
-                    <h2 className="text-sm font-semibold mb-1.5 group-hover:text-primary-500 transition-colors">
-                      {article.title}
-                    </h2>
-                    <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
-                      {article.excerpt}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+      <main>
+        {/* HERO */}
+        <section className="relative">
+          <div className="max-w-[1260px] mx-auto px-5 md:px-9 pt-14 md:pt-20 pb-10 md:pb-14">
+            <div className="max-w-[820px]">
+              <div className="flex items-center gap-3 mb-8 text-[12px] tracking-[0.32em] font-semibold text-sage-deep">
+                <span aria-hidden className="block w-8 h-px bg-sage-deep/50" />
+                JOURNAL
+              </div>
+              <h1 className="font-bold text-[clamp(38px,5.6vw,64px)] leading-[1.12] tracking-[-0.03em] text-bark mb-6 [word-break:keep-all]">
+                相続と不動産の、
+                <br />
+                ちょっと気になること。
+              </h1>
+              <p className="text-[17px] text-bark-2 leading-[1.95] max-w-[620px] font-medium">
+                相続不動産にまつわるトピックや、Ouverからのお知らせをお届けします。
+                読み物として、ときどきのぞいてみてください。
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        </section>
+
+        {/* CATEGORY TABS */}
+        <section className="border-y border-black/5 bg-warm sticky top-16 z-10 backdrop-blur">
+          <div className="max-w-[1260px] mx-auto px-5 md:px-9 py-4 flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => {
+              const active = activeCategory === c.key
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setActiveCategory(c.key)}
+                  className={`px-5 py-2 rounded-full text-[13px] font-semibold transition-colors ${
+                    active
+                      ? 'bg-bark text-warm'
+                      : 'bg-white text-bark-2 border border-black/8 hover:border-black/20'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* POSTS */}
+        <section>
+          <div className="max-w-[1260px] mx-auto px-5 md:px-9 py-14 md:py-20">
+            {loading ? (
+              <div className="py-20">
+                <LoadingSpinner />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="surface-card rounded-[14px] p-14 text-center">
+                <p className="text-[15px] text-bark-2 mb-2 font-medium">
+                  記事はまだありません
+                </p>
+                <p className="text-[13px] text-bark-3 leading-[1.85]">
+                  公開され次第、こちらに掲載します。
+                </p>
+              </div>
+            ) : (
+              <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+                {posts.map((article) => (
+                  <li key={article.slug}>
+                    <Link
+                      href={`/blog/${article.slug}`}
+                      className="group block surface-card rounded-[14px] overflow-hidden transition-[transform,box-shadow] hover:-translate-y-0.5"
+                    >
+                      <div className="relative aspect-[16/10] bg-sage-xlight overflow-hidden">
+                        {article.thumbnailUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={article.thumbnailUrl}
+                            alt={article.title}
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[11px] tracking-[0.3em] font-semibold text-sage-deep/60">
+                            OUVER JOURNAL
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-6 md:p-7">
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="text-[11px] tracking-[0.24em] font-semibold text-sage-deep">
+                            {CATEGORY_LABEL[article.category] ?? article.category}
+                          </span>
+                          <span
+                            aria-hidden
+                            className="block w-4 h-px bg-sage-deep/30"
+                          />
+                          <time className="price text-[12px] text-bark-4">
+                            {formatDate(article.publishedAt)}
+                          </time>
+                        </div>
+                        <h2 className="text-[17px] font-bold text-bark leading-[1.5] tracking-[-0.01em] mb-3 group-hover:text-sage-deep transition-colors line-clamp-2">
+                          {article.title}
+                        </h2>
+                        <p className="text-[13px] text-bark-2 leading-[1.9] line-clamp-3">
+                          {article.excerpt}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </main>
+
       <Footer />
     </div>
   )
