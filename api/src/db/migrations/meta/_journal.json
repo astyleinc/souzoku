@@ -8,6 +8,20 @@
       "when": 1776340576789,
       "tag": "0000_spooky_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776512017716,
+      "tag": "0001_add_is_one_sided",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776512158576,
+      "tag": "0002_add_property_cron_columns",
+      "breakpoints": true
     }
   ]
 }

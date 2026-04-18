@@ -59,6 +59,16 @@ export const properties = pgTable('properties', {
   bidPeriodChangeCount: integer('bid_period_change_count').notNull().default(0),
   returnReason: text('return_reason'),
   publishedAt: timestamp('published_at', { withTimezone: true }),
+  // 登記中（published_registering）へ遷移した時刻。cron の催促・自動差戻し判定に使用
+  registeringStartedAt: timestamp('registering_started_at', { withTimezone: true }),
+  // 登記催促通知を送った日時（二重送信防止）
+  registeringReminderSentAt: timestamp('registering_reminder_sent_at', { withTimezone: true }),
+  // 即決価格に到達した日時（承認期限48時間の起点）
+  instantPriceReachedAt: timestamp('instant_price_reached_at', { withTimezone: true }),
+  // 即決価格到達時の最高入札ID（pending_approval 中の候補）
+  instantPriceBidId: uuid('instant_price_bid_id'),
+  // 相続開始日（申告期限10ヶ月・登記期限3年のカウントダウン起点）
+  inheritanceStartDate: timestamp('inheritance_start_date', { withTimezone: true, mode: 'date' }),
   closedAt: timestamp('closed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

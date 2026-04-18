@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core'
 import { users } from './users'
 import { properties } from './properties'
 import { brokers } from './brokers'
@@ -25,6 +25,8 @@ export const cases = pgTable('cases', {
   contractDocUrl: text('contract_doc_url'),
   settlementDocUrl: text('settlement_doc_url'),
   cancelReason: text('cancel_reason'),
+  // 片手仲介フラグ（売主側のみ担当 → 業者配分60%）
+  isOneSided: boolean('is_one_sided').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

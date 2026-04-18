@@ -9,11 +9,19 @@ export const invoiceStatusEnum = pgEnum('invoice_status', [
   'cancelled',
 ])
 
+export const invoiceTargetEnum = pgEnum('invoice_target_type', [
+  'broker',
+  'professional',
+  'nw',
+])
+
 // 請求書
 export const invoices = pgTable('invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
   paymentId: uuid('payment_id').notNull().references(() => payments.id),
   brokerId: uuid('broker_id').notNull().references(() => brokers.id),
+  // 請求書の発行対象種別。業者以外（士業・NW）の支払調書にも同テーブルを流用する
+  targetType: invoiceTargetEnum('target_type').notNull().default('broker'),
   invoiceNumber: varchar('invoice_number', { length: 50 }).notNull().unique(),
   amount: bigint('amount', { mode: 'number' }).notNull(),
   taxAmount: bigint('tax_amount', { mode: 'number' }).notNull(),

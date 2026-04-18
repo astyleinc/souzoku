@@ -7,6 +7,9 @@ const required = [
 const warnings = [
   { key: 'FRONTEND_URL', fallback: 'http://localhost:3000' },
   { key: 'BETTER_AUTH_URL', fallback: 'http://localhost:8787' },
+  { key: 'RESEND_API_KEY', fallback: '（未設定のためメール送信はスキップ）' },
+  { key: 'MAIL_FROM', fallback: 'Ouver <no-reply@ouver.local>' },
+  { key: 'CRON_SECRET', fallback: '（未設定のためcron認証は無効）' },
 ] as const
 
 export const validateEnv = () => {

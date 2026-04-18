@@ -1,4 +1,4 @@
-import { pgTable, uuid, bigint, numeric, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, bigint, numeric, varchar, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core'
 import { properties } from './properties'
 import { brokers } from './brokers'
 import { professionals } from './professionals'
@@ -34,6 +34,8 @@ export const revenueDistributions = pgTable('revenue_distributions', {
   professionalId: uuid('professional_id').references(() => professionals.id),
   nwCompanyId: uuid('nw_company_id').references(() => nwCompanies.id),
   isNwReferral: varchar('is_nw_referral', { length: 10 }).notNull(),
+  // 片手仲介フラグ（true: 売主側のみ担当 → 業者60%）
+  isOneSided: boolean('is_one_sided').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
