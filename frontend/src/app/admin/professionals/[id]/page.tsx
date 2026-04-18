@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ProfessionalDetail = {
@@ -176,7 +177,7 @@ export default function AdminProfessionalDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-neutral-400" />
-                <span>登録日: {pro.createdAt?.slice(0, 10)}</span>
+                <span>登録日: {formatDate(pro.createdAt)}</span>
               </div>
             </div>
           </div>

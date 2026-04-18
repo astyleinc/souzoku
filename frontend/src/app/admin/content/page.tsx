@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BlogPost = {
@@ -160,7 +161,7 @@ export default function AdminContentPage() {
                           {post.status === 'published' ? '公開中' : '下書き'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{post.updatedAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(post.updatedAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2">
                           <Link href={`/blog/${post.slug}`} className="p-1.5 text-neutral-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors">
@@ -221,7 +222,7 @@ export default function AdminContentPage() {
                           {article.status === 'published' ? '公開中' : '下書き'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{article.createdAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(article.createdAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2">
                           <Link href={`/help/${article.slug}`} className="p-1.5 text-neutral-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors">

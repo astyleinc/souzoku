@@ -10,6 +10,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { buyerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type CaseThread = {
@@ -73,7 +74,7 @@ export default function BuyerMessagesPage() {
                 <p className="text-xs text-neutral-400 mt-0.5">担当: {thread.brokerName}</p>
               </div>
               <div className="shrink-0 text-right flex items-center gap-2">
-                <span className="text-xs text-neutral-400">{thread.updatedAt?.slice(0, 10)}</span>
+                <span className="text-xs text-neutral-400">{formatDate(thread.updatedAt)}</span>
                 <ChevronRight className="w-4 h-4 text-neutral-300" />
               </div>
             </Link>

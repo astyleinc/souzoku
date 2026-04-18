@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { buyerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const statusSteps = [
@@ -98,11 +99,11 @@ export default function BuyerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">案件開始日</p>
-                <p>{caseData.createdAt?.slice(0, 10)}</p>
+                <p>{formatDate(caseData.createdAt)}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">最終更新</p>
-                <p>{caseData.updatedAt?.slice(0, 10)}</p>
+                <p>{formatDate(caseData.updatedAt)}</p>
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BlogPost = {
@@ -110,7 +111,7 @@ export default function BlogPage() {
                       </span>
                       <span className="flex items-center gap-1 text-xs text-neutral-400">
                         <Calendar className="w-3 h-3" />
-                        {article.publishedAt?.slice(0, 10)}
+                        {formatDate(article.publishedAt)}
                       </span>
                     </div>
                     <h2 className="text-sm font-semibold mb-1.5 group-hover:text-primary-500 transition-colors">

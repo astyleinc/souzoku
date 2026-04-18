@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/providers/AuthProvider'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 
 type AccountDeletionFormProps = {
   roleName: string
@@ -39,7 +40,7 @@ export const AccountDeletionForm = ({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `ouver-data-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.download = `ouver-data-export-${formatDate(new Date())}.json`
       a.click()
       URL.revokeObjectURL(url)
     }

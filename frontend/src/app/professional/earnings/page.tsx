@@ -10,6 +10,7 @@ import {
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type RevenueItem = {
@@ -132,7 +133,7 @@ export default function ProfessionalEarningsPage() {
                             {status.label}
                           </span>
                         </td>
-                        <td className="py-3.5 px-5 text-neutral-400">{r.closedAt?.slice(0, 10)}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{formatDate(r.closedAt)}</td>
                       </tr>
                     )
                   })}

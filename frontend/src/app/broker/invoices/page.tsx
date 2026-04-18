@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { brokerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Invoice = {
@@ -118,7 +119,7 @@ export default function BrokerInvoicesPage() {
                           <span className={`text-sm ${invoiceStatusStyle[inv.status]}`}>{invoiceStatusLabel[inv.status]}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{inv.issuedAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(inv.issuedAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
                           <button
@@ -157,7 +158,7 @@ export default function BrokerInvoicesPage() {
                   <div>成約: <span className="price text-neutral-600">{toMan(inv.salePrice).toLocaleString()}</span>万円</div>
                   <div>手数料: <span className="price text-neutral-600">{toMan(inv.brokerageFee).toLocaleString()}</span>万円</div>
                   <div>配分: <span className="price text-neutral-600">{toMan(inv.brokerAmount).toLocaleString()}</span>万円</div>
-                  <div>発行日: {inv.issuedAt?.slice(0, 10)}</div>
+                  <div>発行日: {formatDate(inv.issuedAt)}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

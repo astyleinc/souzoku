@@ -16,6 +16,7 @@ import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type CaseDetail = {
@@ -144,11 +145,11 @@ export default function AdminCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-0.5">作成日</p>
-                <p>{caseData.createdAt?.slice(0, 10)}</p>
+                <p>{formatDate(caseData.createdAt)}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-0.5">最終更新</p>
-                <p>{caseData.updatedAt?.slice(0, 10)}</p>
+                <p>{formatDate(caseData.updatedAt)}</p>
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Document = {
@@ -106,7 +107,7 @@ export default function ProfessionalDocumentsPage() {
                       <td className="py-3.5 px-5 text-neutral-500">{doc.documentType}</td>
                       <td className="py-3.5 px-5 text-neutral-500">{doc.propertyTitle}</td>
                       <td className="py-3.5 px-5 text-neutral-500">{doc.sellerName}</td>
-                      <td className="py-3.5 px-5 text-neutral-400">{doc.createdAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(doc.createdAt)}</td>
                       <td className="py-3.5 px-5">
                         <button
                           onClick={() => handleDownload(doc.id)}
@@ -147,7 +148,7 @@ export default function ProfessionalDocumentsPage() {
                 <div className="text-xs text-neutral-400 mt-2">
                   <span>{doc.sellerName}</span>
                   <span className="mx-2">|</span>
-                  <span>{doc.createdAt?.slice(0, 10)}</span>
+                  <span>{formatDate(doc.createdAt)}</span>
                 </div>
               </div>
             ))}

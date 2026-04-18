@@ -7,6 +7,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { buyerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiBid = {
@@ -100,7 +101,7 @@ export default function BuyerBidsPage() {
                       <td className="py-3.5 px-5">
                         <BidStatusBadge status={bid.status} />
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{bid.createdAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(bid.createdAt)}</td>
                       <td className="py-3.5 px-5">
                         {bid.status === 'active' && (
                           <Link href={`/properties/${bid.propertyId}/bid`} className="text-sm text-primary-500 hover:text-primary-600">
@@ -128,7 +129,7 @@ export default function BuyerBidsPage() {
                   <BidStatusBadge status={bid.status} />
                 </div>
                 <div className="flex items-center justify-between mt-2 text-xs text-neutral-400">
-                  <span>入札日: {bid.createdAt?.slice(0, 10)}</span>
+                  <span>入札日: {formatDate(bid.createdAt)}</span>
                   <span className="price text-sm text-foreground">{Math.round(bid.amount / 10000).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></span>
                 </div>
               </Link>

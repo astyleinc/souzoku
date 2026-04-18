@@ -15,6 +15,7 @@ import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type CaseItem = {
@@ -170,7 +171,7 @@ export default function AdminCasesPage() {
                             />
                           </div>
                         </td>
-                        <td className="py-3.5 px-5 text-xs text-neutral-400">{c.updatedAt?.slice(0, 10)}</td>
+                        <td className="py-3.5 px-5 text-xs text-neutral-400">{formatDate(c.updatedAt)}</td>
                         <td className="py-3.5 px-5">
                           <Link href={`/admin/cases/${c.id}`} className="text-primary-500 hover:underline text-xs font-medium">
                             詳細

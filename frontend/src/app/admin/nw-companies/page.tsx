@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type NwCompany = {
@@ -106,7 +107,7 @@ export default function AdminNwCompaniesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-5 text-neutral-400">{c.createdAt?.slice(0, 10)}</td>
+                    <td className="py-3.5 px-5 text-neutral-400">{formatDate(c.createdAt)}</td>
                     <td className="py-3.5 px-5">
                       <div className="flex items-center gap-2">
                         <Link

@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { buyerNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import type { Case } from '@/types/dashboard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
@@ -87,7 +88,7 @@ export default function BuyerCasesPage() {
 
                 <div className="flex items-center gap-3 text-xs text-neutral-400 mb-3">
                   <span>成約額: <span className="price text-neutral-600">{Math.round(c.amount / 10000).toLocaleString()}</span>万円</span>
-                  <span>更新: {c.updatedAt?.slice(0, 10)}</span>
+                  <span>更新: {formatDate(c.updatedAt)}</span>
                 </div>
 
                 {c.status !== 'cancelled' && (

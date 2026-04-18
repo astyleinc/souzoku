@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { adminNav } from '@/config/navigation'
 import { PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { toProperty } from '@/lib/mappers'
 import type { ApiProperty } from '@/lib/mappers'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
@@ -150,7 +151,7 @@ export default function AdminPropertiesPage() {
                       <td className="py-3.5 px-5 text-center price">{p.bidCount}</td>
                       <td className="py-3.5 px-5"><StatusBadge status={p.status} /></td>
                       <td className="py-3.5 px-5 text-xs text-neutral-400">{p.registrationStatus}</td>
-                      <td className="py-3.5 px-5 text-neutral-400">{p.createdAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(p.createdAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2">
                           <Link href={`/admin/properties/${p.id}`} className="p-1.5 text-primary-500 hover:bg-primary-50 rounded-lg transition-colors">

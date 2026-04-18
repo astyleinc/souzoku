@@ -8,6 +8,7 @@ import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { adminNav } from '@/config/navigation'
 import { BID_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BidItem = {
@@ -118,7 +119,7 @@ export default function AdminBidsPage() {
                     <td className="py-3 px-5">
                       <BidStatusBadge status={bid.status} />
                     </td>
-                    <td className="py-3 px-5 text-neutral-400">{bid.createdAt?.slice(0, 10)}</td>
+                    <td className="py-3 px-5 text-neutral-400">{formatDate(bid.createdAt)}</td>
                     <td className="py-3 px-5">
                       <Link href={`/admin/bids/${bid.propertyId}`} className="text-xs text-primary-500 hover:underline font-medium">
                         詳細

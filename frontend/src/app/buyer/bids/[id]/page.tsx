@@ -17,6 +17,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { buyerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type BidDetail = {
@@ -108,8 +109,8 @@ export default function BuyerBidDetailPage() {
               <BidStatusBadge status={bid.status} />
             </div>
             <div className="flex gap-3 mt-2 text-xs text-neutral-400">
-              <span>入札日: {bid.createdAt?.slice(0, 10)}</span>
-              <span>最終更新: {bid.updatedAt?.slice(0, 10)}</span>
+              <span>入札日: {formatDate(bid.createdAt)}</span>
+              <span>最終更新: {formatDate(bid.updatedAt)}</span>
             </div>
           </div>
         </div>

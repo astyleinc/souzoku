@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const statusSteps = [
@@ -111,7 +112,7 @@ export default function SellerCaseDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">案件開始日</p>
-                <p>{caseData.createdAt?.slice(0, 10)}</p>
+                <p>{formatDate(caseData.createdAt)}</p>
               </div>
             </div>
           </div>
@@ -180,11 +181,11 @@ export default function SellerCaseDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-neutral-400">案件開始</span>
-                <span>{caseData.createdAt?.slice(0, 10)}</span>
+                <span>{formatDate(caseData.createdAt)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-400">最終更新</span>
-                <span>{caseData.updatedAt?.slice(0, 10)}</span>
+                <span>{formatDate(caseData.updatedAt)}</span>
               </div>
             </div>
           </div>

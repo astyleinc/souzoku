@@ -11,6 +11,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Client = {
@@ -130,7 +131,7 @@ export default function ProfessionalClientsPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-5 text-xs text-neutral-400">{client.nwRoute}</td>
-                      <td className="py-3.5 px-5 text-neutral-400">{client.referredAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(client.referredAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-2">
                           <a href={`mailto:${client.email}`} className="p-1.5 text-primary-500 hover:bg-primary-50 rounded-lg transition-colors">
@@ -169,7 +170,7 @@ export default function ProfessionalClientsPage() {
                 <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-neutral-400">
                   <span>物件数: {client.propertyCount}</span>
                   <span>{client.nwRoute}</span>
-                  <span>{client.referredAt?.slice(0, 10)}</span>
+                  <span>{formatDate(client.referredAt)}</span>
                 </div>
               </div>
             ))}

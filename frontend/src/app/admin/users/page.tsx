@@ -7,6 +7,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { ROLE_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiUser = {
@@ -132,8 +133,8 @@ export default function AdminUsersPage() {
                         {ROLE_LABEL[user.role] ?? user.role}
                       </span>
                     </td>
-                    <td className="py-3.5 px-5 text-neutral-500">{user.createdAt?.slice(0, 10)}</td>
-                    <td className="py-3.5 px-5 text-neutral-500">{user.lastLoginAt?.slice(0, 10) ?? '-'}</td>
+                    <td className="py-3.5 px-5 text-neutral-500">{formatDate(user.createdAt)}</td>
+                    <td className="py-3.5 px-5 text-neutral-500">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}</td>
                     <td className="py-3.5 px-5">
                       <Link href={`/admin/users/${user.id}`} className="text-xs text-primary-500 hover:underline">詳細</Link>
                     </td>

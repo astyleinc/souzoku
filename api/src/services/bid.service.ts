@@ -77,7 +77,9 @@ export const createBidService = (db: Database) => ({
     const notificationService = createNotificationService(db)
 
     // 売主へ新規入札通知（即決到達時は後続の INSTANT_PRICE_REACHED で上書き通知する）
-    const hitsInstantPrice = Boolean(prop.instantPrice && input.amount >= prop.instantPrice)
+    // 即決判定は変数に切り出す（後段ブロックでも参照するため）
+    const instantPrice = prop.instantPrice
+    const hitsInstantPrice = instantPrice !== null && input.amount >= instantPrice
     if (!hitsInstantPrice) {
       await notificationService.createSilently(
         {
@@ -112,7 +114,7 @@ export const createBidService = (db: Database) => ({
           event: NOTIFICATION_EVENT.INSTANT_PRICE_REACHED,
           channel: 'email',
           title: '即決価格に到達しました',
-          body: `物件「${prop.title}」に即決価格（${prop.instantPrice!.toLocaleString()}円）以上の入札がありました。\n48時間以内に承認または辞退してください。期限を過ぎると通常の入札に戻ります。`,
+          body: `物件「${prop.title}」に即決価格（${instantPrice?.toLocaleString()}円）以上の入札がありました。\n48時間以内に承認または辞退してください。期限を過ぎると通常の入札に戻ります。`,
           relatedEntityType: 'property',
           relatedEntityId: prop.id,
           alsoEmail: true,

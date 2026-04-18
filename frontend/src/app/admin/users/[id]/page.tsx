@@ -14,6 +14,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { ROLE_LABEL } from '@/data/mock-dashboard'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const roleStyle: Record<string, string> = {
@@ -117,7 +118,7 @@ export default function AdminUserDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-neutral-400" />
-                <span>登録日: {user.createdAt?.slice(0, 10)}</span>
+                <span>登録日: {formatDate(user.createdAt)}</span>
               </div>
               {user.phone && (
                 <div className="flex items-center gap-2">

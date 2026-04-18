@@ -6,6 +6,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { professionalNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Referral = {
@@ -99,7 +100,7 @@ export default function ProfessionalReferralsPage() {
                       <td className="py-3.5 px-5">
                         <StatusBadge status={r.status} />
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{r.createdAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(r.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

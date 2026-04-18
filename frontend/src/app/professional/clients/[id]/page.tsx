@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { professionalNav } from '@/config/navigation'
 import { api } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ClientDetail = {
@@ -146,7 +147,7 @@ export default function ProfessionalClientDetailPage() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <p className="text-sm font-medium">{client.latestPropertyTitle}</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">紹介日: {client.referredAt?.slice(0, 10)}</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">紹介日: {formatDate(client.referredAt)}</p>
                   </div>
                 </div>
                 {/* ステータス進行 */}
@@ -178,7 +179,7 @@ export default function ProfessionalClientDetailPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">{prop.title}</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">紹介日: {prop.referredAt?.slice(0, 10)}</p>
+                      <p className="text-xs text-neutral-400 mt-0.5">紹介日: {formatDate(prop.referredAt)}</p>
                     </div>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600">
                       {STATUS_LABEL[prop.status] ?? prop.status}

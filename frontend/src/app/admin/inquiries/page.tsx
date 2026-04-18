@@ -13,6 +13,7 @@ import { SearchInput } from '@/components/shared/SearchInput'
 import { FilterSelect } from '@/components/shared/FilterSelect'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Inquiry = {
@@ -157,7 +158,7 @@ export default function AdminInquiriesPage() {
                           </span>
                         </td>
                         <td className="py-3.5 px-5 text-neutral-500">{inq.assigneeName ?? '未割当'}</td>
-                        <td className="py-3.5 px-5 text-neutral-400">{inq.createdAt?.slice(0, 10)}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{formatDate(inq.createdAt)}</td>
                         <td className="py-3.5 px-5">
                           <Link href={`/admin/inquiries/${inq.id}`} className="text-xs text-primary-500 hover:underline font-medium">
                             詳細
@@ -187,7 +188,7 @@ export default function AdminInquiriesPage() {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-neutral-400">
                     <span>{inq.senderName}</span>
                     <span>{inq.category}</span>
-                    <span>{inq.createdAt?.slice(0, 10)}</span>
+                    <span>{formatDate(inq.createdAt)}</span>
                   </div>
                 </Link>
               )

@@ -7,6 +7,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { BidStatusBadge } from '@/components/shared/BidStatusBadge'
 import { sellerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type ApiBid = {
@@ -112,7 +113,7 @@ export default function SellerBidsPage() {
                           <td className="py-3.5 px-5">
                             <BidStatusBadge status={bid.status} />
                           </td>
-                          <td className="py-3.5 px-5 text-neutral-400">{bid.updatedAt?.slice(0, 10)}</td>
+                          <td className="py-3.5 px-5 text-neutral-400">{formatDate(bid.updatedAt)}</td>
                           <td className="py-3.5 px-5">
                             {bid.status === 'active' && (
                               <Link href={`/seller/bids/${bid.propertyId}`} className="text-sm text-cta-500 hover:text-cta-600 font-medium">

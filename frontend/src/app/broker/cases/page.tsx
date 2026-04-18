@@ -8,6 +8,7 @@ import { CaseStatusBadge } from '@/components/shared/CaseStatusBadge'
 import { brokerNav } from '@/config/navigation'
 import { CASE_STATUS_LABEL } from '@/data/mock-dashboard'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import type { Case } from '@/types/dashboard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
@@ -95,7 +96,7 @@ export default function BrokerCasesPage() {
                       <td className="py-3.5 px-5">
                         <CaseStatusBadge status={c.status} />
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{c.updatedAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(c.updatedAt)}</td>
                       <td className="py-3.5 px-5">
                         <Link href={`/broker/cases/${c.id}`} className="text-sm text-primary-500 hover:text-primary-600">
                           詳細

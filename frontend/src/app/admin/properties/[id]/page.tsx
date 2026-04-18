@@ -18,6 +18,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { adminNav } from '@/config/navigation'
 import { type PropertyType, PROPERTY_TYPE_LABEL } from '@/data/mock'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type PropertyDetail = {
@@ -267,7 +268,7 @@ export default function AdminPropertyDetailPage() {
                       <tr key={bid.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
                         <td className="py-2 px-3">{bid.bidderName}</td>
                         <td className="py-2 px-3 text-right price">{toMan(bid.amount).toLocaleString()}<span className="text-xs font-normal text-neutral-400 ml-1">万円</span></td>
-                        <td className="py-2 px-3 text-neutral-400">{bid.updatedAt?.slice(0, 10)}</td>
+                        <td className="py-2 px-3 text-neutral-400">{formatDate(bid.updatedAt)}</td>
                       </tr>
                     ))}
                   </tbody>

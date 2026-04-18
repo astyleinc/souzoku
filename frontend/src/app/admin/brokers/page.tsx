@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Broker = {
@@ -126,7 +127,7 @@ export default function AdminBrokersPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-500">登録日</span>
-                  <span className="text-xs">{broker.createdAt?.slice(0, 10)}</span>
+                  <span className="text-xs">{formatDate(broker.createdAt)}</span>
                 </div>
               </div>
 

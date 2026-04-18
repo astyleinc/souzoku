@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import {
   FILE_UPLOAD_ACCEPTED_MIME,
   FILE_UPLOAD_MAX_SIZE_BYTES,
@@ -205,7 +206,7 @@ export default function SellerDocumentsPage() {
                           <span className="text-sm">{docStatusLabel[doc.status]}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-5 text-neutral-400">{doc.uploadedAt?.slice(0, 10)}</td>
+                      <td className="py-3.5 px-5 text-neutral-400">{formatDate(doc.uploadedAt)}</td>
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
                           <button
@@ -246,7 +247,7 @@ export default function SellerDocumentsPage() {
                 <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400">
                   <span>{doc.type}</span>
                   <span>{doc.size}</span>
-                  <span>{doc.uploadedAt?.slice(0, 10)}</span>
+                  <span>{formatDate(doc.uploadedAt)}</span>
                 </div>
               </div>
             ))}

@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { sellerNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type Bid = {
@@ -193,7 +194,7 @@ export default function SellerBidsByPropertyPage() {
                         {bid.bidderType && <span className="text-xs text-neutral-400">({bid.bidderType})</span>}
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-neutral-400 mt-1">
-                        <span>入札日: {bid.createdAt?.slice(0, 10)}</span>
+                        <span>入札日: {formatDate(bid.createdAt)}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

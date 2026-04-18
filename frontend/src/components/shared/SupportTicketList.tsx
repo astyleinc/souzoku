@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 
 type SupportTicket = {
   id: string
@@ -110,8 +111,8 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
                             {sc.label}
                           </span>
                         </td>
-                        <td className="py-3.5 px-5 text-neutral-400">{ticket.createdAt?.slice(0, 10)}</td>
-                        <td className="py-3.5 px-5 text-neutral-400">{ticket.updatedAt?.slice(0, 10)}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{formatDate(ticket.createdAt)}</td>
+                        <td className="py-3.5 px-5 text-neutral-400">{formatDate(ticket.updatedAt)}</td>
                       </tr>
                     )
                   })}
@@ -135,7 +136,7 @@ export const SupportTicketList = ({ contactHref }: SupportTicketListProps) => {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400">
                     <span>{ticket.category}</span>
-                    <span>{ticket.createdAt?.slice(0, 10)}</span>
+                    <span>{formatDate(ticket.createdAt)}</span>
                   </div>
                 </div>
               )

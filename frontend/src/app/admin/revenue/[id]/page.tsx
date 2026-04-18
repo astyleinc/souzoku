@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { DashboardShell } from '@/components/layout/DashboardShell'
 import { adminNav } from '@/config/navigation'
 import { api, toItems } from '@/lib/api'
+import { formatDate } from '@/lib/format'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 type RevenueDetail = {
@@ -142,7 +143,7 @@ export default function AdminRevenueDetailPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">決済完了日</p>
-                <p>{revenue.closedAt?.slice(0, 10)}</p>
+                <p>{formatDate(revenue.closedAt)}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-400 mb-1">紹介経路</p>
