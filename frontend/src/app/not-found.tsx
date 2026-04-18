@@ -1,54 +1,55 @@
 import Link from 'next/link'
-import { Home, Search, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      {/* ヘッダー（最小限） */}
-      <header className="py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <Link href="/" className="flex items-center gap-2 w-fit">
-            <div className="w-7 h-7 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">O</span>
+    <div className="min-h-screen bg-warm flex flex-col">
+      <header className="py-7">
+        <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+          <Link href="/" className="inline-flex items-center gap-3 w-fit">
+            <div className="w-8 h-8 bg-bark rounded-[8px] flex items-center justify-center">
+              <span className="text-warm font-bold text-[13px]">O</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">相続不動産マッチング</span>
+            <span className="text-[14px] font-bold text-bark tracking-[-0.01em]">Ouver</span>
           </Link>
         </div>
       </header>
 
-      {/* メイン */}
-      <main className="flex-1 flex items-center justify-center px-4 pb-24">
-        <div className="text-center max-w-md">
-          {/* 404を家のモチーフで表現 */}
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-100 rounded-2xl mb-6">
-              <Home className="w-10 h-10 text-neutral-300" strokeWidth={1.5} />
-            </div>
-            <p className="price text-6xl text-neutral-200 mb-3">404</p>
-            <h1 className="text-xl font-bold text-foreground">
-              この物件は見つかりませんでした
-            </h1>
-            <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
-              お探しのページは移動または削除された可能性があります。<br />
-              URLをご確認いただくか、物件一覧からお探しください。
-            </p>
+      <main className="flex-1 flex items-center justify-center px-5 md:px-9 pb-24">
+        <div className="w-full max-w-[520px] text-center">
+          <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+            NOT FOUND
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
           </div>
 
-          {/* アクション */}
+          <p className="price text-[clamp(84px,14vw,128px)] font-bold tracking-[-0.04em] leading-none text-sage-deep/25 mb-6">
+            404
+          </p>
+
+          <h1 className="font-bold text-[clamp(26px,3.2vw,34px)] leading-[1.25] tracking-[-0.02em] text-bark mb-4 [word-break:keep-all]">
+            お探しのページが
+            <br />
+            見つかりませんでした
+          </h1>
+          <p className="text-[14px] text-bark-2 leading-[1.95] mb-10">
+            ページが移動されたか、URLが変更されている可能性があります。
+            <br />
+            トップページから、あらためてお探しください。
+          </p>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 active:scale-[0.98] transition-all"
+              className="px-7 py-3 bg-bark text-warm rounded-full text-[13px] font-bold tracking-[0.01em] transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px inline-flex items-center gap-2"
             >
-              <ArrowLeft className="w-4 h-4" />
-              トップに戻る
+              <span aria-hidden>←</span>
+              トップへ戻る
             </Link>
             <Link
               href="/properties"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-neutral-500 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+              className="px-7 py-3 bg-white border border-black/10 text-bark rounded-full text-[13px] font-bold transition-colors hover:border-black/20"
             >
-              <Search className="w-4 h-4" />
-              物件を探す
+              物件をさがす
             </Link>
           </div>
         </div>

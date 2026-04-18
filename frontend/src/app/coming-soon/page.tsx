@@ -2,79 +2,91 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Sparkles, ArrowLeft, Mail, CheckCircle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 
 export default function ComingSoonPage() {
   const [email, setEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
+    if (!email || submitting) return
+    setSubmitting(true)
     await api.post('/subscribe', { email })
+    setSubmitting(false)
     setSubmitted(true)
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      <header className="py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <Link href="/" className="flex items-center gap-2 w-fit">
-            <div className="w-7 h-7 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">O</span>
+    <div className="min-h-screen bg-warm flex flex-col">
+      <header className="py-7">
+        <div className="max-w-[1260px] mx-auto px-5 md:px-9">
+          <Link href="/" className="inline-flex items-center gap-3 w-fit">
+            <div className="w-8 h-8 bg-bark rounded-[8px] flex items-center justify-center">
+              <span className="text-warm font-bold text-[13px]">O</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">相続不動産マッチング</span>
+            <span className="text-[14px] font-bold text-bark tracking-[-0.01em]">Ouver</span>
           </Link>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 pb-24">
-        <div className="text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-cta-50 rounded-2xl mb-6">
-            <Sparkles className="w-10 h-10 text-cta-400" strokeWidth={1.5} />
+      <main className="flex-1 flex items-center justify-center px-5 md:px-9 pb-24">
+        <div className="w-full max-w-[520px] text-center">
+          <div className="flex items-center justify-center gap-3 mb-6 text-[11px] tracking-[0.32em] font-semibold text-sage-deep">
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
+            COMING SOON
+            <span aria-hidden className="block w-6 h-px bg-sage-deep/50" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">
-            この機能は準備中です
+          <h1 className="font-bold text-[clamp(30px,4vw,42px)] leading-[1.22] tracking-[-0.02em] text-bark mb-4 [word-break:keep-all]">
+            この機能は、
+            <br />
+            もうすぐ公開します
           </h1>
-          <p className="text-sm text-neutral-400 leading-relaxed mb-6">
-            現在開発中の機能です。リリース時にお知らせをご希望の場合は、<br />
-            メールアドレスをご登録ください。
+          <p className="text-[14px] text-bark-2 leading-[1.95] mb-10">
+            ただいま、準備を進めています。公開のお知らせを希望される方は、メールアドレスをご登録ください。
           </p>
 
-          {submitted ? (
-            <div className="flex items-center justify-center gap-2 text-sm text-success-600 mb-6">
-              <CheckCircle className="w-4 h-4" />
-              登録ありがとうございます。リリース時にお知らせします。
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex gap-2 max-w-sm mx-auto mb-6">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <div className="surface-card rounded-[16px] p-7 md:p-10 mb-10">
+            {submitted ? (
+              <div className="py-2">
+                <p className="text-[14px] text-sage-deep font-bold mb-2">
+                  ご登録ありがとうございます
+                </p>
+                <p className="text-[13px] text-bark-2 leading-[1.9]">
+                  公開のタイミングで、ご入力いただいたメールアドレスにご連絡いたします。
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="メールアドレス"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                  placeholder="mail@example.com"
+                  autoComplete="email"
+                  className="flex-1 px-4 py-3 text-[14px] bg-white border border-black/10 rounded-[10px] focus:outline-none focus:border-sage-deep/40 transition-colors"
                 />
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2.5 text-sm font-semibold text-white bg-cta-500 rounded-xl hover:bg-cta-600 transition-colors shrink-0"
-              >
-                通知を受け取る
-              </button>
-            </form>
-          )}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-3 bg-bark text-warm rounded-full text-[13px] font-bold tracking-[0.01em] whitespace-nowrap transition-[transform,opacity] hover:opacity-90 hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 inline-flex items-center justify-center gap-2"
+                >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+                  お知らせを受け取る
+                </button>
+              </form>
+            )}
+          </div>
 
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+            className="text-[13px] text-bark-3 hover:text-bark transition-colors inline-flex items-center gap-1.5 underline-offset-[4px] hover:underline decoration-bark-3/40"
           >
-            <ArrowLeft className="w-4 h-4" />
-            トップに戻る
+            <span aria-hidden>←</span>
+            トップへ戻る
           </Link>
         </div>
       </main>
