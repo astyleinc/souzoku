@@ -114,3 +114,5 @@ export const createApp = () => {
 export const app = createApp()
 
 export type AppType = typeof app
+
+export { services } from './lib/services'

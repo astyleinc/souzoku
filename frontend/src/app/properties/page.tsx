@@ -13,7 +13,7 @@ import {
 } from '@/components/property/PropertyFilters'
 import { toProperty, type ApiProperty } from '@/lib/mappers'
 import type { Urgency } from '@/data/mock'
-import { API_TIMEOUT_QUICK_MS } from '@shared/constants'
+import { services } from 'ouver-api'
 
 export const metadata: Metadata = {
   title: '物件一覧｜Ouver',
@@ -24,37 +24,37 @@ export const metadata: Metadata = {
   },
 }
 
-const API_BASE =
-  process.env.API_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
-  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8787')
-
 const ITEMS_PER_PAGE = 12
 
+type PropertyType = 'house' | 'land' | 'apartment' | 'other'
+const PROPERTY_TYPES = ['house', 'land', 'apartment', 'other'] as const
+
+type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'area_desc'
+const SORT_KEYS = ['newest', 'price_asc', 'price_desc', 'area_desc'] as const
+
 const fetchProperties = async (params: Record<string, string | undefined>) => {
-  const query = new URLSearchParams()
   const page = Math.max(1, Number(params.page) || 1)
-
-  if (params.q) query.set('keyword', params.q)
-  if (params.prefecture) query.set('prefecture', params.prefecture)
-  if (params.type) query.set('propertyType', params.type)
-  if (params.price_min) query.set('minPrice', String(Number(params.price_min) * 10000))
-  if (params.price_max) query.set('maxPrice', String(Number(params.price_max) * 10000))
-  if (params.bidding_only === '1') query.set('biddingOnly', 'true')
-  if (params.sort) query.set('sort', params.sort)
-  query.set('page', String(page))
-  query.set('limit', String(ITEMS_PER_PAGE))
-
-  const url = `${API_BASE}/api/properties?${query.toString()}`
+  const propertyType = (PROPERTY_TYPES as readonly string[]).includes(params.type ?? '')
+    ? (params.type as PropertyType)
+    : undefined
+  const sort = (SORT_KEYS as readonly string[]).includes(params.sort ?? '')
+    ? (params.sort as SortKey)
+    : 'newest'
 
   try {
-    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(API_TIMEOUT_QUICK_MS) })
-    if (!res.ok) return null
-    const json = await res.json() as { success: boolean; data?: { items: ApiProperty[]; total: number } }
-    if (json.success && json.data) {
-      return json.data
-    }
-    return null
+    const raw = await services.property.list({
+      page,
+      limit: ITEMS_PER_PAGE,
+      keyword: params.q,
+      prefecture: params.prefecture,
+      propertyType,
+      minPrice: params.price_min ? Number(params.price_min) * 10000 : undefined,
+      maxPrice: params.price_max ? Number(params.price_max) * 10000 : undefined,
+      biddingOnly: params.bidding_only === '1' ? true : undefined,
+      sort,
+    })
+    // Date を ISO 文字列に正規化（ApiProperty 互換）
+    return JSON.parse(JSON.stringify(raw)) as { items: ApiProperty[]; total: number }
   } catch {
     return null
   }
