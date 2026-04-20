@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { HeroImage } from '@/components/home/HeroImage'
 import { HeroSearch } from '@/components/home/HeroSearch'
 import { HeroReveal } from '@/components/home/HeroReveal'
 import { HomeResults } from '@/components/home/HomeResults'
@@ -29,13 +29,12 @@ export default function HomePage() {
         <section className="relative overflow-hidden">
           {/* 背景写真 + 左からフェードするオーバーレイ */}
           <div className="absolute inset-0 z-0">
-            <Image
+            <HeroImage
               src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80&auto=format"
               alt=""
-              fill
               priority
-              className="object-cover object-[center_40%]"
               sizes="100vw"
+              className="object-cover object-[center_40%]"
             />
             <div className="absolute inset-0 hero-gradient" />
           </div>
@@ -54,12 +53,11 @@ export default function HomePage() {
         {/* PARTNERS CTA — 士業・提携宅建業者の募集導線 */}
         <section className="relative overflow-hidden mt-5">
           <div className="absolute inset-0 z-0">
-            <Image
+            <HeroImage
               src="https://images.unsplash.com/photo-1600210492493-0946911123ea?w=1400&q=80&auto=format"
               alt=""
-              fill
-              className="object-cover object-[center_60%]"
               sizes="100vw"
+              className="object-cover object-[center_60%]"
             />
             <div className="absolute inset-0 cta-gradient" />
           </div>
@@ -73,7 +71,7 @@ export default function HomePage() {
                 税理士・司法書士・宅建業者の皆さまへ
               </h2>
               <p className="text-white/70 text-[13px] mt-3 max-w-[480px] leading-[1.85]">
-                相続案件のワンストップ化を担うパートナーを募集しています。紹介料・案件配分の仕組みをご案内します。
+                顧問先に安心・安全なお取引を提供いたします。
               </p>
             </div>
             <Link

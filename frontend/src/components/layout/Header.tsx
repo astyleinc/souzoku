@@ -74,22 +74,6 @@ export const Header = () => {
             >
               物件を探す
             </Link>
-            {!user && (
-              <>
-                <Link
-                  href="/#features"
-                  className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
-                >
-                  サービスについて
-                </Link>
-                <Link
-                  href="/#how-it-works"
-                  className="text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
-                >
-                  ご利用の流れ
-                </Link>
-              </>
-            )}
             {dashboard && (
               <Link
                 href={dashboard.path}
@@ -206,24 +190,6 @@ export const Header = () => {
             >
               物件を探す
             </Link>
-            {!user && (
-              <>
-                <Link
-                  href="/#features"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-50 rounded-xl"
-                >
-                  サービスについて
-                </Link>
-                <Link
-                  href="/#how-it-works"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 text-sm text-neutral-600 hover:bg-neutral-50 rounded-xl"
-                >
-                  ご利用の流れ
-                </Link>
-              </>
-            )}
             {dashboard && (
               <Link
                 href={dashboard.path}
