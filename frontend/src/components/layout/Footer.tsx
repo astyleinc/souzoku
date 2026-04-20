@@ -56,7 +56,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works" className="hover:text-warm transition-colors">
+                <Link href="/guide" className="hover:text-warm transition-colors">
                   ご利用の流れ
                 </Link>
               </li>
