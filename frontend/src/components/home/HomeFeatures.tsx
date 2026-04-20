@@ -253,8 +253,8 @@ export const HomeFeatures = () => (
   <section className="max-w-[1260px] mx-auto px-5 md:px-9 pb-20">
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       {/* 主役カード */}
-      <article className="lg:col-span-7 surface-card-feature rounded-[16px] overflow-hidden flex flex-col sm:flex-row">
-        <div className="feature-illust-well flex items-center justify-center p-6 sm:w-[46%] sm:min-h-[240px]">
+      <article className="lg:col-span-7 surface-card-feature rounded-[16px] flex flex-col sm:flex-row">
+        <div className="flex items-center justify-center p-6 sm:w-[46%] sm:min-h-[240px]">
           <AuctionArt />
         </div>
         <div className="p-6 sm:p-7 flex flex-col justify-center">
