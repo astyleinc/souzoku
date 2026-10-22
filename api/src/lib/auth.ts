@@ -59,7 +59,7 @@ const getAuthOptions = (): BetterAuthOptions => {
         verification: authVerification,
       },
     }),
-    baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:8787'),
+    baseURL: process.env.BETTER_AUTH_URL ?? (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:40601'),
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: process.env.FRONTEND_URL
       ? [process.env.FRONTEND_URL]

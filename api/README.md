@@ -80,7 +80,7 @@ curl -X POST "$SUPABASE_URL/storage/v1/bucket" \
 pnpm dev
 ```
 
-デフォルトで `http://localhost:8787` で起動します。
+デフォルトで `http://localhost:40601` で起動します。
 
 ## ディレクトリ構成
 
