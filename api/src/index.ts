@@ -9,7 +9,7 @@ import { createApp } from './app'
 import { logger } from './lib/logger'
 
 const app = createApp()
-const port = Number(process.env.PORT ?? 8787)
+const port = Number(process.env.PORT ?? 40601)
 
 serve({ fetch: app.fetch, port }, () => {
   logger.info('APIサーバー起動 (ローカル単体)', { port })
